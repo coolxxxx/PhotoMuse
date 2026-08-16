@@ -1,0 +1,115 @@
+{
+  "version": "2.0",
+  "envId": "cloud1-9gv5zn35c8ca8869-00c771e2",
+  "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "createAIStudioOrder",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "uploadAIStudioPhoto",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "submitAIStudioOrder",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "listMyAIStudioOrders",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "getAIStudioOrderDetail",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "queryAIStudioOrder",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminListAIStudioOrders",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminReviewAIStudioOrder",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminDeliverAIStudioOrder",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg"
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "getAIStudioRuntimeConfig",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminUpsertAIStudioRuntimeConfig",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg"
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "callAIStudioCustomerService",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_TEXT_API_URL": "",
+        "AI_STUDIO_TEXT_API_KEY": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "dispatchAIStudioJob",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg"
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    }
+  ],
+  "region": "ap-shanghai"
+}

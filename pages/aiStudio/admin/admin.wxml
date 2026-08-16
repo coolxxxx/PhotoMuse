@@ -1,0 +1,65 @@
+<view class="admin-page">
+  <view class="page-nav">
+    <view class="nav-back" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">订单管理</view>
+    <view class="nav-exit" bindtap="logoutAdmin">退出</view>
+  </view>
+
+  <view class="header">
+    <view class="header-title">订单管理</view>
+    <view class="header-desc">仅白名单运营 openid 可审核、拒单和交付。</view>
+  </view>
+
+  <scroll-view scroll-x class="status-tabs">
+    <view
+      wx:for="{{statusOptions}}"
+      wx:key="value"
+      class="status-tab {{selectedStatus === item.value ? 'active' : ''}}"
+      data-status="{{item.value}}"
+      bindtap="selectStatus"
+    >
+      {{item.label}}
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{orders.length === 0}}" class="empty-state">
+    {{isLoading ? '加载中...' : '当前状态下暂无订单'}}
+  </view>
+
+  <view wx:for="{{orders}}" wx:key="orderId" class="order-card">
+    <view class="order-head">
+      <view>
+        <view class="order-title">{{item.productName}}</view>
+        <view class="order-meta">{{item.orderId}}</view>
+      </view>
+      <view class="status-pill">{{item.statusText}}</view>
+    </view>
+
+    <view class="order-info">
+      <text>{{item.styleName}}</text>
+      <text>{{item.photoCheckText}}</text>
+      <text>{{item.reference_photo_count || 0}} 张参考图</text>
+    </view>
+
+    <view wx:if="{{item.reviewNote}}" class="review-note">{{item.reviewNote}}</view>
+
+    <view class="image-row" wx:if="{{item.customerFiles.length}}">
+      <image
+        wx:for="{{item.customerFiles}}"
+        wx:key="fileId"
+        src="{{item.tempUrl}}"
+        mode="aspectFill"
+        data-url="{{item.tempUrl}}"
+        data-urls="{{item.customerUrls}}"
+        bindtap="previewImage"
+      ></image>
+    </view>
+
+    <view class="actions">
+      <button size="mini" class="action-btn pass" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="passReview">通过</button>
+      <button size="mini" class="action-btn retake" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="requestRetake">重拍</button>
+      <button size="mini" class="action-btn reject" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="rejectOrder">拒单</button>
+      <button size="mini" class="action-btn deliver" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="chooseDelivery">上传交付</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,13 @@
+# 依赖
+node_modules/
+
+# 微信开发者工具私有配置（含个人路径）
+project.private.config.json
+
+# 日志与临时文件
+*.log
+.DS_Store
+Thumbs.db
+
+# 云函数本地依赖
+cloudfunctions/*/node_modules/

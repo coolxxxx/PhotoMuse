@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "pages/aiStudio/index",
+    "pages/aiStudio/detail/detail",
+    "pages/aiStudio/adminLogin/adminLogin",
+    "pages/aiStudio/admin/admin"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#1976D2",
+    "navigationBarTitleText": "光影集",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F5F9FF"
+  },
+  "sitemapLocation": "sitemap.json",
+  "cloud": true,
+  "style": "v2",
+  "theme": "light",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "光影集",
+  "navigationBarBackgroundColor": "#1976D2",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#F5F9FF",
+  "enablePullDownRefresh": true
+}

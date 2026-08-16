@@ -1,0 +1,39 @@
+<view class="admin-login-page">
+  <view class="page-nav">
+    <view class="nav-back" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">管理登录</view>
+  </view>
+
+  <view class="login-card">
+    <view class="login-badge">AI PHOTO OPS</view>
+    <view class="login-title">管理登录</view>
+    <view class="login-desc">
+      仅管理员可进入订单看板。系统会使用当前微信身份校验 openid，不需要教师账号。
+    </view>
+
+    <view class="permission-box">
+      <view class="permission-title">可管理内容</view>
+      <view class="permission-item">查看证件照订单和客户上传照片</view>
+      <view class="permission-item">审核通过、要求重拍或拒单</view>
+      <view class="permission-item">上传交付图并完成质检交付</view>
+    </view>
+
+    <view class="password-field">
+      <view class="field-label">管理口令</view>
+      <input
+        class="password-input"
+        password
+        maxlength="32"
+        placeholder="请输入管理口令"
+        value="{{adminPassword}}"
+        bindinput="onPasswordInput"
+      />
+    </view>
+
+    <button class="login-btn" loading="{{isChecking}}" disabled="{{isChecking}}" bindtap="loginAdmin">
+      {{isChecking ? '正在校验' : '进入管理后台'}}
+    </button>
+
+    <view wx:if="{{errorMessage}}" class="error-message">{{errorMessage}}</view>
+  </view>
+</view>

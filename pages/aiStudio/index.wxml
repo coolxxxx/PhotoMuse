@@ -1,0 +1,213 @@
+<view class="studio-page">
+  <view class="page-nav">
+    <view class="nav-back" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">光影集 PhotoMuse</view>
+  </view>
+
+  <view class="hero">
+    <view class="eyebrow">ID PHOTO SERVICE</view>
+    <view class="hero-title">光影集 · 证件照制作</view>
+    <view class="hero-desc">不用出门的影楼：上传正脸照，确认授权，进入半自动审核与交付流程。</view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">选择套餐</view>
+    <view class="product-list">
+      <view
+        wx:for="{{products}}"
+        wx:key="productId"
+        class="product-card {{selectedProductId === item.productId ? 'selected' : ''}}"
+        data-id="{{item.productId}}"
+        bindtap="selectProduct"
+      >
+        <view class="product-head">
+          <text class="product-name">{{item.name}}</text>
+          <text class="product-price">￥{{item.price}}</text>
+        </view>
+        <text class="product-desc">{{item.description}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section example-section">
+    <view class="section-title">效果范例</view>
+    <view class="example-subtitle">{{currentExample.subtitle}}</view>
+    <view class="example-preview">
+      <view class="example-card before">
+        <image class="example-image" src="{{currentExample.beforeImage}}" mode="aspectFill"></image>
+        <view class="example-label">{{currentExample.beforeLabel}}</view>
+      </view>
+      <view class="example-arrow">→</view>
+      <view class="example-card after">
+        <image class="example-image" src="{{currentExample.afterImage}}" mode="aspectFill"></image>
+        <view class="example-label">{{currentExample.afterLabel}}</view>
+      </view>
+    </view>
+    <view class="example-title">{{currentExample.title}}</view>
+    <view class="feature-list">
+      <view wx:for="{{currentExample.features}}" wx:key="*this" class="feature-item">{{item}}</view>
+    </view>
+  </view>
+
+  <view class="section guide-section">
+    <view class="section-title">拍照引导</view>
+    <view class="guide-grid">
+      <view wx:for="{{currentExample.tips}}" wx:key="*this" class="guide-item">
+        <view class="guide-index">{{index + 1}}</view>
+        <view class="guide-text">{{item}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">选择风格</view>
+    <view class="style-grid">
+      <view
+        wx:for="{{styles}}"
+        wx:key="styleId"
+        class="style-chip {{selectedStyleId === item.styleId ? 'selected' : ''}}"
+        data-id="{{item.styleId}}"
+        bindtap="selectStyle"
+      >
+        <text>{{item.styleId}}</text>
+        <text>{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">制作要求</view>
+    <input
+      class="text-input"
+      type="number"
+      maxlength="11"
+      placeholder="手机号：用于订单查询和交付通知"
+      value="{{contactPhone}}"
+      bindinput="onPhoneInput"
+    />
+    <input
+      class="text-input"
+      password
+      maxlength="32"
+      placeholder="查询密码：至少 6 位，请牢记"
+      value="{{queryPassword}}"
+      bindinput="onQueryPasswordInput"
+    />
+    <picker mode="selector" range="{{specOptions}}" value="{{specIndex}}" bindchange="onSpecChange">
+      <view class="form-row">
+        <text>用途规格</text>
+        <text>{{specOptions[specIndex]}} →</text>
+      </view>
+    </picker>
+    <picker mode="selector" range="{{backgroundOptions}}" value="{{backgroundIndex}}" bindchange="onBackgroundChange">
+      <view class="form-row">
+        <text>底色</text>
+        <text>{{backgroundOptions[backgroundIndex]}} →</text>
+      </view>
+    </picker>
+    <picker mode="selector" range="{{clothingOptions}}" value="{{clothingIndex}}" bindchange="onClothingChange">
+      <view class="form-row">
+        <text>服装</text>
+        <text>{{clothingOptions[clothingIndex]}} →</text>
+      </view>
+    </picker>
+    <textarea
+      class="note-input"
+      maxlength="300"
+      placeholder="可填写补充要求，例如：考试报名、不要过度美颜、保留发型等"
+      value="{{customerNote}}"
+      bindinput="onNoteInput"
+    />
+    <view class="privacy-tip">订单默认绑定当前微信；手机号和查询密码用于换设备或联系客服时核验订单。</view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">上传正脸照</view>
+    <view class="upload-tip">请上传 1-3 张清晰正脸照；不戴帽子、墨镜、口罩，不要多人合照。</view>
+    <view class="photo-grid">
+      <view wx:for="{{photos}}" wx:key="tempFilePath" class="photo-item">
+        <image src="{{item.tempFilePath}}" mode="aspectFill"></image>
+        <view class="remove-photo" data-index="{{index}}" bindtap="removePhoto">×</view>
+      </view>
+      <view wx:if="{{photos.length < 3}}" class="photo-add" bindtap="choosePhotos">
+        <view class="add-plus">＋</view>
+        <view>添加照片</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">授权确认</view>
+    <view class="auth-list">
+      <view wx:for="{{authorizationText}}" wx:key="*this" class="auth-text">{{index + 1}}. {{item}}</view>
+    </view>
+    <view class="switch-row">
+      <text>本人或已获明确授权</text>
+      <switch checked="{{authorization.isSelfOrAuthorized}}" data-field="isSelfOrAuthorized" bindchange="onAuthChange" />
+    </view>
+    <view class="switch-row">
+      <text>照片中人物已满 18 周岁</text>
+      <switch checked="{{authorization.isAdult}}" data-field="isAdult" bindchange="onAuthChange" />
+    </view>
+    <view class="switch-row">
+      <text>同意仅用于本次制作</text>
+      <switch checked="{{authorization.agreesProduction}}" data-field="agreesProduction" bindchange="onAuthChange" />
+    </view>
+  </view>
+
+  <button class="submit-btn" loading="{{isSubmitting}}" disabled="{{isSubmitting}}" bindtap="submitOrder">
+    提交证件照订单
+  </button>
+
+  <view class="section query-section">
+    <view class="query-head" bindtap="toggleQueryPanel">
+      <view>
+        <view class="section-title query-title">查询订单</view>
+        <view class="query-desc">换设备或联系客服时，可用订单号、手机号和查询密码查看订单。</view>
+      </view>
+      <view class="query-toggle">{{showQueryPanel ? '收起' : '展开'}}</view>
+    </view>
+    <view wx:if="{{showQueryPanel}}" class="query-form">
+      <input
+        class="text-input"
+        placeholder="订单号，例如 AIStudio-..."
+        value="{{queryOrderId}}"
+        bindinput="onQueryOrderIdInput"
+      />
+      <input
+        class="text-input"
+        type="number"
+        maxlength="11"
+        placeholder="下单手机号"
+        value="{{queryContactPhone}}"
+        bindinput="onQueryPhoneInput"
+      />
+      <input
+        class="text-input"
+        password
+        maxlength="32"
+        placeholder="查询密码"
+        value="{{queryOrderPassword}}"
+        bindinput="onQueryOrderPasswordInput"
+      />
+      <button class="secondary-btn" bindtap="queryOrder">查询订单</button>
+    </view>
+  </view>
+
+  <view class="section orders-section">
+    <view class="section-title">我的订单</view>
+    <view wx:if="{{orders.length === 0}}" class="empty-state">暂无证件照订单，提交后会显示在这里。</view>
+    <view wx:for="{{orders}}" wx:key="orderId" class="order-card" data-id="{{item.orderId}}" bindtap="openOrder">
+      <view>
+        <view class="order-title">{{item.productName}}</view>
+        <view class="order-meta">{{item.styleName}} · {{item.reference_photo_count}} 张参考图</view>
+        <view wx:if="{{item.reviewNote}}" class="order-note">{{item.reviewNote}}</view>
+      </view>
+      <view class="order-status">{{item.statusText}}</view>
+    </view>
+  </view>
+
+  <view class="admin-entry" bindtap="openAdminLogin">
+    管理登录
+  </view>
+</view>

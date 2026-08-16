@@ -1,0 +1,138 @@
+.admin-login-page {
+  min-height: 100vh;
+  padding: 40rpx 24rpx;
+  box-sizing: border-box;
+  background: #f5f9ff;
+}
+
+.page-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.nav-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 64rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: #ffffff;
+  color: #1976d2;
+  font-size: 28rpx;
+  font-weight: 700;
+  box-shadow: 0 6rpx 18rpx rgba(25, 118, 210, 0.08);
+}
+
+.nav-title {
+  flex: 1;
+  padding-right: 24rpx;
+  color: #1f2d3d;
+  font-size: 30rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.login-card {
+  padding: 34rpx 30rpx;
+  border-radius: 28rpx;
+  background: #ffffff;
+  box-shadow: 0 8rpx 28rpx rgba(25, 118, 210, 0.1);
+}
+
+.login-badge {
+  display: inline-block;
+  margin-bottom: 18rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  color: #1976d2;
+  background: #e3f2fd;
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
+}
+
+.login-title {
+  margin-bottom: 14rpx;
+  color: #1f2d3d;
+  font-size: 42rpx;
+  font-weight: 800;
+}
+
+.login-desc {
+  color: #607d8b;
+  font-size: 27rpx;
+  line-height: 1.6;
+}
+
+.permission-box {
+  margin: 34rpx 0;
+  padding: 24rpx;
+  border-radius: 22rpx;
+  background: #f7fafc;
+}
+
+.permission-title {
+  margin-bottom: 14rpx;
+  color: #263238;
+  font-size: 29rpx;
+  font-weight: 700;
+}
+
+.permission-item {
+  position: relative;
+  margin-top: 10rpx;
+  padding-left: 24rpx;
+  color: #455a64;
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+
+.permission-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16rpx;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #43a047;
+}
+
+.login-btn {
+  border-radius: 999rpx;
+  background: #1976d2;
+  color: #ffffff;
+  font-size: 31rpx;
+  font-weight: 700;
+}
+
+.password-field {
+  margin-bottom: 26rpx;
+}
+
+.field-label {
+  margin-bottom: 12rpx;
+  color: #263238;
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
+.password-input {
+  height: 92rpx;
+  padding: 0 24rpx;
+  border-radius: 20rpx;
+  background: #f7fafc;
+  color: #263238;
+  font-size: 28rpx;
+}
+
+.error-message {
+  margin-top: 22rpx;
+  padding: 18rpx;
+  border-radius: 18rpx;
+  color: #e65100;
+  background: #fff7ed;
+  font-size: 25rpx;
+  line-height: 1.45;
+}
