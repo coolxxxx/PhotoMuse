@@ -865,3 +865,10 @@ button { font-family: inherit; }
   padding: 8px 10px;
   word-break: break-all;
 }
+
+/* 已选周边清单容器（order-view.js 生成，行级 merch-selected-item 系已有样式） */
+.merch-selected-list {
+  margin-top: 10px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 4px;
+}

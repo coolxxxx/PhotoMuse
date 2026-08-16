@@ -998,3 +998,10 @@
   font-size: 24rpx;
   text-decoration: underline;
 }
+
+/* 查询按钮修饰：与主按钮留出一行间距，宽度自适应 */
+.pm-query-btn {
+  margin-top: 24rpx;
+  width: auto;
+  padding: 16rpx 56rpx;
+}

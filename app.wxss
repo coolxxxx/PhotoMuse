@@ -1,4 +1,7 @@
-/* app.wxss 全局样式文件 —— PhotoMuse Editorial 设计令牌（品牌蓝 × 杂志纸面） */
+/* app.wxss 全局样式文件 —— PhotoMuse Editorial 设计令牌（品牌蓝 × 杂志纸面）
+   仅保留实际被页面引用的全局样式：reset / --pm-* 令牌 / .loading / .empty-state / 滚动条。
+   v1.0 模板遗留的工具类（.btn*/.card/.input/h1-h3/.text-*/.mt*/.mb*/.list*/.icon/.tag*/.modal*/.fade-in/.container
+   及旧绿色变量）经全量 wxml 反查零引用，已于本次清理移除（tests/static/check-visual-integrity.js 守护）。 */
 
 /* 重置样式 */
 page, view, text, image, button, input, textarea {
@@ -16,23 +19,8 @@ page {
   --pm-success:#2E6B3F; --pm-success-soft:#EAF2EC; --pm-warning:#C66A2E; --pm-warning-soft:#F7EFE6; --pm-danger:#B23A3A; --pm-danger-soft:#F6EAEA;
   --pm-radius:6rpx; --pm-radius-card:8rpx;
   --pm-serif:Georgia,'Nimbus Roman','Songti SC','STSong',SimSun,serif;
+  --pm-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
   --pm-shadow-card:0 2rpx 12rpx rgba(27,31,36,0.05);
-
-  /* @deprecated 旧版绿色主题，一律使用 --pm-* */
-  --primary-color: #4CAF50;
-  --primary-light: #81C784;
-  --primary-dark: #388E3C;
-  --secondary-color: #2196F3;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --text-light: #999999;
-  --border-color: #e0e0e0;
-  --background-color: #f0f0f0;
-  --white: #ffffff;
-  --success-color: #4CAF50;
-  --warning-color: #FF9800;
-  --error-color: #F44336;
-  --info-color: #2196F3;
 
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--pm-bg);
@@ -41,154 +29,7 @@ page {
   line-height: 1.5;
 }
 
-/* 容器样式 */
-.container {
-  width: 100%;
-  min-height: 100vh;
-  padding: 0;
-}
-
-/* 按钮样式 */
-.btn {
-  display: inline-block;
-  padding: 28rpx 60rpx;
-  border-radius: var(--pm-radius);
-  font-size: 32rpx;
-  font-weight: 500;
-  text-align: center;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  margin: 10rpx 0;
-}
-
-.btn-primary {
-  background-color: var(--pm-primary);
-  color: var(--pm-card);
-}
-
-.btn-primary:active {
-  background-color: var(--pm-primary-deep);
-}
-
-.btn-secondary {
-  background-color: var(--pm-card);
-  color: var(--pm-primary);
-  border: 2rpx solid var(--pm-primary);
-}
-
-.btn-secondary:active {
-  background-color: var(--pm-primary-soft);
-  color: var(--pm-primary-deep);
-}
-
-.btn-disabled {
-  background-color: var(--pm-ink-4);
-  color: var(--pm-card);
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* 卡片样式 */
-.card {
-  background-color: var(--pm-card);
-  border: 1rpx solid var(--pm-hairline);
-  border-radius: var(--pm-radius-card);
-  padding: 30rpx;
-  margin: 20rpx;
-  box-shadow: var(--pm-shadow-card);
-}
-
-/* 输入框样式 */
-.input {
-  width: 100%;
-  padding: 24rpx;
-  border: 2rpx solid var(--pm-hairline-strong);
-  border-radius: var(--pm-radius);
-  font-size: 32rpx;
-  margin-bottom: 20rpx;
-  transition: border-color 0.3s ease;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--pm-primary);
-}
-
-.input-disabled {
-  background-color: var(--pm-card-soft);
-  color: var(--pm-ink-3);
-  pointer-events: none;
-}
-
-/* 标题样式 */
-h1 {
-  font-size: 48rpx;
-  font-weight: 600;
-  margin-bottom: 20rpx;
-  color: var(--pm-ink);
-}
-
-h2 {
-  font-size: 42rpx;
-  font-weight: 600;
-  margin-bottom: 16rpx;
-  color: var(--pm-ink);
-}
-
-h3 {
-  font-size: 36rpx;
-  font-weight: 600;
-  margin-bottom: 12rpx;
-  color: var(--pm-ink);
-}
-
-/* 文本样式 */
-.text-primary {
-  color: var(--pm-ink);
-}
-
-.text-secondary {
-  color: var(--pm-ink-2);
-}
-
-.text-light {
-  color: var(--pm-ink-3);
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-right {
-  text-align: right;
-}
-
-/* 间距样式 */
-.mt-10 {
-  margin-top: 10rpx;
-}
-
-.mt-20 {
-  margin-top: 20rpx;
-}
-
-.mt-30 {
-  margin-top: 30rpx;
-}
-
-.mb-10 {
-  margin-bottom: 10rpx;
-}
-
-.mb-20 {
-  margin-bottom: 20rpx;
-}
-
-.mb-30 {
-  margin-bottom: 30rpx;
-}
-
-/* 加载动画 */
+/* 加载态（detail 等页使用） */
 .loading {
   display: flex;
   justify-content: center;
@@ -197,108 +38,7 @@ h3 {
   width: 100%;
 }
 
-/* 列表样式 */
-.list {
-  width: 100%;
-}
-
-.list-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 30rpx;
-  border-bottom: 1rpx solid var(--pm-hairline);
-}
-
-.list-item:last-child {
-  border-bottom: none;
-}
-
-/* 图标样式 */
-.icon {
-  width: 44rpx;
-  height: 44rpx;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* 标签样式 */
-.tag {
-  display: inline-block;
-  padding: 6rpx 20rpx;
-  border-radius: var(--pm-radius);
-  font-size: 24rpx;
-  margin-right: 10rpx;
-  margin-bottom: 10rpx;
-}
-
-.tag-primary {
-  background-color: var(--pm-primary-soft);
-  color: var(--pm-primary-deep);
-}
-
-.tag-success {
-  background-color: var(--pm-success-soft);
-  color: var(--pm-success);
-}
-
-.tag-warning {
-  background-color: var(--pm-warning-soft);
-  color: var(--pm-warning);
-}
-
-.tag-error {
-  background-color: var(--pm-danger-soft);
-  color: var(--pm-danger);
-}
-
-/* 弹窗样式 */
-.modal-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-.modal-content {
-  background-color: var(--pm-card);
-  border-radius: var(--pm-radius-card);
-  width: 80%;
-  max-width: 600rpx;
-  padding: 40rpx;
-}
-
-.modal-header {
-  font-size: 36rpx;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 30rpx;
-}
-
-.modal-body {
-  font-size: 32rpx;
-  color: var(--pm-ink-2);
-  margin-bottom: 30rpx;
-  text-align: center;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: space-between;
-}
-
-.modal-footer .btn {
-  flex: 1;
-  margin: 0 10rpx;
-}
-
-/* 空状态样式 */
+/* 空状态（index/detail/admin 使用） */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -336,32 +76,4 @@ h3 {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--pm-ink-4);
-}
-
-/* 动画效果 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20rpx);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease;
-}
-
-/* 响应式适配 */
-@media screen and (min-width: 768px) {
-  page {
-    font-size: 14px;
-  }
-  .container {
-    max-width: 768px;
-    margin: 0 auto;
-    box-shadow: 0 0 20rpx rgba(0, 0, 0, 0.1);
-  }
 }

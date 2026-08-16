@@ -85,7 +85,7 @@
   padding: 8rpx 16rpx;
   border: 1rpx solid var(--pm-primary);
   border-radius: 4rpx;
-  background: var(--pm-soft);
+  background: var(--pm-primary-soft);
   color: var(--pm-primary-deep);
   font-size: 24rpx;
   letter-spacing: 2rpx;
@@ -236,9 +236,9 @@
 .query-mode-tip {
   margin: 16rpx 0 4rpx;
   padding: 14rpx 16rpx;
-  border: 1rpx solid var(--pm-line);
+  border: 1rpx solid var(--pm-primary-line);
   border-radius: 4rpx;
-  background: var(--pm-soft);
+  background: var(--pm-primary-soft);
   color: var(--pm-primary-deep);
 }
 
@@ -322,7 +322,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1rpx dashed var(--pm-line);
+  border: 1rpx dashed var(--pm-primary-line);
   color: var(--pm-primary);
   font-size: 24rpx;
   letter-spacing: 2rpx;
@@ -352,7 +352,7 @@
 
 .secondary-btn {
   margin-top: 26rpx;
-  border: 1rpx solid var(--pm-line);
+  border: 1rpx solid var(--pm-primary-line);
   border-radius: 0;
   background: var(--pm-card);
   color: var(--pm-primary);
@@ -449,7 +449,7 @@
   padding: 6rpx 12rpx;
   border: 1rpx solid var(--pm-primary);
   border-radius: 4rpx;
-  background: var(--pm-soft);
+  background: var(--pm-primary-soft);
   color: var(--pm-primary-deep);
   font-size: 22rpx;
   letter-spacing: 1rpx;
@@ -535,7 +535,7 @@
   padding: 6rpx 14rpx;
   border: 1rpx solid var(--pm-primary);
   border-radius: 4rpx;
-  background: var(--pm-soft);
+  background: var(--pm-primary-soft);
   color: var(--pm-primary-deep);
   font-size: 24rpx;
   text-align: center;
@@ -574,7 +574,7 @@
   align-self: flex-start;
   margin-bottom: 14rpx;
   padding: 2rpx 10rpx;
-  border: 1rpx solid var(--pm-line);
+  border: 1rpx solid var(--pm-primary-line);
   border-radius: 4rpx;
   color: var(--pm-primary-deep);
   font-size: 22rpx;
@@ -744,4 +744,17 @@
   color: var(--pm-ink-3);
   font-size: 25rpx;
   text-align: center;
+}
+
+/* 分主题选片与周边区块的额外间距（紧跟状态卡与收款码） */
+.theme-section,
+.merch-section {
+  margin-top: 8rpx;
+}
+
+/* 进行中状态：品牌蓝方签（默认态，success/danger 之外的状态） */
+.st-badge.st-info {
+  color: var(--pm-primary);
+  border-color: var(--pm-primary-line);
+  background: var(--pm-primary-soft);
 }
