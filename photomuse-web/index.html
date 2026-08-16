@@ -680,6 +680,15 @@
           }
         }
 
+        /* 全部照片登记完成后提交审核，订单才能进入制作队列 */
+        try {
+          PM.showLoading('正在提交审核…');
+          await PM.callApi('submitOrder', { orderId: order.orderId, webToken: order.webToken });
+        } catch (e) {
+          /* 提交失败不阻断：订单与照片已保存，用户可在订单页重新提交/联系客服 */
+          console.warn('submitOrder 失败:', e && e.message);
+        }
+
         PM.hideLoading();
         location.href = 'order.html?orderId=' + encodeURIComponent(order.orderId);
       });

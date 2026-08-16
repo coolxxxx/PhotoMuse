@@ -7,7 +7,7 @@
    │
    ├── CloudBase Web SDK（匿名登录）
    │      ├── callFunction → photomuseOpenApi（apiKey 信封：catalog / createOrder /
-   │      │     registerPhoto / getOrder / selectCells / queryOrder / paymentQR /
+   │      │     registerPhoto / submitOrder / getOrder / selectCells / queryOrder / paymentQR /
    │      │     businessConfig / samples / merchandise / analyzePhoto / selectMerch）
    │      └── uploadFile → 云存储 ai-studio/{orderId}/web-customer/、customer-retake/、
    │      │     ai-studio/analysis/web-{ts}.{ext}（AI 主题推荐分析用图，不登记订单）

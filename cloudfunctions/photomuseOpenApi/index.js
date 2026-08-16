@@ -71,11 +71,36 @@ const ORDER_STYLES = [
 ];
 
 const PORTRAIT_THEMES = [
-  { themeId: 'guofeng', name: '古风写真' },
-  { themeId: 'sports', name: '运动活力' },
-  { themeId: 'casual', name: '休闲日常' },
-  { themeId: 'travel', name: '旅拍风光' },
-  { themeId: 'family', name: '亲子合照' }
+  {
+    themeId: 'guofeng',
+    name: '古风写真',
+    desc: '汉服加身，园林叠影，一键穿越的水墨意境大片。',
+    sceneHint: '汉服、园林长廊、竹林溪水，水墨留白背景，拍出温婉端庄的古风质感'
+  },
+  {
+    themeId: 'sports',
+    name: '运动活力',
+    desc: '球场街头双场景切换，定格你最飒的动感瞬间。',
+    sceneHint: '球场、街头、城市跑道，动感构图配高对比光影，元气氛围直接拉满'
+  },
+  {
+    themeId: 'casual',
+    name: '休闲日常',
+    desc: '咖啡居家街拍三连，把松弛感日常拍成高光时刻。',
+    sceneHint: '咖啡店、居家窗边、街头随拍，自然光加浅景深，轻松拿捏氛围感'
+  },
+  {
+    themeId: 'travel',
+    name: '旅拍风光',
+    desc: '海边古镇山野任你选，一张照片装下整段旅程。',
+    sceneHint: '海边日落、古镇石巷、山野草原，大场景构图配旅行穿搭，出片即封面'
+  },
+  {
+    themeId: 'family',
+    name: '亲子合照',
+    desc: '从温馨互动到全家福，把陪伴拍成值得收藏的样子。',
+    sceneHint: '温馨互动、拥抱对视、全家福站位，柔和暖调光线，幸福感溢出屏幕'
+  }
 ];
 
 // 多主题阶梯定价服务端默认值（ai_studio_business_config 集合 configId='default' 可覆盖，
@@ -214,7 +239,7 @@ const DEFAULT_CONFIG = {
 };
 
 const SUPPORTED_ACTIONS = [
-  'catalog', 'queryOrder', 'paymentQR', 'runtimeConfig', 'createOrder', 'registerPhoto', 'getOrder', 'selectCells',
+  'catalog', 'queryOrder', 'paymentQR', 'runtimeConfig', 'createOrder', 'registerPhoto', 'submitOrder', 'getOrder', 'selectCells',
   'businessConfig', 'samples', 'merchandise', 'analyzePhoto', 'selectMerch'
 ];
 
@@ -253,6 +278,8 @@ exports.main = async (event = {}) => {
         return await handleCreateOrder(payload);
       case 'registerPhoto':
         return await handleRegisterPhoto(payload);
+      case 'submitOrder':
+        return await handleSubmitOrder(payload);
       case 'getOrder':
         return await handleGetOrder(payload);
       case 'selectCells':
@@ -284,8 +311,12 @@ function handleCatalog() {
   return {
     success: true,
     products: PRODUCTS,
-    themes: THEMES,
-    styles: STYLES
+    // 写真套图可选主题（与小程序 utils/ai-studio-config.js 的 PORTRAIT_THEMES 同构）
+    themes: PORTRAIT_THEMES,
+    // standard 套餐（证件照/简历照）的风格选项
+    styles: STYLES,
+    // 品类分组（兼容旧接入方）
+    categories: THEMES
   };
 }
 
@@ -534,6 +565,59 @@ async function handleRegisterPhoto(payload) {
     success: true,
     fileId: addResult._id,
     referencePhotoCount: nextCount
+  };
+}
+
+/**
+ * 网站订单提交审核（webToken 鉴权，逻辑对齐 submitAIStudioOrder：
+ * 授权确认 + 照片 1-3 张 + 进入 photo_review）
+ */
+async function handleSubmitOrder(payload) {
+  const orderId = cleanText(payload.orderId, 80);
+  const webToken = cleanText(payload.webToken, 128);
+  if (!orderId || !webToken) return fail('VALIDATION_ERROR', '订单号或令牌无效');
+
+  const tokenHash = hashWebToken(webToken);
+  const order = await findWebOrder(orderId, tokenHash);
+  if (!order) return fail('NOT_FOUND', '订单不存在或令牌不匹配');
+
+  if (order.adult_identity_authorization !== 'confirmed') {
+    return fail('AUTHORIZATION_REQUIRED', '请先确认本人/成年人授权');
+  }
+  if (!['waiting_photos', 'photo_review'].includes(order.order_status)) {
+    return fail('INVALID_STATUS', '当前订单状态不允许提交');
+  }
+
+  const countResult = await db.collection('ai_studio_files')
+    .where({ orderId, fileType: 'customer_photo', status: 'uploaded' })
+    .count();
+  if (countResult.total < 1) {
+    return fail('PHOTO_REQUIRED', '请至少上传 1 张正脸照片');
+  }
+  if (countResult.total > MAX_CUSTOMER_PHOTOS) {
+    return fail('PHOTO_LIMIT_EXCEEDED', '最多上传 3 张参考照片');
+  }
+
+  await db.collection('ai_studio_orders').where({ orderId, web_token_hash: tokenHash }).update({
+    data: {
+      order_status: 'photo_review',
+      photo_check: 'unchecked',
+      reference_photo_count: countResult.total,
+      submittedAt: db.serverDate(),
+      updatedAt: db.serverDate()
+    }
+  });
+
+  await writeAudit('open_api', 'submitOrder', { orderId });
+
+  return {
+    success: true,
+    order: {
+      orderId,
+      order_status: 'photo_review',
+      photo_check: 'unchecked',
+      reference_photo_count: countResult.total
+    }
   };
 }
 
