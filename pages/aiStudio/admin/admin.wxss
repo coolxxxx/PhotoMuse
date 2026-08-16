@@ -57,6 +57,8 @@
 .header-actions {
   display: flex;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 12rpx;
 }
@@ -353,4 +355,232 @@
 .empty-state {
   padding: 80rpx 0;
   text-align: center;
+}
+
+/* ---------------- 样张管理 / 定价设置 ---------------- */
+.samples-btn {
+  flex-shrink: 0;
+  color: #2e7d32;
+  background: #ffffff;
+  border: 2rpx solid #2e7d32;
+}
+
+.samples-btn.active {
+  color: #ffffff;
+  background: #2e7d32;
+}
+
+.pricing-btn {
+  flex-shrink: 0;
+  color: #e65100;
+  background: #ffffff;
+  border: 2rpx solid #e65100;
+}
+
+.pricing-btn.active {
+  color: #ffffff;
+  background: #e65100;
+}
+
+.save-pricing {
+  color: #ffffff;
+  background: #e65100;
+}
+
+.sample-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+
+.sample-upload {
+  color: #ffffff;
+  background: #2e7d32;
+}
+
+.sample-generate {
+  color: #ffffff;
+  background: #7b1fa2;
+}
+
+.sample-register {
+  color: #1565c0;
+  background: #ffffff;
+  border: 2rpx solid #1565c0;
+}
+
+.sample-refresh {
+  color: #455a64;
+  background: #ffffff;
+  border: 2rpx solid #90a4ae;
+}
+
+.sample-hint {
+  margin-bottom: 14rpx;
+  color: #90a4ae;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.sample-group {
+  margin-bottom: 16rpx;
+}
+
+.sample-group-title {
+  margin-bottom: 8rpx;
+  color: #1976d2;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.sample-empty {
+  padding: 14rpx 0;
+  color: #90a4ae;
+  font-size: 24rpx;
+}
+
+.sample-item {
+  display: flex;
+  gap: 16rpx;
+  padding: 14rpx 0;
+  border-top: 2rpx dashed #eef3f8;
+}
+
+.sample-thumb {
+  flex-shrink: 0;
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 12rpx;
+  background: #eef3f8;
+}
+
+.sample-fields {
+  flex: 1;
+  min-width: 0;
+}
+
+.sample-input {
+  height: 56rpx;
+  padding: 0 16rpx;
+  border-radius: 10rpx;
+  background: #f2f6fa;
+  color: #263238;
+  font-size: 24rpx;
+  box-sizing: border-box;
+}
+
+.sample-input.caption {
+  width: 100%;
+  margin-bottom: 10rpx;
+}
+
+.sample-input.sort {
+  width: 96rpx;
+  text-align: center;
+}
+
+.sample-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.sample-sort-label {
+  flex-shrink: 0;
+  color: #455a64;
+  font-size: 23rpx;
+}
+
+.sample-switch {
+  flex-shrink: 0;
+  margin: 0 -6rpx;
+  transform: scale(0.7);
+}
+
+.sample-save {
+  color: #ffffff;
+  background: #1976d2;
+}
+
+.sample-remove {
+  color: #c62828;
+  background: #ffffff;
+  border: 2rpx solid #c62828;
+}
+
+/* ---------------- 周边清单 / 制作流转 ---------------- */
+.merch-list {
+  margin-top: 18rpx;
+  padding: 18rpx;
+  border-radius: 16rpx;
+  background: #f8fbff;
+  border: 2rpx solid #e3f2fd;
+}
+
+.merch-title {
+  margin-bottom: 10rpx;
+  color: #1565c0;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.merch-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 6rpx 0;
+  color: #37474f;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.merch-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.merch-price {
+  flex-shrink: 0;
+  color: #1565c0;
+  font-weight: 600;
+}
+
+.merch-sum {
+  margin-top: 6rpx;
+  padding-top: 12rpx;
+  border-top: 2rpx dashed #bbdefb;
+  color: #0d47a1;
+  font-weight: 700;
+}
+
+.merch-export {
+  color: #ffffff;
+  background: #00695c;
+}
+
+.merch-start {
+  color: #ffffff;
+  background: #ef6c00;
+}
+
+.merch-ship {
+  color: #ffffff;
+  background: #2e7d32;
+}
+
+.ticket-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 16rpx;
+  background: #e0f2f1;
+  border: 2rpx dashed #00695c;
+  color: #00695c;
+  font-size: 24rpx;
+  font-weight: 700;
+  box-sizing: border-box;
 }

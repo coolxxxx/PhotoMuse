@@ -195,7 +195,30 @@
   margin-top: 18rpx;
 }
 
-/* 网格预览选片 */
+/* 分主题网格预览选片 */
+.theme-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.theme-title {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.theme-selected-badge {
+  flex-shrink: 0;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: #e8f5e9;
+  color: #43a047;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
 .grid-preview-wrap {
   margin-top: 10rpx;
 }
@@ -243,7 +266,24 @@
   color: #1976d2;
 }
 
-/* 已选分镜徽章 */
+/* 已选分镜徽章（分主题分组） */
+.selected-theme-block {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #edf2f7;
+}
+
+.selected-theme-block:last-child {
+  border-bottom: none;
+  padding-bottom: 4rpx;
+}
+
+.selected-theme-name {
+  margin-bottom: 12rpx;
+  color: #1976d2;
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
 .selected-cells {
   display: flex;
   flex-wrap: wrap;
@@ -266,4 +306,141 @@
 .selected-cells-tail {
   color: #607d8b;
   font-size: 26rpx;
+}
+
+/* 周边好物 */
+.merch-wait-hint {
+  margin-top: 12rpx;
+}
+
+.merch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18rpx;
+  margin-top: 20rpx;
+}
+
+.merch-card {
+  display: flex;
+  flex-direction: column;
+  padding: 22rpx;
+  border: 1rpx solid #e3f2fd;
+  border-radius: 20rpx;
+  background: #f8fbff;
+  box-sizing: border-box;
+}
+
+.merch-tag {
+  align-self: flex-start;
+  margin-bottom: 14rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.merch-name {
+  color: #1f2d3d;
+  font-size: 27rpx;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.merch-desc {
+  flex: 1;
+  margin-top: 10rpx;
+  color: #607d8b;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.merch-meta {
+  margin-top: 10rpx;
+  color: #90a4ae;
+  font-size: 22rpx;
+}
+
+.merch-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.merch-price {
+  color: #e65100;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.merch-go {
+  flex-shrink: 0;
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: #1976d2;
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+/* 已选周边清单 */
+.merch-selected-list {
+  margin-top: 6rpx;
+}
+
+.merch-selected-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #edf2f7;
+}
+
+.merch-item-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.merch-item-qty {
+  color: #607d8b;
+  font-size: 24rpx;
+}
+
+.merch-item-total {
+  flex-shrink: 0;
+  color: #e65100;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.merch-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0 8rpx;
+  color: #1f2d3d;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.merch-total-value {
+  color: #e65100;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.merch-status-hint {
+  margin-top: 12rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 16rpx;
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 25rpx;
+  line-height: 1.5;
 }

@@ -169,6 +169,81 @@
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memory": 256
+    },
+    {
+      "name": "getAIStudioBusinessConfig",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminUpsertAIStudioBusinessConfig",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "listAIStudioSamples",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminUpsertAIStudioSamples",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "listAIStudioMerchandise",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "selectAIStudioMerch",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminUpdateMerchProduction",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "exportAIStudioPrintFile",
+      "timeout": 60,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 512
+    },
+    {
+      "name": "analyzeAIStudioPhoto",
+      "timeout": 40,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
     }
   ],
   "region": "ap-shanghai"

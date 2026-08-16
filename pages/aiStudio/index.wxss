@@ -266,6 +266,14 @@
   gap: 16rpx;
 }
 
+.theme-card {
+  width: 100%;
+}
+
+.theme-card .theme-chip {
+  width: 100%;
+}
+
 .theme-chip {
   display: flex;
   flex-direction: column;
@@ -281,6 +289,201 @@
 .theme-chip.selected {
   border-color: #43a047;
   background: #eef8ef;
+}
+
+.theme-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.theme-check {
+  flex-shrink: 0;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: #e8eef7;
+  color: #607d8b;
+  line-height: 40rpx;
+  text-align: center;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.theme-chip.selected .theme-check {
+  background: #43a047;
+  color: #ffffff;
+}
+
+.sample-scroll {
+  width: 100%;
+  margin-top: 14rpx;
+  white-space: nowrap;
+}
+
+.sample-row {
+  display: inline-flex;
+  gap: 14rpx;
+  padding: 4rpx 2rpx 8rpx;
+}
+
+.sample-card {
+  display: inline-flex;
+  flex-direction: column;
+  width: 200rpx;
+}
+
+.sample-image {
+  width: 200rpx;
+  height: 150rpx;
+  border-radius: 14rpx;
+  background: #eef3f8;
+}
+
+.sample-caption {
+  margin-top: 8rpx;
+  color: #607d8b;
+  font-size: 22rpx;
+  line-height: 1.4;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.sample-empty {
+  margin-top: 14rpx;
+  padding: 22rpx;
+  border-radius: 16rpx;
+  background: #f7fafc;
+  color: #90a4ae;
+  text-align: center;
+  font-size: 24rpx;
+}
+
+.price-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 10rpx;
+  padding: 22rpx;
+  border-radius: 18rpx;
+  background: #f7fafc;
+}
+
+.price-detail {
+  color: #455a64;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.price-count {
+  margin-top: 6rpx;
+  color: #90a4ae;
+  font-size: 22rpx;
+}
+
+.price-total {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.price-amount {
+  color: #e65100;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.price-photos {
+  margin-top: 4rpx;
+  color: #90a4ae;
+  font-size: 22rpx;
+}
+
+.ai-analyze-btn {
+  margin-bottom: 18rpx;
+  padding: 22rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(135deg, #1976d2, #43a047);
+  color: #ffffff;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.ai-analyze-btn.analyzing {
+  opacity: 0.72;
+}
+
+.analysis-summary {
+  margin-bottom: 20rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 16rpx;
+  background: #e3f2fd;
+  color: #1f2d3d;
+  font-size: 25rpx;
+  line-height: 1.55;
+}
+
+.score-row {
+  margin-bottom: 20rpx;
+}
+
+.score-head {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 10rpx;
+}
+
+.score-name {
+  color: #1f2d3d;
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
+.recommend-badge {
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+  background: #e65100;
+  color: #ffffff;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.score-value {
+  margin-left: auto;
+  color: #1976d2;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.score-track {
+  height: 14rpx;
+  border-radius: 999rpx;
+  background: #e8eef7;
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #1976d2, #43a047);
+}
+
+.score-reason {
+  margin-top: 10rpx;
+  color: #607d8b;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.apply-btn {
+  margin-top: 4rpx;
 }
 
 .theme-name {

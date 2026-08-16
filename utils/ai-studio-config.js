@@ -1,3 +1,11 @@
+// 多主题阶梯定价默认值（服务端 ai_studio_business_config 集合可覆盖）
+const PORTRAIT_PRICING = {
+  baseThemePrice: 69.9,
+  extraThemePrice: 39.9,
+  maxThemes: 3,
+  photosPerTheme: 5
+};
+
 const PRODUCTS = [
   {
     productId: 'id_photo_9_9',
@@ -24,7 +32,7 @@ const PRODUCTS = [
     deliveryCount: 5,
     productionLine: 'manual_ai',
     productType: 'portrait',
-    description: '任选主题，3x5 网格预览选片，交付 5 张高清成片。'
+    description: '1-3 个主题随心配，每主题 5 张成片，阶梯计价。'
   }
 ];
 
@@ -116,6 +124,9 @@ const STATUS_LABELS = {
   delivered: '已交付',
   revision: '返修中',
   closed: '已完结',
+  merch_pending: '周边待制作',
+  in_production: '周边制作中',
+  completed: '已完结',
   cancelled: '已取消'
 };
 
@@ -177,6 +188,7 @@ module.exports = {
   PRODUCTS,
   STYLES,
   PORTRAIT_THEMES,
+  PORTRAIT_PRICING,
   STATUS_LABELS,
   PHOTO_CHECK_LABELS,
   AUTHORIZATION_TEXT,

@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>场景模拟 · 光影集 PhotoMuse</title>
+  <meta name="description" content="光影集 PhotoMuse 周边场景模拟：选择成片与周边品类，实时预览挂墙、摆台、挂历、钱包照、亚克力挂件与相册的实物效果。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ============================================================
+     * 场景模拟页专属样式（sc- 前缀；蓝白体系复用 style.css 的 CSS 变量）
+     * 六款纯 CSS 场景：挂墙客厅 / 木桌摆台 / 13 月挂历 / 钱包+6 卡 /
+     * 双圆亚克力挂件 / 相册跨页，无任何图片素材
+     * ============================================================ */
+
+    .sc-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .sc-nav-title { flex: 1; text-align: center; font-size: 16px; font-weight: 700; color: var(--pm-text); }
+    .sc-order-tag {
+      max-width: 120px;
+      font-size: 11px;
+      color: var(--pm-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sc-hint {
+      margin-bottom: 12px;
+      padding: 9px 12px;
+      border-radius: var(--pm-radius-sm);
+      color: var(--pm-blue-deep);
+      background: var(--pm-blue-light);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    /* ===== 1. 品类切换条 ===== */
+    .sc-chipbar {
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: var(--pm-radius);
+      background: var(--pm-card);
+      box-shadow: var(--pm-shadow);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+    }
+    .sc-chip {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 7px 13px;
+      margin-right: 7px;
+      border: none;
+      border-radius: 8px;
+      background: #EEF3F8;
+      color: #37474F;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .sc-chip-name { font-size: 13px; font-weight: 700; }
+    .sc-chip-price { margin-top: 2px; font-size: 11px; color: #78909C; }
+    .sc-chip.active { background: var(--pm-blue); color: #fff; box-shadow: 0 4px 10px rgba(25, 118, 210, 0.32); }
+    .sc-chip.active .sc-chip-price { color: rgba(255, 255, 255, 0.85); }
+
+    /* ===== 2. 场景模拟区 ===== */
+    .sc-stage {
+      position: relative;
+      width: 100%;
+      min-height: 300px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .sc-photo { display: block; width: 100%; height: 100%; object-fit: cover; background: #EEF3F8; }
+    .sc-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      width: 100%;
+      height: 100%;
+      color: #90A4AE;
+      font-size: 12px;
+      background: #E8EEF5;
+      text-align: center;
+    }
+    .sc-photo-target { cursor: pointer; }
+
+    /* --- 挂墙：客厅墙场景 --- */
+    .sc-wall { height: 310px; background: linear-gradient(180deg, #F8F3EA 0%, #F1E9DA 70%, #E9DFCC 100%); }
+    .sc-baseboard {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 17px;
+      background: #DCCFB8; border-top: 1.5px solid #CBBCA0;
+      box-shadow: 0 -4px 7px rgba(93, 64, 55, 0.1);
+    }
+    .sc-frame-group { position: absolute; left: 50%; top: 20px; transform: translateX(-50%) rotate(1deg); }
+    .sc-nail {
+      position: absolute; top: -15px; left: 50%;
+      width: 6px; height: 6px; margin-left: -3px;
+      border-radius: 50%; background: #5D4037;
+    }
+    .sc-cord {
+      position: absolute; top: -13px;
+      width: 2px; height: 22px; border-radius: 1px;
+      background: #8D6E63; transform-origin: 50% 100%;
+    }
+    .sc-cord.l { left: 18%; transform: rotate(24deg); }
+    .sc-cord.r { right: 18%; transform: rotate(-24deg); }
+    .sc-frame {
+      background: linear-gradient(145deg, #7B5A4F 0%, #5D4037 100%);
+      padding: 7px; border-radius: 4px;
+      box-shadow: 0 11px 22px rgba(62, 39, 35, 0.35);
+    }
+    .sc-mat { background: #FFFFFF; padding: 12px; }
+    .size-8 .sc-mat .sc-photo, .size-8 .sc-mat .sc-empty { width: 132px; height: 165px; }
+    .size-12 .sc-frame { padding: 9px; }
+    .size-12 .sc-mat { padding: 15px; }
+    .size-12 .sc-mat .sc-photo, .size-12 .sc-mat .sc-empty { width: 176px; height: 211px; }
+
+    .sc-sofa { position: absolute; bottom: 17px; left: 50%; width: 270px; height: 100px; transform: translateX(-50%); }
+    .sc-sofa-back {
+      position: absolute; bottom: 28px; left: 35px; right: 35px; height: 59px;
+      border-radius: 22px 22px 7px 7px; background: #C5CAD2;
+    }
+    .sc-sofa-cushion { position: absolute; bottom: 56px; width: 80px; height: 31px; border-radius: 12px; background: #CED3DA; }
+    .sc-sofa-cushion.l { left: 48px; }
+    .sc-sofa-cushion.r { right: 48px; }
+    .sc-sofa-arm { position: absolute; bottom: 10px; width: 31px; height: 75px; border-radius: 16px; background: #ADB3BD; }
+    .sc-sofa-arm.l { left: 14px; }
+    .sc-sofa-arm.r { right: 14px; }
+    .sc-sofa-seat { position: absolute; bottom: 10px; left: 28px; right: 28px; height: 39px; border-radius: 8px; background: #B8BEC7; }
+    .sc-sofa-shadow {
+      position: absolute; bottom: 6px; left: 32px; right: 32px; height: 12px;
+      border-radius: 50%; background: rgba(62, 39, 35, 0.12);
+    }
+
+    /* --- 摆台：木桌 + 水晶摆台 --- */
+    .sc-desk { height: 310px; background: linear-gradient(180deg, #EDF1F6 0%, #E8EDF3 52%, #C9A075 52%, #C9A075 100%); }
+    .sc-desk-surface {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
+      background: linear-gradient(180deg, #C9A075 0%, #BD8F66 60%, #B0855C 100%);
+      clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%);
+    }
+    .sc-desk-grain {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 150px;
+      clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%);
+      background-image: repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.06) 0,
+        rgba(255, 255, 255, 0.06) 1.5px,
+        transparent 1.5px,
+        transparent 32px
+      );
+    }
+    .sc-stand-group { position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%); }
+    .sc-stand-shadow {
+      position: absolute; bottom: -9px; left: 50%;
+      width: 160px; height: 20px; margin-left: -80px;
+      border-radius: 50%; background: rgba(62, 39, 35, 0.28);
+    }
+    .sc-stand-piece { position: relative; transform: perspective(450px) rotateX(8deg); }
+    .sc-desk-card { background: #FFFFFF; padding: 8px; box-shadow: 0 8px 17px rgba(62, 39, 35, 0.3); }
+    .sc-desk-card .sc-photo, .sc-desk-card .sc-empty { width: 135px; height: 189px; }
+    .sc-crystal {
+      position: absolute; top: -4px; bottom: -7px; left: -7px; right: -7px;
+      border-radius: 2px;
+      clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%);
+      background: linear-gradient(
+        155deg,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(255, 255, 255, 0.1) 42%,
+        rgba(255, 255, 255, 0.06) 70%,
+        rgba(255, 255, 255, 0.32) 100%
+      );
+    }
+    .sc-crystal-shine {
+      position: absolute; top: 6%; left: 16%;
+      width: 10px; height: 72%;
+      border-radius: 6px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+      transform: rotate(16deg);
+    }
+    .sc-crystal-base {
+      position: absolute; bottom: -12px; left: 50%;
+      width: 115px; height: 10px; margin-left: -57px;
+      border-radius: 6px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.35));
+      box-shadow: 0 4px 7px rgba(62, 39, 35, 0.2);
+    }
+
+    /* --- 挂历：照片 + 13 个月历点阵 --- */
+    .sc-calendar {
+      min-height: 0;
+      height: auto;
+      overflow: visible;
+      padding: 26px 0 20px;
+      background: linear-gradient(180deg, #E9EEF4 0%, #DFE7F0 100%);
+      display: flex;
+      justify-content: center;
+      border-radius: 10px;
+    }
+    .sc-cal-card {
+      position: relative;
+      width: 260px;
+      background: #FFFDF9;
+      border-radius: 7px;
+      box-shadow: 0 11px 23px rgba(31, 45, 61, 0.18);
+      transform: rotate(0.6deg);
+      padding-bottom: 4px;
+    }
+    .sc-cal-ring {
+      position: absolute; top: -10px;
+      width: 17px; height: 17px;
+      border: 4px solid #97A1AC;
+      border-radius: 50%;
+      box-sizing: border-box;
+    }
+    .sc-cal-ring.l { left: 55px; }
+    .sc-cal-ring.r { right: 55px; }
+    .sc-cal-photo {
+      display: block;
+      width: 226px; height: 260px;
+      margin: 14px auto 0;
+      border-radius: 5px;
+      object-fit: cover;
+      background: #EEF3F8;
+    }
+    .sc-cal-empty-photo {
+      display: flex; align-items: center; justify-content: center;
+      width: 226px; height: 260px;
+      margin: 14px auto 0;
+      border-radius: 5px;
+      background: #E8EEF5;
+      color: #90A4AE;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .sc-cal-range { margin: 7px 0 2px; text-align: center; color: #90A4AE; font-size: 11px; letter-spacing: 1px; }
+    .sc-cal-months { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 4px 10px 7px; }
+    .sc-cal-month { border-top: 1px solid #E8E2D6; padding-top: 2px; }
+    .sc-cal-month-name { text-align: center; color: #37474F; font-size: 10px; font-weight: 700; line-height: 1.3; }
+    .sc-cal-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: 1px; }
+    .sc-cal-week span { text-align: center; color: #90A4AE; font-size: 7.5px; line-height: 1.4; }
+    .sc-cal-dots { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; margin-top: 2px; }
+    .sc-cal-dot { width: 4px; height: 4px; border-radius: 50%; background: #546E7A; justify-self: center; }
+    .sc-cal-dot.blank { background: transparent; }
+
+    /* --- 钱包照：钱包 + 6 张小卡 --- */
+    .sc-wallet { height: 310px; background: linear-gradient(180deg, #F3F0EA 0%, #E9E3D7 100%); }
+    .sc-wallet-body {
+      position: absolute; left: 13px; bottom: 75px;
+      width: 150px; height: 118px;
+      border-radius: 13px;
+      background: linear-gradient(160deg, #6D4C41 0%, #4E342E 100%);
+      box-shadow: 0 9px 18px rgba(62, 39, 35, 0.35);
+    }
+    .sc-wallet-flap {
+      position: absolute; top: 0; left: 0; right: 0; height: 46px;
+      border-radius: 13px 13px 0 0;
+      background: rgba(0, 0, 0, 0.16);
+    }
+    .sc-wallet-stitch {
+      position: absolute; top: 6px; left: 6px; right: 6px; bottom: 6px;
+      border: 1.5px dashed rgba(255, 255, 255, 0.35);
+      border-radius: 9px;
+    }
+    .sc-wallet-clasp {
+      position: absolute; top: 38px; left: 50%;
+      width: 28px; height: 14px; margin-left: -14px;
+      border-radius: 5px;
+      background: linear-gradient(180deg, #DCC699, #B49A6C);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    }
+    .sc-wallet-card {
+      position: absolute;
+      box-sizing: border-box;
+      width: 78px; height: 58px;
+      padding: 4px;
+      border-radius: 4px;
+      background: #FFFFFF;
+      box-shadow: 0 4px 8px rgba(31, 45, 61, 0.2);
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .sc-wallet-card .sc-photo { width: 100%; height: 100%; }
+    .sc-wallet-card .sc-empty { font-size: 10px; }
+    .sc-wcard-0 { right: 85px; bottom: 120px; transform: rotate(-9deg); z-index: 6; }
+    .sc-wcard-1 { right: 32px; bottom: 128px; transform: rotate(7deg); z-index: 5; }
+    .sc-wcard-2 { right: 95px; bottom: 74px; transform: rotate(5deg); z-index: 4; }
+    .sc-wcard-3 { right: 44px; bottom: 66px; transform: rotate(-6deg); z-index: 3; }
+    .sc-wcard-4 { right: 84px; bottom: 29px; transform: rotate(9deg); z-index: 2; }
+    .sc-wcard-5 { right: 29px; bottom: 22px; transform: rotate(-4deg); z-index: 1; }
+
+    /* --- 亚克力挂件：一对圆形挂件 --- */
+    .sc-pendant { height: 330px; background: linear-gradient(180deg, #EEF3F8 0%, #E0E9F2 100%); }
+    .sc-pendant-group { position: absolute; top: 18px; width: 150px; height: 290px; }
+    .sc-pendant-group.a { left: calc(50% - 160px); transform: rotate(-4deg); }
+    .sc-pendant-group.b { right: calc(50% - 160px); transform: rotate(5deg); }
+    .sc-pendant-rope {
+      position: absolute; top: 0; left: 50%;
+      width: 2px; height: 74px; margin-left: -1px;
+      border-radius: 1px;
+      background: linear-gradient(180deg, #A1887F, #8D6E63);
+    }
+    .sc-pendant-ring {
+      position: absolute; top: 69px; left: 50%;
+      width: 22px; height: 22px; margin-left: -11px;
+      border: 3.5px solid #9AA2AB;
+      border-radius: 50%;
+      box-sizing: border-box;
+    }
+    .sc-pendant-body {
+      position: absolute; top: 100px; left: 50%;
+      width: 132px; height: 132px; margin-left: -66px;
+      border: 1.5px solid rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 34% 26%,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(255, 255, 255, 0.28) 46%,
+        rgba(255, 255, 255, 0.45) 100%
+      );
+      box-shadow: 0 9px 18px rgba(31, 45, 61, 0.16);
+      cursor: pointer;
+    }
+    .sc-pendant-photo {
+      position: absolute; top: 50%; left: 50%;
+      width: 100px; height: 100px;
+      margin: -50px 0 0 -50px;
+      border: 3px solid #FFFFFF;
+      border-radius: 50%;
+      overflow: hidden;
+      box-sizing: border-box;
+      background: #EEF3F8;
+      object-fit: cover;
+      display: block;
+    }
+    .sc-pendant-empty {
+      position: absolute; top: 50%; left: 50%;
+      width: 100px; height: 100px;
+      margin: -50px 0 0 -50px;
+      border: 3px solid #FFFFFF;
+      border-radius: 50%;
+      box-sizing: border-box;
+      background: #E8EEF5;
+      color: #90A4AE;
+      font-size: 11px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sc-pendant-shine {
+      position: absolute; top: 15px; left: 17px;
+      width: 46px; height: 46px;
+      border: 6px solid transparent;
+      border-top-color: rgba(255, 255, 255, 0.9);
+      border-right-color: rgba(255, 255, 255, 0.55);
+      border-radius: 50%;
+      transform: rotate(28deg);
+    }
+
+    /* --- 相册：摊开的跨页相册 --- */
+    .sc-album { height: 330px; background: linear-gradient(180deg, #F6F1E8 0%, #EAE2D3 100%); }
+    .sc-album-wrap {
+      position: absolute; top: 50px; left: 50%;
+      width: 300px; height: 245px;
+      transform: translateX(-50%);
+    }
+    .sc-album-depth { position: absolute; border-radius: 6px; }
+    .sc-album-depth.d1 { top: 3px; left: -2px; right: -2px; bottom: -3px; background: #E6DFCF; }
+    .sc-album-depth.d2 { top: 6px; left: -4px; right: -4px; bottom: -6px; background: #D8CFB9; }
+    .sc-album-spread {
+      position: absolute; top: 0; left: 0; right: 0; height: 210px;
+      display: flex;
+      border-radius: 6px;
+      background: #FDFBF6;
+      box-shadow: 0 9px 20px rgba(31, 45, 61, 0.22);
+      z-index: 2;
+    }
+    .sc-album-page { flex: 1; display: flex; align-items: center; justify-content: center; }
+    .sc-album-page.l {
+      border-radius: 6px 1.5px 1.5px 6px;
+      box-shadow: inset -11px 0 13px -7px rgba(31, 45, 61, 0.22);
+    }
+    .sc-album-page.r {
+      border-radius: 1.5px 6px 6px 1.5px;
+      box-shadow: inset 11px 0 13px -7px rgba(31, 45, 61, 0.22);
+    }
+    .sc-album-photo-card {
+      background: #FFFFFF;
+      padding: 7px 7px 6px;
+      border-radius: 2px;
+      box-shadow: 0 4px 9px rgba(31, 45, 61, 0.12);
+      cursor: pointer;
+    }
+    .sc-album-photo-card .sc-photo, .sc-album-photo-card .sc-empty { width: 108px; height: 125px; object-fit: cover; }
+    .sc-album-photo-card .sc-empty { font-size: 11px; }
+    .sc-album-caption { width: 75px; height: 4px; margin: 7px auto 0; border-radius: 2px; background: #E3DDD0; }
+    .sc-album-spine {
+      position: absolute; top: 0; bottom: 0; left: 50%;
+      width: 5px; margin-left: -2.5px;
+      background: linear-gradient(90deg, rgba(31, 45, 61, 0) 0%, rgba(31, 45, 61, 0.38) 50%, rgba(31, 45, 61, 0) 100%);
+      z-index: 3;
+    }
+    .sc-album-bookspine {
+      position: absolute; left: 50%; bottom: 3px;
+      width: 105px; height: 15px; margin-left: -52px;
+      border-radius: 4px 4px 6px 6px;
+      background: linear-gradient(180deg, #6D4C41, #4E342E);
+      box-shadow: 0 5px 9px rgba(62, 39, 35, 0.3);
+      z-index: 4;
+    }
+
+    /* --- 成片切换照片条 --- */
+    .sc-strip-wrap { margin-top: 14px; }
+    .sc-strip-title { margin-bottom: 8px; font-size: 13.5px; font-weight: 700; color: var(--pm-text); }
+    .sc-strip { width: 100%; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .sc-strip-row { display: inline-flex; align-items: center; padding-bottom: 4px; }
+    .sc-strip-item {
+      position: relative;
+      box-sizing: border-box;
+      width: 60px; height: 60px;
+      margin-right: 8px;
+      border: 2px solid #E3EAF2;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #EEF3F8;
+      padding: 0;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+    .sc-strip-item img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .sc-strip-item.active { border-color: var(--pm-blue); box-shadow: 0 4px 9px rgba(25, 118, 210, 0.3); }
+    .sc-strip-no {
+      position: absolute; right: 3px; bottom: 3px;
+      min-width: 15px; height: 15px;
+      padding: 0 4px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      font-size: 10px;
+      line-height: 15px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .sc-strip-empty { display: inline-flex; align-items: center; height: 60px; color: #90A4AE; font-size: 12.5px; }
+
+    /* ===== 3. 已选清单 ===== */
+    .sc-cart-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #EDF2F7; }
+    .sc-cart-item:last-of-type { border-bottom: none; }
+    .sc-cart-thumb {
+      flex: 0 0 auto;
+      width: 48px; height: 48px;
+      border-radius: 7px;
+      background: #EEF3F8;
+      object-fit: cover;
+      border: 1px solid var(--pm-border);
+    }
+    .sc-cart-thumb-empty {
+      flex: 0 0 auto;
+      width: 48px; height: 48px;
+      border-radius: 7px;
+      background: #EEF3F8;
+      border: 1px solid var(--pm-border);
+    }
+    .sc-cart-info { flex: 1; min-width: 0; margin: 0 8px; }
+    .sc-cart-name {
+      font-size: 13.5px; font-weight: 600; color: var(--pm-text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sc-cart-price { margin-top: 3px; color: #78909C; font-size: 12px; }
+    .sc-stepper { display: flex; align-items: center; gap: 2px; }
+    .sc-step-btn {
+      width: 26px; height: 26px;
+      border: none;
+      border-radius: 6px;
+      background: #EEF3F8;
+      color: var(--pm-blue);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 26px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+    }
+    .sc-step-btn:hover { background: var(--pm-blue-light); }
+    .sc-step-num { min-width: 26px; font-size: 14px; font-weight: 700; color: var(--pm-text); text-align: center; }
+    .sc-cart-remove {
+      margin-left: 8px;
+      width: 22px; height: 22px;
+      border: none;
+      border-radius: 50%;
+      background: #FDECEA;
+      color: #D32F2F;
+      font-size: 14px;
+      line-height: 22px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+    .sc-cart-total {
+      display: flex;
+      justify-content: flex-end;
+      align-items: baseline;
+      padding-top: 10px;
+      color: #37474F;
+      font-size: 13.5px;
+    }
+    .sc-cart-total-num { margin-left: 6px; color: var(--pm-blue); font-size: 19px; font-weight: 800; }
+    .sc-submit-hint { margin-top: 8px; color: #90A4AE; font-size: 11.5px; text-align: center; }
+    .sc-empty-state { color: var(--pm-text-secondary); font-size: 12.5px; line-height: 1.55; }
+  </style>
+</head>
+<body>
+  <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
+
+  <header class="topbar">
+    <div class="brand-name">光影集 PhotoMuse</div>
+    <div class="brand-slogan">不用出门的影楼 · 上传一张照片，收获整套专业形象</div>
+  </header>
+
+  <main class="page">
+    <noscript><div class="warn-box">本站需要启用 JavaScript 才能使用场景模拟。</div></noscript>
+
+    <div class="sc-nav">
+      <button type="button" class="btn btn-sm btn-outline" id="sc-back">‹ 返回</button>
+      <span class="sc-nav-title">场景模拟</span>
+      <span class="sc-order-tag" id="sc-order-tag"></span>
+    </div>
+
+    <div class="sc-hint">选品类、选成片，实时预览周边实物效果；点击场景中的照片或下方缩略图可切换成片。</div>
+
+    <div class="sc-chipbar" id="sc-chipbar"></div>
+
+    <section class="card">
+      <div class="sc-stage-wrap" id="sc-stage"></div>
+      <div class="sc-strip-wrap">
+        <div class="sc-strip-title">成片切换</div>
+        <div class="sc-strip" id="sc-strip"></div>
+        <button type="button" class="btn" id="sc-add-btn">加入清单</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>已选清单</h2></div>
+      <div id="sc-cart"></div>
+    </section>
+  </main>
+
+  <footer class="footer">光影集 PhotoMuse · 上传一张照片，生成证件照、形象照与 AI 写真</footer>
+
+  <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.7.0/cloudbase.full.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      /* 与服务端 DEFAULT_MERCH 保持一致的内置品类常量
+         （本地仅做展示与预估，提交以服务端 merch_total 为准） */
+      const MERCH_CATALOG = [
+        { merchId: 'wall_8', label: '挂墙·8寸', price: 49 },
+        { merchId: 'wall_12', label: '挂墙·12寸', price: 79 },
+        { merchId: 'desk_5', label: '水晶摆台', price: 29 },
+        { merchId: 'calendar', label: '挂历', price: 39 },
+        { merchId: 'wallet', label: '钱包照', price: 9.9 },
+        { merchId: 'pendant', label: '亚克力挂件', price: 19 },
+        { merchId: 'album', label: '精装相册', price: 69 }
+      ];
+
+      const WEEK_HEADER = ['日', '一', '二', '三', '四', '五', '六'];
+      const WALLET_CARD_COUNT = 6;
+      const MAX_QTY = 9;
+      const MAX_CART_ITEMS = 20;
+      const PHOTO_LIMIT = 50;
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (v) => String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const round1 = (v) => Math.round((Number(v) || 0) * 10) / 10;
+      const fmtPrice = (v) => {
+        const n = round1(v);
+        return Number.isInteger(n) ? String(n) : n.toFixed(1);
+      };
+      const pad2 = (v) => (v < 10 ? '0' + v : String(v));
+
+      /* ---------- URL 参数与凭证 ---------- */
+      const params = new URLSearchParams(location.search);
+      const orderId = (params.get('orderId') || '').trim();
+      let webToken = (params.get('webToken') || '').trim();
+      if (!webToken && orderId) { webToken = findLocalWebToken(orderId); }
+      const fileIDs = parseFileIDs(params.get('fileIDs'));
+      let activeMerchId = findMerch(params.get('merchId')) ? params.get('merchId') : MERCH_CATALOG[0].merchId;
+
+      const state = {
+        photos: [],       /* [{fileID, url}] */
+        currentIndex: 0,
+        cart: [],         /* [{key,merchId,label,price,fileID,photoUrl,qty}] */
+        loading: true
+      };
+
+      /* ---------- 工具 ---------- */
+      function findMerch(merchId) {
+        return MERCH_CATALOG.find((item) => item.merchId === merchId) || null;
+      }
+
+      function parseFileIDs(raw) {
+        if (!raw) { return []; }
+        let list = [];
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) { list = parsed; }
+        } catch (e) { list = []; }
+        return list
+          .map((id) => (typeof id === 'string' ? id.trim() : ''))
+          .filter((id) => id.indexOf('cloud://') === 0)
+          .slice(0, PHOTO_LIMIT);
+      }
+
+      function findLocalWebToken(id) {
+        try {
+          const arr = JSON.parse(localStorage.getItem('pm_orders') || '[]');
+          const hit = (arr || []).find((o) => o && o.orderId === id);
+          return hit ? String(hit.webToken || '') : '';
+        } catch (e) { return ''; }
+      }
+
+      /* 查询页三元组凭证（sessionStorage，与 query.html 共存） */
+      function readQueryCreds() {
+        try {
+          const raw = sessionStorage.getItem('pm_query_creds');
+          const c = raw ? JSON.parse(raw) : null;
+          return (c && c.orderId && c.contactPhone && c.queryPassword) ? c : null;
+        } catch (e) { return null; }
+      }
+
+      const urlOf = (photo) => (photo && photo.url) || '';
+      const pick = (offset) => {
+        if (!state.photos.length) { return null; }
+        const len = state.photos.length;
+        return state.photos[((state.currentIndex + offset) % len + len) % len];
+      };
+
+      /* ---------- 13 个月月历（当月起，按真实首日星期对齐） ---------- */
+      function buildCalendarMonths() {
+        const months = [];
+        const now = new Date();
+        for (let i = 0; i < 13; i += 1) {
+          const first = new Date(now.getFullYear(), now.getMonth() + i, 1);
+          const days = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+          const offset = first.getDay();
+          const cells = [];
+          for (let b = 0; b < offset; b += 1) { cells.push({ on: 0 }); }
+          for (let day = 1; day <= days; day += 1) { cells.push({ on: 1 }); }
+          months.push({ label: (first.getMonth() + 1) + '月', cells: cells });
+        }
+        return months;
+      }
+
+      function buildCalendarRange() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 12, 1);
+        return start.getFullYear() + '.' + pad2(start.getMonth() + 1) + ' — ' + end.getFullYear() + '.' + pad2(end.getMonth() + 1);
+      }
+
+      const CALENDAR_MONTHS = buildCalendarMonths();
+      const CALENDAR_RANGE = buildCalendarRange();
+
+      /* ---------- 渲染 ---------- */
+      const els = {
+        chipbar: $('sc-chipbar'),
+        stage: $('sc-stage'),
+        strip: $('sc-strip'),
+        addBtn: $('sc-add-btn'),
+        cart: $('sc-cart'),
+        back: $('sc-back'),
+        orderTag: $('sc-order-tag')
+      };
+
+      function renderChips() {
+        els.chipbar.innerHTML = MERCH_CATALOG.map((m) => `
+          <button type="button" class="sc-chip${m.merchId === activeMerchId ? ' active' : ''}" data-merch="${esc(m.merchId)}">
+            <span class="sc-chip-name">${esc(m.label)}</span>
+            <span class="sc-chip-price">¥${esc(fmtPrice(m.price))}</span>
+          </button>`).join('');
+      }
+
+      function photoHtml(url, emptyText, extraClass) {
+        const cls = 'sc-photo' + (extraClass ? ' ' + extraClass : '');
+        return url
+          ? `<img class="${cls}" src="${esc(url)}" alt="成片预览">`
+          : `<div class="sc-empty${extraClass ? ' ' + extraClass : ''}">${esc(emptyText)}</div>`;
+      }
+
+      function renderScene() {
+        const currentUrl = urlOf(state.photos[state.currentIndex]);
+        let html = '';
+        if (activeMerchId === 'wall_8' || activeMerchId === 'wall_12') {
+          html = `
+            <div class="sc-stage sc-wall">
+              <div class="sc-frame-group ${activeMerchId === 'wall_12' ? 'size-12' : 'size-8'}" data-photo>
+                <div class="sc-nail"></div>
+                <div class="sc-cord l"></div>
+                <div class="sc-cord r"></div>
+                <div class="sc-frame"><div class="sc-mat">${photoHtml(currentUrl, '点击选择成片')}</div></div>
+              </div>
+              <div class="sc-sofa">
+                <div class="sc-sofa-back"></div>
+                <div class="sc-sofa-cushion l"></div>
+                <div class="sc-sofa-cushion r"></div>
+                <div class="sc-sofa-arm l"></div>
+                <div class="sc-sofa-arm r"></div>
+                <div class="sc-sofa-seat"></div>
+                <div class="sc-sofa-shadow"></div>
+              </div>
+              <div class="sc-baseboard"></div>
+            </div>`;
+        } else if (activeMerchId === 'desk_5') {
+          html = `
+            <div class="sc-stage sc-desk">
+              <div class="sc-stand-group">
+                <div class="sc-stand-shadow"></div>
+                <div class="sc-stand-piece">
+                  <div class="sc-desk-card" data-photo>${photoHtml(currentUrl, '点击选择成片')}</div>
+                  <div class="sc-crystal"></div>
+                  <div class="sc-crystal-shine"></div>
+                  <div class="sc-crystal-base"></div>
+                </div>
+              </div>
+              <div class="sc-desk-surface"></div>
+              <div class="sc-desk-grain"></div>
+            </div>`;
+        } else if (activeMerchId === 'calendar') {
+          html = `
+            <div class="sc-stage sc-calendar">
+              <div class="sc-cal-card">
+                <div class="sc-cal-ring l"></div>
+                <div class="sc-cal-ring r"></div>
+                ${currentUrl
+                  ? `<img class="sc-cal-photo" src="${esc(currentUrl)}" alt="挂历封面成片" data-photo>`
+                  : `<div class="sc-cal-empty-photo" data-photo>点击选择成片</div>`}
+                <div class="sc-cal-range">${esc(CALENDAR_RANGE)}</div>
+                <div class="sc-cal-months">
+                  ${CALENDAR_MONTHS.map((month) => `
+                    <div class="sc-cal-month">
+                      <div class="sc-cal-month-name">${esc(month.label)}</div>
+                      <div class="sc-cal-week">${WEEK_HEADER.map((d) => `<span>${esc(d)}</span>`).join('')}</div>
+                      <div class="sc-cal-dots">${month.cells.map((c) => `<span class="sc-cal-dot${c.on ? '' : ' blank'}"></span>`).join('')}</div>
+                    </div>`).join('')}
+                </div>
+              </div>
+            </div>`;
+        } else if (activeMerchId === 'wallet') {
+          html = `
+            <div class="sc-stage sc-wallet">
+              <div class="sc-wallet-body">
+                <div class="sc-wallet-flap"></div>
+                <div class="sc-wallet-stitch"></div>
+                <div class="sc-wallet-clasp"></div>
+              </div>
+              ${Array.from({ length: WALLET_CARD_COUNT }, (_, slot) => `
+                <div class="sc-wallet-card sc-wcard-${slot}" data-photo>
+                  ${photoHtml(urlOf(pick(slot)), '待选片')}
+                </div>`).join('')}
+            </div>`;
+        } else if (activeMerchId === 'pendant') {
+          html = `
+            <div class="sc-stage sc-pendant">
+              ${['a', 'b'].map((side, i) => `
+                <div class="sc-pendant-group ${side}">
+                  <div class="sc-pendant-rope"></div>
+                  <div class="sc-pendant-ring"></div>
+                  <div class="sc-pendant-body" data-photo>
+                    ${urlOf(pick(i))
+                      ? `<img class="sc-pendant-photo" src="${esc(urlOf(pick(i)))}" alt="挂件成片">`
+                      : '<div class="sc-pendant-empty">选片</div>'}
+                    <div class="sc-pendant-shine"></div>
+                  </div>
+                </div>`).join('')}
+            </div>`;
+        } else {
+          html = `
+            <div class="sc-stage sc-album">
+              <div class="sc-album-wrap">
+                <div class="sc-album-depth d2"></div>
+                <div class="sc-album-depth d1"></div>
+                <div class="sc-album-spread">
+                  <div class="sc-album-page l">
+                    <div class="sc-album-photo-card" data-photo>
+                      ${photoHtml(urlOf(pick(0)), '选择照片')}
+                      <div class="sc-album-caption"></div>
+                    </div>
+                  </div>
+                  <div class="sc-album-page r">
+                    <div class="sc-album-photo-card" data-photo>
+                      ${photoHtml(urlOf(pick(1)), '选择照片')}
+                      <div class="sc-album-caption"></div>
+                    </div>
+                  </div>
+                  <div class="sc-album-spine"></div>
+                </div>
+                <div class="sc-album-bookspine"></div>
+              </div>
+            </div>`;
+        }
+        els.stage.innerHTML = html;
+      }
+
+      function renderStrip() {
+        if (state.loading) {
+          els.strip.innerHTML = '<div class="sc-strip-row"><span class="sc-strip-empty">成片加载中…</span></div>';
+          return;
+        }
+        if (!state.photos.length) {
+          els.strip.innerHTML = '<div class="sc-strip-row"><span class="sc-strip-empty">暂无成片，请从订单页重新进入</span></div>';
+          return;
+        }
+        els.strip.innerHTML = '<div class="sc-strip-row">' + state.photos.map((p, i) => `
+          <button type="button" class="sc-strip-item${i === state.currentIndex ? ' active' : ''}" data-index="${i}" title="成片 ${i + 1}">
+            ${p.url ? `<img src="${esc(p.url)}" alt="成片 ${i + 1}">` : ''}
+            <span class="sc-strip-no">${i + 1}</span>
+          </button>`).join('') + '</div>';
+      }
+
+      function renderAddBtn() {
+        const merch = findMerch(activeMerchId) || MERCH_CATALOG[0];
+        els.addBtn.textContent = `加入清单（${merch.label} · ¥${fmtPrice(merch.price)}）`;
+      }
+
+      function renderCart() {
+        if (!state.cart.length) {
+          els.cart.innerHTML = '<div class="sc-empty-state">尚未添加周边。切换上方品类并点击「加入清单」，即可模拟并汇总实物效果。</div>';
+          return;
+        }
+        const total = round1(state.cart.reduce((sum, item) => sum + item.price * item.qty, 0));
+        els.cart.innerHTML =
+          state.cart.map((item, i) => `
+            <div class="sc-cart-item">
+              ${item.photoUrl
+                ? `<img class="sc-cart-thumb" src="${esc(item.photoUrl)}" alt="周边用片">`
+                : '<div class="sc-cart-thumb-empty"></div>'}
+              <div class="sc-cart-info">
+                <div class="sc-cart-name">${esc(item.label)}</div>
+                <div class="sc-cart-price">¥${esc(fmtPrice(item.price))} / 件</div>
+              </div>
+              <div class="sc-stepper">
+                <button type="button" class="sc-step-btn" data-act="minus" data-index="${i}" aria-label="减少数量">−</button>
+                <span class="sc-step-num">${esc(item.qty)}</span>
+                <button type="button" class="sc-step-btn" data-act="plus" data-index="${i}" aria-label="增加数量">＋</button>
+              </div>
+              <button type="button" class="sc-cart-remove" data-act="remove" data-index="${i}" aria-label="移除">×</button>
+            </div>`).join('') +
+          `<div class="sc-cart-total"><span>合计</span><span class="sc-cart-total-num">¥${esc(fmtPrice(total))}</span></div>` +
+          '<button type="button" class="btn" id="sc-submit-btn">提交周边选择</button>' +
+          '<div class="sc-submit-hint">提交后由商家复核并安排制作，最终金额以商家确认为准。</div>';
+      }
+
+      function renderAll() {
+        renderChips();
+        renderScene();
+        renderStrip();
+        renderAddBtn();
+        renderCart();
+      }
+
+      /* ---------- 交互 ---------- */
+      els.chipbar.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('.sc-chip') : null;
+        if (!btn) { return; }
+        const id = btn.getAttribute('data-merch');
+        if (!id || id === activeMerchId) { return; }
+        activeMerchId = id;
+        renderAll();
+      });
+
+      /* 场景照片点击：多张成片时循环切换 */
+      els.stage.addEventListener('click', (e) => {
+        const target = e.target && e.target.closest ? e.target.closest('[data-photo]') : null;
+        if (!target) { return; }
+        if (!state.photos.length) { PM.toast('暂无成片可选', 'error'); return; }
+        if (state.photos.length === 1) { PM.toast('当前订单只有 1 张成片', 'info'); return; }
+        setCurrentIndex((state.currentIndex + 1) % state.photos.length);
+      });
+
+      els.strip.addEventListener('click', (e) => {
+        const item = e.target && e.target.closest ? e.target.closest('.sc-strip-item') : null;
+        if (!item) { return; }
+        setCurrentIndex(Number(item.getAttribute('data-index')) || 0);
+      });
+
+      function setCurrentIndex(index) {
+        if (!(index >= 0) || index >= state.photos.length || index === state.currentIndex) { return; }
+        state.currentIndex = index;
+        renderScene();
+        renderStrip();
+      }
+
+      els.addBtn.addEventListener('click', () => {
+        const photo = state.photos[state.currentIndex];
+        if (!photo) { PM.toast('暂无成片可选', 'error'); return; }
+        const merch = findMerch(activeMerchId) || MERCH_CATALOG[0];
+        const key = merch.merchId + '::' + photo.fileID;
+        const existing = state.cart.find((item) => item.key === key);
+        if (existing) {
+          if (existing.qty >= MAX_QTY) { PM.toast('每项最多 9 件', 'error'); return; }
+          existing.qty += 1;
+        } else {
+          if (state.cart.length >= MAX_CART_ITEMS) { PM.toast('最多 20 个周边项', 'error'); return; }
+          state.cart.push({
+            key: key,
+            merchId: merch.merchId,
+            label: merch.label,
+            price: merch.price,
+            fileID: photo.fileID,
+            photoUrl: photo.url || '',
+            qty: 1
+          });
+        }
+        renderCart();
+      });
+
+      els.cart.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('button[data-act]') : null;
+        if (!btn) { return; }
+        const index = Number(btn.getAttribute('data-index'));
+        const item = state.cart[index];
+        if (!item) { return; }
+        const act = btn.getAttribute('data-act');
+        if (act === 'remove') {
+          state.cart.splice(index, 1);
+        } else if (act === 'minus') {
+          if (item.qty > 1) { item.qty -= 1; }
+        } else if (act === 'plus') {
+          if (item.qty >= MAX_QTY) { PM.toast('每项最多 9 件', 'error'); return; }
+          item.qty += 1;
+        }
+        renderCart();
+      });
+
+      /* 委托提交按钮（随清单重渲染） */
+      els.cart.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('#sc-submit-btn') : null;
+        if (!btn || btn.disabled) { return; }
+        submitMerch(btn);
+      });
+
+      /* ---------- 提交周边选择 ---------- */
+      async function submitMerch(btn) {
+        if (!orderId) { PM.toast('缺少订单号，请从订单页进入', 'error'); return; }
+        if (!state.cart.length) { PM.toast('请先添加周边项', 'error'); return; }
+
+        const payload = {
+          orderId: orderId,
+          items: state.cart.map((item) => ({ merchId: item.merchId, fileID: item.fileID, qty: item.qty }))
+        };
+        if (webToken) {
+          payload.webToken = webToken;
+        } else {
+          const creds = readQueryCreds();
+          if (creds && creds.orderId === orderId) {
+            payload.contactPhone = creds.contactPhone;
+            payload.queryPassword = creds.queryPassword;
+          }
+        }
+        if (!payload.webToken && !payload.contactPhone) {
+          PM.toast('缺少订单凭证，请从订单页重新进入', 'error');
+          return;
+        }
+
+        btn.disabled = true;
+        PM.showLoading('提交中…');
+        try {
+          await PM.callApi('selectMerch', payload);
+          PM.hideLoading();
+          PM.toast('周边已选定，商家将安排制作', 'success');
+          setTimeout(goBack, 1200);
+        } catch (e) {
+          PM.hideLoading();
+          PM.toast((e && e.message) || '提交失败，请重试', 'error');
+          btn.disabled = false;
+        }
+      }
+
+      function goBack() {
+        const ref = document.referrer || '';
+        if (ref.indexOf('query.html') >= 0) { location.href = 'query.html'; return; }
+        if (orderId) { location.href = 'order.html?orderId=' + encodeURIComponent(orderId); return; }
+        location.href = 'index.html';
+      }
+
+      els.back.addEventListener('click', goBack);
+
+      /* ---------- 初始化 ---------- */
+      PM.setupConfigBanner();
+      els.orderTag.textContent = orderId ? '订单 ' + orderId : '';
+
+      renderAll();
+
+      (async () => {
+        if (!fileIDs.length) {
+          state.loading = false;
+          renderAll();
+          if (!orderId) {
+            PM.toast('缺少订单参数，请从订单页进入搭配', 'error');
+          }
+          return;
+        }
+        try {
+          const urlMap = await PM.getTempFileURL(fileIDs);
+          state.photos = fileIDs.map((fileID) => ({ fileID: fileID, url: urlMap[fileID] || '' }));
+        } catch (e) {
+          state.photos = fileIDs.map((fileID) => ({ fileID: fileID, url: '' }));
+        }
+        state.loading = false;
+        renderAll();
+      })();
+    })();
+  </script>
+</body>
+</html>

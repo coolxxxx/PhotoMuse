@@ -1,0 +1,219 @@
+<view class="showcase-page">
+  <view class="top-nav">
+    <view class="back-btn" bindtap="goBack">‹ 返回</view>
+    <view class="nav-title">场景模拟</view>
+  </view>
+
+  <view class="hint-bar">选品类、选成片，实时预览周边实物效果；点击场景中的照片或下方缩略图可切换成片。</view>
+
+  <!-- 1. 品类切换条 -->
+  <scroll-view class="chip-bar" scroll-x enable-flex>
+    <view class="chip-row">
+      <view
+        wx:for="{{catalog}}"
+        wx:key="merchId"
+        class="chip {{activeMerchId === item.merchId ? 'chip-active' : ''}}"
+        data-merch-id="{{item.merchId}}"
+        bindtap="switchMerch"
+      >
+        <view class="chip-name">{{item.label}}</view>
+        <view class="chip-price">¥{{item.priceText}}</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 2. 场景模拟区（纯 CSS/SVG，不依赖图片素材） -->
+  <view class="scene-card">
+    <!-- 挂墙：客厅墙场景 -->
+    <view class="scene-stage scene-wall" wx:if="{{activeMerchId === 'wall_8' || activeMerchId === 'wall_12'}}">
+      <view class="wall-frame-group {{activeMerchId === 'wall_12' ? 'size-12' : 'size-8'}}" bindtap="onScenePhotoTap">
+        <view class="frame-nail"></view>
+        <view class="frame-cord cord-l"></view>
+        <view class="frame-cord cord-r"></view>
+        <view class="wall-frame">
+          <view class="frame-mat">
+            <image wx:if="{{currentPhotoUrl}}" class="scene-photo" src="{{currentPhotoUrl}}" mode="aspectFill"></image>
+            <view wx:else class="scene-photo photo-empty">点击选择成片</view>
+          </view>
+        </view>
+      </view>
+      <view class="sofa">
+        <view class="sofa-back"></view>
+        <view class="sofa-cushion cushion-l"></view>
+        <view class="sofa-cushion cushion-r"></view>
+        <view class="sofa-arm sofa-arm-l"></view>
+        <view class="sofa-arm sofa-arm-r"></view>
+        <view class="sofa-seat"></view>
+        <view class="sofa-shadow"></view>
+      </view>
+      <view class="wall-baseboard"></view>
+    </view>
+
+    <!-- 摆台：桌面水晶摆台 -->
+    <view class="scene-stage scene-desk" wx:elif="{{activeMerchId === 'desk_5'}}">
+      <view class="stand-group">
+        <view class="stand-base-shadow"></view>
+        <view class="stand-piece">
+          <view class="desk-photo-card" bindtap="onScenePhotoTap">
+            <image wx:if="{{currentPhotoUrl}}" class="scene-photo desk-photo" src="{{currentPhotoUrl}}" mode="aspectFill"></image>
+            <view wx:else class="scene-photo desk-photo photo-empty">点击选择成片</view>
+          </view>
+          <view class="crystal-panel" bindtap="onScenePhotoTap"></view>
+          <view class="crystal-shine"></view>
+          <view class="crystal-base"></view>
+        </view>
+      </view>
+      <view class="desk-surface"></view>
+      <view class="desk-grain"></view>
+    </view>
+
+    <!-- 挂历：照片 + 13 个月历点阵 -->
+    <view class="scene-stage scene-calendar" wx:elif="{{activeMerchId === 'calendar'}}">
+      <view class="calendar-card">
+        <view class="cal-ring ring-l"></view>
+        <view class="cal-ring ring-r"></view>
+        <image wx:if="{{currentPhotoUrl}}" class="cal-photo" src="{{currentPhotoUrl}}" mode="aspectFill" bindtap="onScenePhotoTap"></image>
+        <view wx:else class="cal-photo photo-empty" bindtap="onScenePhotoTap">点击选择成片</view>
+        <view class="cal-range">{{calendarRange}}</view>
+        <view class="cal-months">
+          <view class="cal-month" wx:for="{{calendarMonths}}" wx:for-item="month" wx:key="label">
+            <view class="cal-month-name">{{month.label}}</view>
+            <view class="cal-week">
+              <text wx:for="{{month.header}}" wx:for-item="day" wx:key="*this">{{day}}</text>
+            </view>
+            <view class="cal-dots">
+              <view
+                wx:for="{{month.cells}}"
+                wx:for-item="cell"
+                wx:key="id"
+                class="cal-dot {{cell.on ? '' : 'blank'}}"
+              ></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 钱包照：钱包 + 掏出的 6 张小卡 -->
+    <view class="scene-stage scene-wallet" wx:elif="{{activeMerchId === 'wallet'}}">
+      <view class="wallet">
+        <view class="wallet-flap"></view>
+        <view class="wallet-stitch"></view>
+        <view class="wallet-clasp"></view>
+      </view>
+      <view class="wallet-cards">
+        <view
+          class="wallet-card wcard-{{item.slot}}"
+          wx:for="{{walletCards}}"
+          wx:key="slot"
+          bindtap="onScenePhotoTap"
+        >
+          <image wx:if="{{item.url}}" class="scene-photo" src="{{item.url}}" mode="aspectFill"></image>
+          <view wx:else class="scene-photo photo-empty">待选片</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 亚克力挂件：一对圆形挂件 -->
+    <view class="scene-stage scene-pendant" wx:elif="{{activeMerchId === 'pendant'}}">
+      <view class="pendant-group pendant-a">
+        <view class="pendant-rope"></view>
+        <view class="pendant-ring"></view>
+        <view class="pendant-body" bindtap="onScenePhotoTap">
+          <image wx:if="{{pendantPhotos[0].url}}" class="pendant-photo" src="{{pendantPhotos[0].url}}" mode="aspectFill"></image>
+          <view wx:else class="pendant-photo photo-empty photo-empty-sm">选片</view>
+          <view class="pendant-shine"></view>
+        </view>
+      </view>
+      <view class="pendant-group pendant-b">
+        <view class="pendant-rope"></view>
+        <view class="pendant-ring"></view>
+        <view class="pendant-body" bindtap="onScenePhotoTap">
+          <image wx:if="{{pendantPhotos[1].url}}" class="pendant-photo" src="{{pendantPhotos[1].url}}" mode="aspectFill"></image>
+          <view wx:else class="pendant-photo photo-empty photo-empty-sm">选片</view>
+          <view class="pendant-shine"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 相册：摊开的跨页相册 -->
+    <view class="scene-stage scene-album" wx:elif="{{activeMerchId === 'album'}}">
+      <view class="album-wrap">
+        <view class="album-depth depth-2"></view>
+        <view class="album-depth depth-1"></view>
+        <view class="album-spread">
+          <view class="album-page page-left">
+            <view class="album-photo-card" bindtap="onScenePhotoTap">
+              <image wx:if="{{albumPhotos[0].url}}" class="scene-photo album-photo" src="{{albumPhotos[0].url}}" mode="aspectFill"></image>
+              <view wx:else class="scene-photo album-photo photo-empty">选择照片</view>
+              <view class="album-caption"></view>
+            </view>
+          </view>
+          <view class="album-page page-right">
+            <view class="album-photo-card" bindtap="onScenePhotoTap">
+              <image wx:if="{{albumPhotos[1].url}}" class="scene-photo album-photo" src="{{albumPhotos[1].url}}" mode="aspectFill"></image>
+              <view wx:else class="scene-photo album-photo photo-empty">选择照片</view>
+              <view class="album-caption"></view>
+            </view>
+          </view>
+          <view class="album-spine"></view>
+        </view>
+        <view class="album-bookspine"></view>
+      </view>
+    </view>
+
+    <!-- 成片切换照片条 -->
+    <view class="photo-strip-wrap">
+      <view class="strip-title">成片切换</view>
+      <view wx:if="{{isLoadingPhotos}}" class="strip-empty">成片加载中...</view>
+      <scroll-view wx:else class="photo-strip" scroll-x enable-flex>
+        <view class="strip-row">
+          <view
+            wx:for="{{photos}}"
+            wx:key="fileID"
+            class="strip-item {{currentPhotoIndex === index ? 'strip-active' : ''}}"
+            data-index="{{index}}"
+            bindtap="onStripPhotoTap"
+          >
+            <image class="strip-image" src="{{item.url}}" mode="aspectFill"></image>
+            <view class="strip-no">{{index + 1}}</view>
+          </view>
+          <view wx:if="{{photos.length === 0}}" class="strip-empty">暂无成片，请从订单详情重新进入</view>
+        </view>
+      </scroll-view>
+      <button class="primary-btn" bindtap="addToCart">加入清单（{{activeLabel}} · ¥{{activePriceText}}）</button>
+    </view>
+  </view>
+
+  <!-- 3. 已选清单 -->
+  <view class="cart-section">
+    <view class="section-title">已选清单</view>
+    <view wx:if="{{cart.length === 0}}" class="empty-state">尚未添加周边。切换上方品类并点击「加入清单」，即可模拟并汇总实物效果。</view>
+    <view wx:for="{{cart}}" wx:key="key" class="cart-item">
+      <image class="cart-thumb" src="{{item.photoUrl}}" mode="aspectFill"></image>
+      <view class="cart-info">
+        <view class="cart-name">{{item.label}}</view>
+        <view class="cart-price">¥{{item.priceText}} / 件</view>
+      </view>
+      <view class="stepper">
+        <view class="step-btn" data-index="{{index}}" bindtap="onQtyMinus">−</view>
+        <view class="step-num">{{item.qty}}</view>
+        <view class="step-btn" data-index="{{index}}" bindtap="onQtyPlus">＋</view>
+      </view>
+      <view class="cart-remove" data-index="{{index}}" bindtap="removeCartItem">×</view>
+    </view>
+    <view class="cart-total" wx:if="{{cart.length > 0}}">
+      <text>合计</text>
+      <text class="cart-total-num">¥{{cartTotalText}}</text>
+    </view>
+
+    <!-- 4. 提交 -->
+    <button
+      class="primary-btn submit-btn"
+      loading="{{isSubmitting}}"
+      disabled="{{cart.length === 0}}"
+      bindtap="submitMerch"
+    >提交周边选择</button>
+    <view class="submit-hint" wx:if="{{cart.length > 0}}">提交后由商家复核并安排制作，最终金额以商家确认为准。</view>
+  </view>
+</view>

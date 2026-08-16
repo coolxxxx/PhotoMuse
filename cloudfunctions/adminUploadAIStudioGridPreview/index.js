@@ -34,8 +34,22 @@ exports.main = async (event = {}) => {
       return fail('INVALID_STATUS', '当前状态不能上传预览网格');
     }
 
+    // 主题维度：可选 themeId，默认订单第一个主题；传入时必须属于该订单
+    const orderThemes = getOrderThemes(order);
+    const themeIdInput = cleanText(event.themeId, 40);
+    let targetTheme = null;
+    if (themeIdInput) {
+      targetTheme = orderThemes.find(item => item.themeId === themeIdInput) || null;
+      if (!targetTheme) return fail('VALIDATION_ERROR', '主题不属于该订单');
+    } else if (orderThemes.length > 0) {
+      targetTheme = orderThemes[0];
+    }
+
+    // 旧网格置 replaced：仅替换同主题下已上传的 grid_preview
+    const replaceWhere = { orderId, fileType: 'grid_preview', status: 'uploaded' };
+    if (targetTheme) replaceWhere.themeId = targetTheme.themeId;
     await db.collection('ai_studio_files')
-      .where({ orderId, fileType: 'grid_preview', status: 'uploaded' })
+      .where(replaceWhere)
       .update({
         data: {
           status: 'replaced',
@@ -48,6 +62,7 @@ exports.main = async (event = {}) => {
         orderId,
         _openid: order._openid,
         fileType: 'grid_preview',
+        ...(targetTheme ? { themeId: targetTheme.themeId } : {}),
         fileID,
         fileName,
         size,
@@ -63,7 +78,16 @@ exports.main = async (event = {}) => {
       grid_preview_uploaded_at: db.serverDate(),
       updatedAt: db.serverDate()
     };
-    if (Array.isArray(order.selected_cells) && order.selected_cells.length > 0) {
+    // 仅重置该主题的选片（多主题订单按主题内嵌 selectedCells；旧单主题订单沿用 selected_cells）
+    const themeIndex = targetTheme && Array.isArray(order.themes)
+      ? order.themes.findIndex(item => item && item.themeId === targetTheme.themeId)
+      : -1;
+    if (themeIndex >= 0) {
+      const entry = order.themes[themeIndex] || {};
+      if (Array.isArray(entry.selectedCells) && entry.selectedCells.length > 0) {
+        updateData[`themes.${themeIndex}.selectedCells`] = [];
+      }
+    } else if (Array.isArray(order.selected_cells) && order.selected_cells.length > 0) {
       updateData.selected_cells = [];
     }
 
@@ -74,14 +98,16 @@ exports.main = async (event = {}) => {
     await writeAudit(orderId, OPENID, 'admin_upload_grid_preview', {
       fileID,
       fileName,
-      note
+      note,
+      ...(targetTheme ? { themeId: targetTheme.themeId } : {})
     });
 
     return {
       success: true,
       order: {
         orderId,
-        order_status: 'grid_preview'
+        order_status: 'grid_preview',
+        ...(targetTheme ? { themeId: targetTheme.themeId } : {})
       }
     };
   } catch (error) {
@@ -93,6 +119,19 @@ exports.main = async (event = {}) => {
 async function getOrder(orderId) {
   const result = await db.collection('ai_studio_orders').where({ orderId }).limit(1).get();
   return result.data && result.data[0];
+}
+
+// 归一化订单主题列表：新订单读 themes 数组；旧单主题订单回退 theme_id/theme_name
+function getOrderThemes(order) {
+  if (Array.isArray(order.themes) && order.themes.length > 0) {
+    return order.themes
+      .filter(item => item && item.themeId)
+      .map(item => ({ themeId: item.themeId, themeName: item.themeName || '' }));
+  }
+  if (order.theme_id) {
+    return [{ themeId: order.theme_id, themeName: order.theme_name || '' }];
+  }
+  return [];
 }
 
 function isAdmin(openid) {

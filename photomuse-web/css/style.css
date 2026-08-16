@@ -409,3 +409,224 @@ button { font-family: inherit; }
   color: var(--pm-text-secondary);
   font-size: 12px;
 }
+
+/* ============================================================
+ * 影楼新能力：写真主题多选 / 样张横滑 / 阶梯价格条 / AI 推荐 /
+ *           分主题选片 / 周边好物
+ * ============================================================ */
+
+/* ---------- 写真主题多选（下单页） ---------- */
+.theme-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.theme-block {
+  border: 1.5px solid var(--pm-border);
+  border-radius: var(--pm-radius);
+  padding: 10px 12px;
+  background: #FBFDFF;
+  transition: border-color 0.15s, background 0.15s;
+}
+.theme-block.selected { border-color: var(--pm-green); background: var(--pm-green-light); }
+.theme-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+.theme-name-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.theme-name { font-weight: 700; font-size: 14.5px; color: var(--pm-text); }
+.theme-block.selected .theme-name { color: #1B5E20; }
+.theme-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #E8EEF7;
+  color: var(--pm-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+.theme-block.selected .theme-check { background: var(--pm-green); color: #fff; }
+.theme-desc { margin: 0; font-size: 12.5px; color: var(--pm-text-secondary); line-height: 1.5; }
+
+/* ---------- 主题样张横滑 ---------- */
+.sample-scroll {
+  margin-top: 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.sample-row { display: flex; gap: 8px; padding: 2px 0 6px; width: max-content; }
+.sample-card {
+  display: block;
+  width: 120px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.sample-image {
+  display: block;
+  width: 120px;
+  height: 90px;
+  border-radius: 10px;
+  background: #EEF3F8;
+  border: 1px solid var(--pm-border);
+  object-fit: cover;
+}
+.sample-caption {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--pm-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sample-empty {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: var(--pm-radius-sm);
+  background: #F7FAFC;
+  color: #90A4AE;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* ---------- 阶梯价格条 ---------- */
+.price-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--pm-radius);
+  background: #F7FAFC;
+}
+.price-detail { color: #455A64; font-size: 12.5px; line-height: 1.5; }
+.price-count { margin-top: 4px; color: #90A4AE; font-size: 11.5px; }
+.price-total { flex: 0 0 auto; text-align: right; }
+.price-amount { color: var(--pm-orange); font-size: 18px; font-weight: 800; }
+.price-photos { margin-top: 2px; color: #90A4AE; font-size: 11.5px; }
+
+/* ---------- AI 帮我选主题 ---------- */
+.ai-analyze-wrap { margin: 14px 0 12px; }
+.btn-ai {
+  background: linear-gradient(135deg, var(--pm-blue), var(--pm-green));
+  font-size: 15px;
+}
+.btn-ai:hover:not(:disabled) { background: linear-gradient(135deg, #1565C0, #2E7D32); }
+.btn-ai:disabled { background: linear-gradient(135deg, #90A4AE, #A5D6A7); }
+.analysis-panel {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius);
+  background: #FBFDFF;
+}
+.analysis-summary {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--pm-radius-sm);
+  background: var(--pm-blue-light);
+  color: var(--pm-blue-deep);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.score-row { margin-bottom: 12px; }
+.score-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.score-name { font-size: 13.5px; font-weight: 700; color: var(--pm-text); }
+.recommend-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--pm-orange);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.score-value { margin-left: auto; color: var(--pm-blue); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.score-track { height: 8px; border-radius: 999px; background: #E8EEF7; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--pm-blue), var(--pm-green)); }
+.score-reason { margin-top: 6px; font-size: 12px; color: var(--pm-text-secondary); line-height: 1.5; }
+
+/* ---------- 订单视图：分主题选片卡 ---------- */
+.theme-grid-card .cell-grid { margin: 10px 0 14px; }
+.theme-grid-card .chips { align-items: center; }
+
+/* ---------- 周边好物（订单视图） ---------- */
+.merch-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 10px 0 4px; }
+.merch-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1.5px solid var(--pm-border);
+  border-radius: var(--pm-radius);
+  padding: 12px;
+  background: #FBFDFF;
+}
+.merch-tag {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--pm-blue-light);
+  color: var(--pm-blue);
+  font-weight: 600;
+}
+.merch-name { font-weight: 600; font-size: 13.5px; line-height: 1.4; }
+.merch-desc { margin: 0; font-size: 12px; color: var(--pm-text-secondary); line-height: 1.5; }
+.merch-meta { font-size: 11.5px; color: #90A4AE; }
+.merch-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.merch-price { color: var(--pm-orange); font-weight: 700; font-size: 15px; white-space: nowrap; }
+.merch-go {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--pm-blue);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.merch-go:hover { background: #1565C0; }
+
+.merch-selected-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--pm-border);
+}
+.merch-selected-item:last-child { border-bottom: none; }
+.merch-item-qty { font-size: 12px; color: var(--pm-text-secondary); margin-top: 2px; }
+.merch-item-total { color: var(--pm-orange); font-weight: 700; white-space: nowrap; }
+.merch-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 10px;
+  margin-top: 4px;
+  border-top: 1.5px solid var(--pm-border);
+  font-size: 14px;
+}
+.merch-total-value { color: var(--pm-orange); font-weight: 800; font-size: 18px; }
+.merch-status-hint {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--pm-text-secondary);
+  background: #F7FAFC;
+  border-radius: var(--pm-radius-sm);
+  padding: 8px 10px;
+  word-break: break-all;
+}

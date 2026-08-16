@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>在线下单 · 光影集 PhotoMuse</title>
   <meta name="description" content="光影集 PhotoMuse 在线下单：上传一张照片，生成证件照、职业形象照与多主题 AI 写真。">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -33,8 +33,30 @@
     </section>
 
     <section class="card hidden" id="portrait-section">
-      <div class="card-head"><h2>选择写真主题（五选一）</h2></div>
-      <div id="theme-list" class="option-list"></div>
+      <div class="card-head">
+        <h2>选择写真主题（可多选）</h2>
+        <span class="badge badge-blue" id="theme-count-badge">已选 0 / 3</span>
+      </div>
+      <div id="theme-list" class="theme-list"></div>
+
+      <div class="price-bar" id="price-bar">
+        <div class="price-info">
+          <div class="price-detail" id="price-detail"></div>
+          <div class="price-count" id="price-count"></div>
+        </div>
+        <div class="price-total">
+          <div class="price-amount" id="price-amount"></div>
+          <div class="price-photos" id="price-photos"></div>
+        </div>
+      </div>
+
+      <div class="ai-analyze-wrap">
+        <button type="button" class="btn btn-ai" id="ai-analyze-btn" data-requires-key>AI 帮我选主题</button>
+        <input id="ai-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden>
+        <p class="muted small">选一张正脸照，AI 分析气质并推荐最合适的写真主题（约需 10 秒，分析用图不进入订单）。</p>
+      </div>
+      <div id="analysis-panel" class="hidden"></div>
+
       <label class="field">
         <span class="field-label">场景描述（选填）</span>
         <textarea id="scene-desc" rows="3" maxlength="200" placeholder="想要的效果、服装道具、背景氛围…"></textarea>
@@ -97,6 +119,19 @@
       const OK_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
       const LINE_LABELS = { auto: '自动产线', semi_auto: '半自动产线', manual_ai: '人工精修', manual: '人工产线' };
 
+      /* 写真主题目录（与小程序 utils/ai-studio-config.js PORTRAIT_THEMES 同构；
+         catalog 接口返回的 themes 为旧版品类目录，写真下单以这 5 个主题为准） */
+      const PORTRAIT_THEMES = [
+        { themeId: 'guofeng', name: '古风写真', desc: '汉服加身，园林叠影，一键穿越的水墨意境大片。', sceneHint: '汉服、园林长廊、竹林溪水，水墨留白背景，拍出温婉端庄的古风质感' },
+        { themeId: 'sports', name: '运动活力', desc: '球场街头双场景切换，定格你最飒的动感瞬间。', sceneHint: '球场、街头、城市跑道，动感构图配高对比光影，元气氛围直接拉满' },
+        { themeId: 'casual', name: '休闲日常', desc: '咖啡居家街拍三连，把松弛感日常拍成高光时刻。', sceneHint: '咖啡店、居家窗边、街头随拍，自然光加浅景深，轻松拿捏氛围感' },
+        { themeId: 'travel', name: '旅拍风光', desc: '海边古镇山野任你选，一张照片装下整段旅程。', sceneHint: '海边日落、古镇石巷、山野草原，大场景构图配旅行穿搭，出片即封面' },
+        { themeId: 'family', name: '亲子合照', desc: '从温馨互动到全家福，把陪伴拍成值得收藏的样子。', sceneHint: '温馨互动、拥抱对视、全家福站位，柔和暖调光线，幸福感溢出屏幕' }
+      ];
+
+      /* 多主题阶梯定价兜底值（businessConfig 接口可覆盖） */
+      const DEFAULT_PRICING = { baseThemePrice: 69.9, extraThemePrice: 39.9, maxThemes: 3, photosPerTheme: 5 };
+
       const $ = (id) => document.getElementById(id);
       const esc = (v) => String(v == null ? '' : v)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -104,6 +139,11 @@
       const priceText = (n) => {
         const v = Number(n);
         return (isFinite(v) && v > 0) ? '¥' + String(Math.round(v * 100) / 100) : '';
+      };
+      const fmtPrice = (n) => {
+        const v = Math.round(Number(n) * 10) / 10;
+        if (!isFinite(v)) { return '0'; }
+        return Number.isInteger(v) ? String(v) : v.toFixed(1);
       };
       const fmtSize = (n) => {
         const v = Number(n);
@@ -124,6 +164,14 @@
         retry: $('catalog-retry'),
         portraitSection: $('portrait-section'),
         themeList: $('theme-list'),
+        themeCountBadge: $('theme-count-badge'),
+        priceDetail: $('price-detail'),
+        priceCount: $('price-count'),
+        priceAmount: $('price-amount'),
+        pricePhotos: $('price-photos'),
+        aiBtn: $('ai-analyze-btn'),
+        aiInput: $('ai-photo-input'),
+        analysisPanel: $('analysis-panel'),
         sceneDesc: $('scene-desc'),
         standardSection: $('standard-section'),
         styleList: $('style-list'),
@@ -139,13 +187,22 @@
       };
 
       const state = {
-        products: [], themes: [], styles: [],
-        productId: '', themeId: '', styleId: '',
+        products: [], styles: [],
+        productId: '', styleId: '',
+        selectedThemes: [],          /* 写真主题多选（themeId 数组，服务端按此计价） */
+        pricing: Object.assign({}, DEFAULT_PRICING),
+        samplesByTheme: {},          /* themeId -> [{sampleId,fileID,caption,url}] */
+        samplesLoaded: false,
+        analysis: null,              /* {summary, scores:[{themeId,themeName,score,reason}]} */
         files: [], urls: []
       };
 
       const isPortrait = (p) => !!p && p.productType === 'portrait';
       const currentProduct = () => state.products.find((p) => p.productId === state.productId) || null;
+      const maxThemes = () => {
+        const v = Number(state.pricing.maxThemes);
+        return Number.isInteger(v) && v >= 1 ? v : DEFAULT_PRICING.maxThemes;
+      };
 
       /* ---------- 套餐目录 ---------- */
       const loadCatalog = async () => {
@@ -156,10 +213,8 @@
           const res = await PM.callApi('catalog');
           PM.hideLoading();
           state.products = res.products || [];
-          state.themes = res.themes || [];
           state.styles = res.styles || [];
           renderProducts();
-          renderThemes();
           renderStyles();
           if (state.products.length) { selectProduct(state.products[0].productId); }
         } catch (e) {
@@ -201,36 +256,273 @@
         const portrait = isPortrait(currentProduct());
         els.portraitSection.classList.toggle('hidden', !portrait);
         els.standardSection.classList.toggle('hidden', portrait);
-        if (portrait && !state.themeId && state.themes.length) { selectTheme(state.themes[0].themeId); }
+        if (portrait) {
+          /* 套餐切回写真：保留仍在白名单内的已选主题，为空则默认第一个 */
+          const keep = state.selectedThemes.filter((tid) => PORTRAIT_THEMES.some((t) => t.themeId === tid));
+          state.selectedThemes = keep.length ? keep : (PORTRAIT_THEMES[0] ? [PORTRAIT_THEMES[0].themeId] : []);
+          renderThemeSelection();
+        } else {
+          state.selectedThemes = [];
+        }
         if (!portrait && !state.styleId && state.styles.length) { selectStyle(state.styles[0].styleId); }
+        updateScenePlaceholder();
       };
 
+      /* ---------- 写真主题：多选 + 样张 + 价格条 ---------- */
       const renderThemes = () => {
-        els.themeList.innerHTML = state.themes.map((t) => `
-          <label class="option-card">
-            <input type="radio" name="theme" value="${esc(t.themeId)}" hidden>
-            <div class="option-name">${esc(t.name)}</div>
-            <p class="option-desc">${esc(t.desc || t.description || '')}</p>
-          </label>`).join('');
-        els.themeList.querySelectorAll('input[name="theme"]').forEach((r) => {
-          r.addEventListener('change', () => selectTheme(r.value));
+        els.themeList.innerHTML = PORTRAIT_THEMES.map((t) => `
+          <div class="theme-block" data-theme="${esc(t.themeId)}">
+            <button type="button" class="theme-chip" data-theme="${esc(t.themeId)}">
+              <span class="theme-name-row">
+                <span class="theme-name">${esc(t.name)}</span>
+                <span class="theme-check" aria-hidden="true">+</span>
+              </span>
+              <span class="theme-desc">${esc(t.desc || '')}</span>
+            </button>
+            <div class="sample-slot" data-theme="${esc(t.themeId)}">
+              <div class="sample-empty">样张加载中…</div>
+            </div>
+          </div>`).join('');
+        els.themeList.querySelectorAll('.theme-chip').forEach((btn) => {
+          btn.addEventListener('click', () => toggleTheme(btn.getAttribute('data-theme')));
         });
+        renderThemeSelection();
       };
 
-      const selectTheme = (id) => {
-        state.themeId = id;
-        els.themeList.querySelectorAll('.option-card').forEach((c) => {
-          const input = c.querySelector('input');
-          const on = !!input && input.value === id;
-          c.classList.toggle('selected', on);
-          if (on && input) { input.checked = true; }
+      const toggleTheme = (id) => {
+        if (!id) { return; }
+        const max = maxThemes();
+        const pos = state.selectedThemes.indexOf(id);
+        if (pos >= 0) {
+          state.selectedThemes.splice(pos, 1);
+        } else if (state.selectedThemes.length >= max) {
+          PM.toast(`最多选择 ${max} 个主题`, 'error');
+          return;
+        } else {
+          state.selectedThemes.push(id);
+        }
+        renderThemeSelection();
+        updateScenePlaceholder();
+      };
+
+      const renderThemeSelection = () => {
+        const max = maxThemes();
+        els.themeCountBadge.textContent = `已选 ${state.selectedThemes.length} / ${max}`;
+        els.themeList.querySelectorAll('.theme-block').forEach((block) => {
+          const on = state.selectedThemes.indexOf(block.getAttribute('data-theme')) >= 0;
+          block.classList.toggle('selected', on);
+          const check = block.querySelector('.theme-check');
+          if (check) { check.textContent = on ? '✓' : '+'; }
         });
-        const theme = state.themes.find((t) => t.themeId === id);
-        els.sceneDesc.placeholder = (theme && theme.sceneHint)
-          ? '参考：' + theme.sceneHint
+        renderPriceBar();
+      };
+
+      const renderPriceBar = () => {
+        const p = state.pricing;
+        const count = state.selectedThemes.length;
+        const extraCount = Math.max(0, count - 1);
+        const total = count > 0 ? Math.round((p.baseThemePrice + extraCount * p.extraThemePrice) * 10) / 10 : 0;
+
+        let detail;
+        if (count === 0) {
+          detail = `基础 1 主题 ¥${fmtPrice(p.baseThemePrice)}，每加 1 主题 +¥${fmtPrice(p.extraThemePrice)}`;
+        } else if (count === 1) {
+          detail = `基础 1 主题 ¥${fmtPrice(p.baseThemePrice)}`;
+        } else {
+          detail = `基础 1 主题 ¥${fmtPrice(p.baseThemePrice)} + ${extraCount} 主题 ×¥${fmtPrice(p.extraThemePrice)}`;
+        }
+        els.priceDetail.textContent = detail;
+        els.priceCount.textContent = `已选 ${count} / ${maxThemes()} 个主题`;
+        els.priceAmount.textContent = count > 0 ? `¥${fmtPrice(total)}` : `¥${fmtPrice(p.baseThemePrice)} 起`;
+        els.pricePhotos.textContent = count > 0 ? `${count * p.photosPerTheme} 张成片` : `每主题 ${p.photosPerTheme} 张`;
+      };
+
+      const updateScenePlaceholder = () => {
+        const first = PORTRAIT_THEMES.find((t) => t.themeId === state.selectedThemes[state.selectedThemes.length - 1]);
+        els.sceneDesc.placeholder = (first && first.sceneHint)
+          ? '参考：' + first.sceneHint
           : '想要的效果、服装道具、背景氛围…';
       };
 
+      /* 阶梯定价配置（businessConfig，失败静默用兜底值） */
+      const loadBusinessConfig = async () => {
+        try {
+          const res = await PM.callApi('businessConfig');
+          const c = (res && res.config) || {};
+          const num = (v, fallback) => {
+            const n = Number(v);
+            return (isFinite(n) && n > 0) ? Math.round(n * 10) / 10 : fallback;
+          };
+          const intg = (v, fallback) => {
+            const n = Number(v);
+            return (Number.isInteger(n) && n >= 1) ? n : fallback;
+          };
+          state.pricing = {
+            baseThemePrice: num(c.baseThemePrice, DEFAULT_PRICING.baseThemePrice),
+            extraThemePrice: num(c.extraThemePrice, DEFAULT_PRICING.extraThemePrice),
+            maxThemes: Math.min(intg(c.maxThemes, DEFAULT_PRICING.maxThemes), PORTRAIT_THEMES.length),
+            photosPerTheme: intg(c.photosPerTheme, DEFAULT_PRICING.photosPerTheme)
+          };
+        } catch (e) { /* 读取失败保持兜底定价 */ }
+        renderThemeSelection();
+      };
+
+      /* 主题样张（samples + getTempFileURL 换链） */
+      const loadSamples = async () => {
+        try {
+          const res = await PM.callApi('samples');
+          const rows = (res && res.data ? res.data : [])
+            .filter((s) => s && s.themeId && s.fileID)
+            .slice(0, 50);
+          const grouped = {};
+          PORTRAIT_THEMES.forEach((t) => { grouped[t.themeId] = []; });
+          rows.forEach((s) => {
+            if (!grouped[s.themeId]) { grouped[s.themeId] = []; }
+            grouped[s.themeId].push({ sampleId: s.sampleId, fileID: s.fileID, caption: s.caption || '', url: '' });
+          });
+          if (rows.length) {
+            const urlMap = await PM.getTempFileURL(rows.map((s) => s.fileID));
+            Object.keys(grouped).forEach((tid) => {
+              grouped[tid].forEach((s) => { s.url = urlMap[s.fileID] || ''; });
+            });
+          }
+          state.samplesByTheme = grouped;
+        } catch (e) {
+          state.samplesByTheme = {};
+        }
+        state.samplesLoaded = true;
+        renderSamples();
+      };
+
+      const renderSamples = () => {
+        els.themeList.querySelectorAll('.sample-slot').forEach((slot) => {
+          const tid = slot.getAttribute('data-theme');
+          const samples = (state.samplesByTheme[tid] || []).filter((s) => s.url);
+          if (!samples.length) {
+            slot.innerHTML = '<div class="sample-empty">样张制作中</div>';
+            return;
+          }
+          slot.innerHTML =
+            '<div class="sample-scroll"><div class="sample-row">' +
+            samples.map((s) => `
+              <button type="button" class="sample-card" data-url="${esc(s.url)}" title="点击在新标签页查看大图">
+                <img class="sample-image" src="${esc(s.url)}" alt="${esc(s.caption || '样张')}" loading="lazy">
+                ${s.caption ? `<span class="sample-caption">${esc(s.caption)}</span>` : ''}
+              </button>`).join('') +
+            '</div></div>';
+          slot.querySelectorAll('.sample-card').forEach((card) => {
+            card.addEventListener('click', () => {
+              const url = card.getAttribute('data-url');
+              if (url) { window.open(url, '_blank', 'noopener'); }
+              else { PM.toast('样张链接尚未就绪，请稍后再试', 'error'); }
+            });
+          });
+        });
+      };
+
+      /* ---------- AI 帮我选主题 ---------- */
+      els.aiBtn.addEventListener('click', () => {
+        if (els.aiBtn.disabled) { return; }
+        els.aiInput.click();
+      });
+
+      els.aiInput.addEventListener('change', async () => {
+        const file = (els.aiInput.files || [])[0];
+        els.aiInput.value = '';
+        if (!file) { return; }
+        const typeOk = OK_MIME_TYPES.indexOf(file.type) >= 0 || /\.(jpe?g|png|webp)$/i.test(file.name || '');
+        if (!typeOk) { PM.toast('仅支持 jpg/png/webp 照片', 'error'); return; }
+        if (file.size > MAX_PHOTO_BYTES) { PM.toast(`照片超过 ${MAX_PHOTO_MB}MB 限制`, 'error'); return; }
+
+        els.aiBtn.disabled = true;
+        els.aiBtn.textContent = 'AI 分析中…';
+        PM.showLoading('AI 分析中，约需 10 秒…');
+        try {
+          /* 分析用图不登记订单，走独立 analysis 路径 */
+          const cloudPath = `ai-studio/analysis/web-${Date.now()}.${extOf(file)}`;
+          const fileID = await PM.uploadFile(cloudPath, file);
+          const res = await PM.callApi('analyzePhoto', { fileID: fileID });
+          state.analysis = normalizeAnalysis(res && res.analysis);
+          renderAnalysis();
+        } catch (e) {
+          renderAnalysisError(e);
+        } finally {
+          PM.hideLoading();
+          els.aiBtn.disabled = false;
+          els.aiBtn.textContent = 'AI 帮我选主题';
+        }
+      });
+
+      const normalizeAnalysis = (analysis) => {
+        const raw = analysis && typeof analysis === 'object' ? analysis : {};
+        const scores = (Array.isArray(raw.scores) ? raw.scores : [])
+          .filter((item) => item && item.themeId && PORTRAIT_THEMES.some((t) => t.themeId === item.themeId))
+          .map((item) => {
+            const theme = PORTRAIT_THEMES.find((t) => t.themeId === item.themeId);
+            const score = Math.min(100, Math.max(0, Math.round(Number(item.score) || 0)));
+            return {
+              themeId: item.themeId,
+              themeName: item.themeName || (theme ? theme.name : item.themeId),
+              score: score,
+              reason: item.reason || '暂无数据'
+            };
+          })
+          .sort((a, b) => b.score - a.score);
+        return {
+          summary: raw.summary || 'AI 已完成照片分析，以下为各主题适配度。',
+          scores: scores
+        };
+      };
+
+      const renderAnalysis = () => {
+        const a = state.analysis;
+        if (!a || !a.scores.length) { return; }
+        els.analysisPanel.classList.remove('hidden');
+        els.analysisPanel.innerHTML =
+          '<div class="analysis-panel">' +
+            '<div class="card-head" style="margin-bottom:8px"><h2 style="font-size:15px">AI 主题推荐</h2></div>' +
+            `<div class="analysis-summary">${esc(a.summary)}</div>` +
+            a.scores.map((item, i) => `
+              <div class="score-row">
+                <div class="score-head">
+                  <span class="score-name">${esc(item.themeName)}</span>
+                  ${i < 2 ? '<span class="recommend-badge">推荐</span>' : ''}
+                  <span class="score-value">${esc(item.score)} 分</span>
+                </div>
+                <div class="score-track"><div class="score-fill" style="width:${item.score}%"></div></div>
+                <div class="score-reason">${esc(item.reason)}</div>
+              </div>`).join('') +
+            '<button type="button" class="btn btn-outline" id="apply-recommend-btn">采用推荐</button>' +
+          '</div>';
+        const applyBtn = $('apply-recommend-btn');
+        if (applyBtn) {
+          applyBtn.addEventListener('click', () => {
+            const ids = state.analysis.scores
+              .slice(0, Math.min(2, maxThemes()))
+              .map((item) => item.themeId)
+              .filter((id) => PORTRAIT_THEMES.some((t) => t.themeId === id));
+            if (!ids.length) { return; }
+            state.selectedThemes = ids;
+            renderThemeSelection();
+            updateScenePlaceholder();
+            PM.toast(`已勾选 ${ids.length} 个推荐主题`, 'success');
+            els.themeList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+        els.analysisPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+
+      const renderAnalysisError = (e) => {
+        els.analysisPanel.classList.remove('hidden');
+        els.analysisPanel.innerHTML =
+          `<div class="analysis-panel"><div class="warn-box">${esc((e && e.message) || 'AI 分析失败，请稍后重试')}</div>` +
+          (String(e && e.code) === 'CONFIG_MISSING'
+            ? '<p class="muted small">视觉分析模型尚未配置，可先自行勾选主题，或联系商家人工推荐。</p>'
+            : '') +
+          '</div>';
+      };
+
+      /* ---------- 标准套餐风格 ---------- */
       const renderStyles = () => {
         els.styleList.innerHTML = state.styles.map((s) => `
           <label class="option-card">
@@ -314,7 +606,7 @@
         const product = currentProduct();
         if (!product) { PM.toast('请选择套餐', 'error'); return; }
         const portrait = isPortrait(product);
-        if (portrait && !state.themeId) { PM.toast('请选择写真主题', 'error'); return; }
+        if (portrait && !state.selectedThemes.length) { PM.toast('请至少选择 1 个写真主题', 'error'); return; }
         if (!portrait && !state.styleId) { PM.toast('请选择照片风格', 'error'); return; }
         const phone = els.phone.value.trim();
         if (!/^1[3-9]\d{9}$/.test(phone)) { PM.toast('请填写正确的 11 位手机号', 'error'); els.phone.focus(); return; }
@@ -334,7 +626,8 @@
           }
         };
         if (portrait) {
-          payload.themeId = state.themeId;
+          /* 多主题套系：themes 数组提交，服务端按 businessConfig 阶梯计价 */
+          payload.themes = state.selectedThemes.slice();
           const scene = els.sceneDesc.value.trim();
           if (scene) { payload.sceneDesc = scene; }
         } else {
@@ -395,6 +688,9 @@
       PM.setupConfigBanner();
       if (PM.isConfigured()) {
         loadCatalog();
+        renderThemes();
+        loadBusinessConfig();
+        loadSamples();
       } else {
         els.productList.innerHTML = '<div class="warn-box">站点未配置 API Key，请联系管理员。</div>';
       }

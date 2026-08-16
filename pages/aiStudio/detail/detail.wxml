@@ -55,37 +55,100 @@
     <button class="primary-btn" loading="{{isUploading}}" bindtap="submitRetakePhotos">提交补拍</button>
   </view>
 
-  <view class="section" wx:if="{{order.product_type === 'portrait' && order.order_status === 'grid_preview'}}">
-    <view class="section-title">网格预览选片</view>
-    <view wx:if="{{gridPreviewUrl}}" class="grid-preview-wrap">
-      <image
-        class="grid-preview-image"
-        src="{{gridPreviewUrl}}"
-        mode="aspectFit"
-        bindtap="previewGridImage"
-      ></image>
-      <view class="hint grid-preview-tip">点击查看大图</view>
+  <!-- 分主题网格选片：每个主题独立预览 + 15 宫格（旧单主题订单只渲染一个主题） -->
+  <block wx:if="{{order.product_type === 'portrait' && order.order_status === 'grid_preview'}}">
+    <view
+      class="section theme-section"
+      wx:for="{{themes}}"
+      wx:key="key"
+      wx:for-item="theme"
+      wx:for-index="themeIndex"
+    >
+      <view class="theme-head">
+        <view class="section-title theme-title">主题 · {{theme.themeName}}</view>
+        <view wx:if="{{theme.hasSelected}}" class="theme-selected-badge">已选 {{theme.selectedCells.length}} 张</view>
+      </view>
+      <view wx:if="{{theme.previewUrl}}" class="grid-preview-wrap">
+        <image
+          class="grid-preview-image"
+          src="{{theme.previewUrl}}"
+          mode="aspectFit"
+          data-theme-index="{{themeIndex}}"
+          bindtap="previewThemeGrid"
+        ></image>
+        <view class="hint grid-preview-tip">点击查看大图</view>
+      </view>
+      <view wx:else class="empty-state">该主题的网格预览图尚未上传，请稍后再查看。</view>
+      <view class="hint cell-hint">请在 3x5 网格中点击选择分镜，本主题最多可选 {{theme.maxCells}} 个。</view>
+      <view wx:if="{{theme.hasSelected}}" class="hint">该主题已选过，如需调整可改选后重新提交。</view>
+      <view class="cell-grid">
+        <view
+          wx:for="{{gridCells}}"
+          wx:key="*this"
+          wx:for-item="cell"
+          class="cell-item {{theme.selectedMap[cell] ? 'selected' : ''}}"
+          data-theme-index="{{themeIndex}}"
+          data-cell="{{cell}}"
+          bindtap="toggleThemeCell"
+        >{{cell}}</view>
+      </view>
+      <button
+        class="primary-btn"
+        loading="{{theme.submitting}}"
+        data-theme-index="{{themeIndex}}"
+        bindtap="submitThemeCells"
+      >{{theme.hasSelected ? '重新选片' : '确认选片'}}</button>
     </view>
-    <view wx:else class="empty-state">商家尚未上传网格预览图，请稍后再查看。</view>
-    <view class="hint cell-hint">请在 3x5 网格中点击选择分镜，最多可选 {{order.deliveryCount || 5}} 个。</view>
-    <view class="cell-grid">
-      <view
-        wx:for="{{gridCells}}"
-        wx:key="*this"
-        class="cell-item {{selectedMap[item] ? 'selected' : ''}}"
-        data-cell="{{item}}"
-        bindtap="toggleCell"
-      >{{item}}</view>
+  </block>
+
+  <view class="section" wx:if="{{order.product_type === 'portrait' && order.order_status === 'cell_selected' && selectedThemes.length}}">
+    <view class="section-title">已选分镜</view>
+    <view class="selected-theme-block" wx:for="{{selectedThemes}}" wx:key="key" wx:for-item="group">
+      <view wx:if="{{group.themeName}}" class="selected-theme-name">{{group.themeName}}</view>
+      <view class="selected-cells">
+        <view wx:for="{{group.cells}}" wx:key="*this" wx:for-item="cell" class="selected-cell-badge">{{cell}}</view>
+        <view class="selected-cells-tail">制作中</view>
+      </view>
     </view>
-    <button class="primary-btn" loading="{{isSubmittingCells}}" bindtap="submitSelectedCells">确认选片</button>
   </view>
 
-  <view class="section" wx:if="{{order.product_type === 'portrait' && order.order_status === 'cell_selected' && order.selected_cells.length}}">
-    <view class="section-title">已选分镜</view>
-    <view class="selected-cells">
-      <view wx:for="{{order.selected_cells}}" wx:key="*this" class="selected-cell-badge">{{item}}</view>
-      <view class="selected-cells-tail">制作中</view>
-    </view>
+  <!-- 周边好物：已选片/已交付展示商品网格；已选周边后展示清单与制作/发货进度 -->
+  <view class="section merch-section" wx:if="{{showMerch}}">
+    <view class="section-title">周边好物</view>
+    <block wx:if="{{merchMode === 'shop'}}">
+      <view class="hint">成片还能做成实体周边，选好商品后进入搭配页挑选成片，由商家制作寄送。</view>
+      <view wx:if="{{!hasPrintableFiles}}" class="hint merch-wait-hint">成片制作完成后即可搭配周边。</view>
+      <view wx:if="{{isLoadingMerch}}" class="empty-state">周边清单加载中...</view>
+      <view wx:elif="{{merchList.length === 0}}" class="empty-state">暂未上架周边商品，敬请期待。</view>
+      <view wx:else class="merch-grid">
+        <view class="merch-card" wx:for="{{merchList}}" wx:key="merchId" wx:for-item="merch">
+          <view class="merch-tag">{{merch.categoryLabel}}</view>
+          <view class="merch-name">{{merch.name}}</view>
+          <view wx:if="{{merch.desc}}" class="merch-desc">{{merch.desc}}</view>
+          <view wx:if="{{merch.ratioText}}" class="merch-meta">{{merch.ratioText}}</view>
+          <view class="merch-foot">
+            <view class="merch-price">¥{{merch.price}}</view>
+            <view class="merch-go" data-merch="{{merch.merchId}}" bindtap="goMerchShowcase">去搭配</view>
+          </view>
+        </view>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="merch-selected-list">
+        <view class="merch-selected-item" wx:for="{{merchItems}}" wx:key="merchItemId" wx:for-item="merch">
+          <view class="merch-item-main">
+            <view class="merch-name">{{merch.name}}</view>
+            <view class="merch-item-qty">数量 × {{merch.qty}}</view>
+          </view>
+          <view class="merch-item-total">¥{{merch.lineTotal}}</view>
+        </view>
+      </view>
+      <view class="merch-total-row">
+        <text>周边合计</text>
+        <text class="merch-total-value">¥{{merchTotal}}</text>
+      </view>
+      <view class="merch-status-hint">{{merchStatusHint}}</view>
+    </block>
   </view>
 
   <view class="section">

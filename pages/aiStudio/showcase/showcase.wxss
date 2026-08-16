@@ -1,0 +1,1015 @@
+/* 场景模拟展示页：蓝白体系（#1976D2 / #F5F9FF）+ 实物色（米白墙 / 木色 / 深棕） */
+
+.showcase-page {
+  min-height: 100vh;
+  padding: 24rpx;
+  box-sizing: border-box;
+  background: #f5f9ff;
+}
+
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 64rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: #ffffff;
+  color: #1976d2;
+  font-size: 28rpx;
+  font-weight: 700;
+  box-shadow: 0 6rpx 18rpx rgba(25, 118, 210, 0.08);
+}
+
+.nav-title {
+  flex: 1;
+  padding-right: 24rpx;
+  color: #1f2d3d;
+  font-size: 30rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.hint-bar {
+  margin-bottom: 20rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 16rpx;
+  color: #1976d2;
+  background: #e3f2fd;
+  font-size: 25rpx;
+  line-height: 1.5;
+}
+
+/* ===== 1. 品类切换条 ===== */
+.chip-bar {
+  margin-bottom: 24rpx;
+  padding: 18rpx;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+  white-space: nowrap;
+}
+
+.chip-row {
+  display: inline-flex;
+}
+
+.chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14rpx 26rpx;
+  margin-right: 14rpx;
+  border-radius: 16rpx;
+  background: #eef3f8;
+  color: #37474f;
+}
+
+.chip-name {
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.chip-price {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #78909c;
+}
+
+.chip-active {
+  background: #1976d2;
+  color: #ffffff;
+  box-shadow: 0 8rpx 18rpx rgba(25, 118, 210, 0.32);
+}
+
+.chip-active .chip-price {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ===== 2. 场景模拟区 ===== */
+.scene-card {
+  margin-bottom: 24rpx;
+  padding: 24rpx;
+  border-radius: 24rpx;
+  background: #ffffff;
+  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+}
+
+.scene-stage {
+  position: relative;
+  width: 100%;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.scene-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #eef3f8;
+}
+
+.photo-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: #90a4ae;
+  font-size: 24rpx;
+  background: #e8eef5;
+}
+
+.photo-empty-sm {
+  font-size: 20rpx;
+}
+
+/* --- 挂墙：客厅墙场景 --- */
+.scene-wall {
+  height: 620rpx;
+  background: linear-gradient(180deg, #f8f3ea 0%, #f1e9da 70%, #e9dfcc 100%);
+}
+
+.wall-baseboard {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34rpx;
+  background: #dccfb8;
+  border-top: 3rpx solid #cbbca0;
+  box-shadow: 0 -8rpx 14rpx rgba(93, 64, 55, 0.1);
+}
+
+.wall-frame-group {
+  position: absolute;
+  left: 50%;
+  top: 22rpx;
+  transform: translateX(-50%) rotate(1deg);
+}
+
+.frame-nail {
+  position: absolute;
+  top: -30rpx;
+  left: 50%;
+  width: 12rpx;
+  height: 12rpx;
+  margin-left: -6rpx;
+  border-radius: 50%;
+  background: #5d4037;
+}
+
+.frame-cord {
+  position: absolute;
+  top: -26rpx;
+  width: 4rpx;
+  height: 44rpx;
+  border-radius: 2rpx;
+  background: #8d6e63;
+  transform-origin: 50% 100%;
+}
+
+.cord-l {
+  left: 18%;
+  transform: rotate(24deg);
+}
+
+.cord-r {
+  right: 18%;
+  transform: rotate(-24deg);
+}
+
+.wall-frame {
+  background: linear-gradient(145deg, #7b5a4f 0%, #5d4037 100%);
+  padding: 14rpx;
+  border-radius: 8rpx;
+  box-shadow: 0 22rpx 44rpx rgba(62, 39, 35, 0.35);
+}
+
+.frame-mat {
+  background: #ffffff;
+  padding: 24rpx;
+}
+
+.size-8 .frame-mat .scene-photo {
+  width: 240rpx;
+  height: 300rpx;
+}
+
+.size-12 .wall-frame {
+  padding: 18rpx;
+}
+
+.size-12 .frame-mat {
+  padding: 30rpx;
+}
+
+.size-12 .frame-mat .scene-photo {
+  width: 320rpx;
+  height: 384rpx;
+}
+
+.sofa {
+  position: absolute;
+  bottom: 34rpx;
+  left: 50%;
+  width: 540rpx;
+  height: 200rpx;
+  transform: translateX(-50%);
+}
+
+.sofa-back {
+  position: absolute;
+  bottom: 56rpx;
+  left: 70rpx;
+  right: 70rpx;
+  height: 118rpx;
+  border-radius: 44rpx 44rpx 14rpx 14rpx;
+  background: #c5cad2;
+}
+
+.sofa-cushion {
+  position: absolute;
+  bottom: 112rpx;
+  width: 160rpx;
+  height: 62rpx;
+  border-radius: 24rpx;
+  background: #ced3da;
+}
+
+.cushion-l {
+  left: 96rpx;
+}
+
+.cushion-r {
+  right: 96rpx;
+}
+
+.sofa-arm {
+  position: absolute;
+  bottom: 20rpx;
+  width: 62rpx;
+  height: 150rpx;
+  border-radius: 31rpx;
+  background: #adb3bd;
+}
+
+.sofa-arm-l {
+  left: 28rpx;
+}
+
+.sofa-arm-r {
+  right: 28rpx;
+}
+
+.sofa-seat {
+  position: absolute;
+  bottom: 20rpx;
+  left: 56rpx;
+  right: 56rpx;
+  height: 78rpx;
+  border-radius: 16rpx;
+  background: #b8bec7;
+}
+
+.sofa-shadow {
+  position: absolute;
+  bottom: 12rpx;
+  left: 64rpx;
+  right: 64rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  background: rgba(62, 39, 35, 0.12);
+}
+
+/* --- 摆台：桌面 + 水晶摆台 --- */
+.scene-desk {
+  height: 620rpx;
+  background: linear-gradient(180deg, #edf1f6 0%, #e8edf3 52%, #c9a075 52%, #c9a075 100%);
+}
+
+.desk-surface {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 300rpx;
+  background: linear-gradient(180deg, #c9a075 0%, #bd8f66 60%, #b0855c 100%);
+  clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%);
+}
+
+.desk-grain {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 300rpx;
+  clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%);
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 0,
+    rgba(255, 255, 255, 0.06) 3rpx,
+    transparent 3rpx,
+    transparent 64rpx
+  );
+}
+
+.stand-group {
+  position: absolute;
+  bottom: 86rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.stand-base-shadow {
+  position: absolute;
+  bottom: -18rpx;
+  left: 50%;
+  width: 320rpx;
+  height: 40rpx;
+  margin-left: -160rpx;
+  border-radius: 50%;
+  background: rgba(62, 39, 35, 0.28);
+}
+
+.stand-piece {
+  position: relative;
+  transform: perspective(900rpx) rotateX(8deg);
+}
+
+.desk-photo-card {
+  background: #ffffff;
+  padding: 16rpx;
+  box-shadow: 0 16rpx 34rpx rgba(62, 39, 35, 0.3);
+}
+
+.desk-photo {
+  width: 250rpx;
+  height: 350rpx;
+}
+
+.crystal-panel {
+  position: absolute;
+  top: -8rpx;
+  bottom: -14rpx;
+  left: -14rpx;
+  right: -14rpx;
+  border-radius: 4rpx;
+  clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%);
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.1) 42%,
+    rgba(255, 255, 255, 0.06) 70%,
+    rgba(255, 255, 255, 0.32) 100%
+  );
+}
+
+.crystal-shine {
+  position: absolute;
+  top: 6%;
+  left: 16%;
+  width: 20rpx;
+  height: 72%;
+  border-radius: 12rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+  transform: rotate(16deg);
+}
+
+.crystal-base {
+  position: absolute;
+  bottom: -24rpx;
+  left: 50%;
+  width: 230rpx;
+  height: 20rpx;
+  margin-left: -115rpx;
+  border-radius: 12rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.35));
+  box-shadow: 0 8rpx 14rpx rgba(62, 39, 35, 0.2);
+}
+
+/* --- 挂历：照片 + 13 个月历点阵 --- */
+.scene-calendar {
+  height: auto;
+  overflow: visible;
+  padding: 46rpx 0 40rpx;
+  background: linear-gradient(180deg, #e9eef4 0%, #dfe7f0 100%);
+  display: flex;
+  justify-content: center;
+}
+
+.calendar-card {
+  position: relative;
+  width: 500rpx;
+  background: #fffdf9;
+  border-radius: 14rpx;
+  box-shadow: 0 22rpx 46rpx rgba(31, 45, 61, 0.18);
+  transform: rotate(0.6deg);
+  padding-bottom: 8rpx;
+}
+
+.cal-ring {
+  position: absolute;
+  top: -20rpx;
+  width: 34rpx;
+  height: 34rpx;
+  border: 8rpx solid #97a1ac;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.ring-l {
+  left: 110rpx;
+}
+
+.ring-r {
+  right: 110rpx;
+}
+
+.cal-photo {
+  display: block;
+  width: 452rpx;
+  height: 620rpx;
+  margin: 26rpx auto 0;
+  border-radius: 10rpx;
+  background: #eef3f8;
+}
+
+.cal-range {
+  margin: 14rpx 0 4rpx;
+  text-align: center;
+  color: #90a4ae;
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
+}
+
+.cal-months {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10rpx;
+  padding: 8rpx 20rpx 14rpx;
+}
+
+.cal-month {
+  border-top: 2rpx solid #e8e2d6;
+  padding-top: 4rpx;
+}
+
+.cal-month-name {
+  text-align: center;
+  color: #37474f;
+  font-size: 20rpx;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 2rpx;
+}
+
+.cal-week text {
+  text-align: center;
+  color: #90a4ae;
+  font-size: 13rpx;
+  line-height: 1.4;
+}
+
+.cal-dots {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 4rpx;
+  margin-top: 4rpx;
+}
+
+.cal-dot {
+  width: 7rpx;
+  height: 7rpx;
+  border-radius: 50%;
+  background: #546e7a;
+  justify-self: center;
+}
+
+.cal-dot.blank {
+  background: transparent;
+}
+
+/* --- 钱包照：钱包 + 6 张小卡 --- */
+.scene-wallet {
+  height: 620rpx;
+  background: linear-gradient(180deg, #f3f0ea 0%, #e9e3d7 100%);
+}
+
+.wallet {
+  position: absolute;
+  left: 26rpx;
+  bottom: 150rpx;
+  width: 300rpx;
+  height: 236rpx;
+  border-radius: 26rpx;
+  background: linear-gradient(160deg, #6d4c41 0%, #4e342e 100%);
+  box-shadow: 0 18rpx 36rpx rgba(62, 39, 35, 0.35);
+}
+
+.wallet-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 92rpx;
+  border-radius: 26rpx 26rpx 0 0;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.wallet-stitch {
+  position: absolute;
+  top: 12rpx;
+  left: 12rpx;
+  right: 12rpx;
+  bottom: 12rpx;
+  border: 3rpx dashed rgba(255, 255, 255, 0.35);
+  border-radius: 18rpx;
+}
+
+.wallet-clasp {
+  position: absolute;
+  top: 76rpx;
+  left: 50%;
+  width: 56rpx;
+  height: 28rpx;
+  margin-left: -28rpx;
+  border-radius: 10rpx;
+  background: linear-gradient(180deg, #dcc699, #b49a6c);
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.25);
+}
+
+.wallet-cards {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.wallet-card {
+  position: absolute;
+  box-sizing: border-box;
+  width: 150rpx;
+  height: 114rpx;
+  padding: 8rpx;
+  border-radius: 8rpx;
+  background: #ffffff;
+  box-shadow: 0 8rpx 16rpx rgba(31, 45, 61, 0.2);
+  overflow: hidden;
+}
+
+.wcard-0 {
+  right: 170rpx;
+  bottom: 240rpx;
+  transform: rotate(-9deg);
+  z-index: 6;
+}
+
+.wcard-1 {
+  right: 64rpx;
+  bottom: 256rpx;
+  transform: rotate(7deg);
+  z-index: 5;
+}
+
+.wcard-2 {
+  right: 190rpx;
+  bottom: 148rpx;
+  transform: rotate(5deg);
+  z-index: 4;
+}
+
+.wcard-3 {
+  right: 88rpx;
+  bottom: 132rpx;
+  transform: rotate(-6deg);
+  z-index: 3;
+}
+
+.wcard-4 {
+  right: 168rpx;
+  bottom: 58rpx;
+  transform: rotate(9deg);
+  z-index: 2;
+}
+
+.wcard-5 {
+  right: 58rpx;
+  bottom: 44rpx;
+  transform: rotate(-4deg);
+  z-index: 1;
+}
+
+/* --- 亚克力挂件：一对圆形挂件 --- */
+.scene-pendant {
+  height: 640rpx;
+  background: linear-gradient(180deg, #eef3f8 0%, #e0e9f2 100%);
+}
+
+.pendant-group {
+  position: absolute;
+  top: 36rpx;
+  width: 300rpx;
+  height: 540rpx;
+}
+
+.pendant-a {
+  left: 40rpx;
+  transform: rotate(-4deg);
+}
+
+.pendant-b {
+  right: 40rpx;
+  transform: rotate(5deg);
+}
+
+.pendant-rope {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4rpx;
+  height: 148rpx;
+  margin-left: -2rpx;
+  border-radius: 2rpx;
+  background: linear-gradient(180deg, #a1887f, #8d6e63);
+}
+
+.pendant-ring {
+  position: absolute;
+  top: 138rpx;
+  left: 50%;
+  width: 44rpx;
+  height: 44rpx;
+  margin-left: -22rpx;
+  border: 7rpx solid #9aa2ab;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.pendant-body {
+  position: absolute;
+  top: 192rpx;
+  left: 50%;
+  width: 264rpx;
+  height: 264rpx;
+  margin-left: -132rpx;
+  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 34% 26%,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.28) 46%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  box-shadow: 0 18rpx 36rpx rgba(31, 45, 61, 0.16);
+}
+
+.pendant-photo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200rpx;
+  height: 200rpx;
+  margin: -100rpx 0 0 -100rpx;
+  border: 6rpx solid #ffffff;
+  border-radius: 50%;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #eef3f8;
+}
+
+.pendant-shine {
+  position: absolute;
+  top: 30rpx;
+  left: 34rpx;
+  width: 92rpx;
+  height: 92rpx;
+  border: 12rpx solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.9);
+  border-right-color: rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  transform: rotate(28deg);
+}
+
+/* --- 相册：摊开的跨页相册 --- */
+.scene-album {
+  height: 640rpx;
+  background: linear-gradient(180deg, #f6f1e8 0%, #eae2d3 100%);
+}
+
+.album-wrap {
+  position: absolute;
+  top: 84rpx;
+  left: 50%;
+  width: 600rpx;
+  height: 470rpx;
+  transform: translateX(-50%);
+}
+
+.album-depth {
+  position: absolute;
+  border-radius: 12rpx;
+}
+
+.depth-1 {
+  top: 6rpx;
+  left: -4rpx;
+  right: -4rpx;
+  bottom: -6rpx;
+  background: #e6dfcf;
+}
+
+.depth-2 {
+  top: 12rpx;
+  left: -9rpx;
+  right: -9rpx;
+  bottom: -12rpx;
+  background: #d8cfb9;
+}
+
+.album-spread {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 420rpx;
+  display: flex;
+  border-radius: 12rpx;
+  background: #fdfbf6;
+  box-shadow: 0 18rpx 40rpx rgba(31, 45, 61, 0.22);
+  z-index: 2;
+}
+
+.album-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-left {
+  border-radius: 12rpx 3rpx 3rpx 12rpx;
+  box-shadow: inset -22rpx 0 26rpx -14rpx rgba(31, 45, 61, 0.22);
+}
+
+.page-right {
+  border-radius: 3rpx 12rpx 12rpx 3rpx;
+  box-shadow: inset 22rpx 0 26rpx -14rpx rgba(31, 45, 61, 0.22);
+}
+
+.album-photo-card {
+  background: #ffffff;
+  padding: 14rpx 14rpx 12rpx;
+  border-radius: 4rpx;
+  box-shadow: 0 8rpx 18rpx rgba(31, 45, 61, 0.12);
+}
+
+.album-photo {
+  width: 216rpx;
+  height: 250rpx;
+}
+
+.album-caption {
+  width: 150rpx;
+  height: 8rpx;
+  margin: 14rpx auto 0;
+  border-radius: 4rpx;
+  background: #e3ddd0;
+}
+
+.album-spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 10rpx;
+  margin-left: -5rpx;
+  background: linear-gradient(
+    90deg,
+    rgba(31, 45, 61, 0) 0%,
+    rgba(31, 45, 61, 0.38) 50%,
+    rgba(31, 45, 61, 0) 100%
+  );
+  z-index: 3;
+}
+
+.album-bookspine {
+  position: absolute;
+  left: 50%;
+  bottom: 6rpx;
+  width: 210rpx;
+  height: 30rpx;
+  margin-left: -105rpx;
+  border-radius: 8rpx 8rpx 12rpx 12rpx;
+  background: linear-gradient(180deg, #6d4c41, #4e342e);
+  box-shadow: 0 10rpx 18rpx rgba(62, 39, 35, 0.3);
+  z-index: 4;
+}
+
+/* --- 成片切换照片条 --- */
+.photo-strip-wrap {
+  margin-top: 22rpx;
+}
+
+.strip-title {
+  margin-bottom: 14rpx;
+  color: #1f2d3d;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.photo-strip {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.strip-row {
+  display: inline-flex;
+  align-items: center;
+  padding-bottom: 6rpx;
+}
+
+.strip-item {
+  position: relative;
+  box-sizing: border-box;
+  width: 120rpx;
+  height: 120rpx;
+  margin-right: 16rpx;
+  border: 4rpx solid #e3eaf2;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: #eef3f8;
+}
+
+.strip-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.strip-active {
+  border-color: #1976d2;
+  box-shadow: 0 8rpx 18rpx rgba(25, 118, 210, 0.3);
+}
+
+.strip-no {
+  position: absolute;
+  right: 6rpx;
+  bottom: 6rpx;
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 6rpx;
+  border-radius: 15rpx;
+  background: rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 30rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.strip-empty {
+  display: inline-flex;
+  align-items: center;
+  height: 120rpx;
+  color: #90a4ae;
+  font-size: 25rpx;
+}
+
+/* ===== 3. 已选清单 ===== */
+.cart-section {
+  margin-bottom: 24rpx;
+  padding: 28rpx;
+  border-radius: 24rpx;
+  background: #ffffff;
+  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+}
+
+.section-title {
+  margin-bottom: 20rpx;
+  color: #1f2d3d;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.empty-state {
+  color: #607d8b;
+  font-size: 26rpx;
+  line-height: 1.55;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #edf2f7;
+}
+
+.cart-thumb {
+  flex-shrink: 0;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 14rpx;
+  background: #eef3f8;
+}
+
+.cart-info {
+  flex: 1;
+  min-width: 0;
+  margin: 0 12rpx;
+}
+
+.cart-name {
+  color: #1f2d3d;
+  font-size: 27rpx;
+  font-weight: 600;
+}
+
+.cart-price {
+  margin-top: 6rpx;
+  color: #78909c;
+  font-size: 24rpx;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+}
+
+.step-btn {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 12rpx;
+  background: #eef3f8;
+  color: #1976d2;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 52rpx;
+  text-align: center;
+}
+
+.step-num {
+  min-width: 56rpx;
+  color: #1f2d3d;
+  font-size: 28rpx;
+  font-weight: 700;
+  text-align: center;
+}
+
+.cart-remove {
+  margin-left: 14rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: #fdecea;
+  color: #d32f2f;
+  font-size: 30rpx;
+  line-height: 44rpx;
+  text-align: center;
+}
+
+.cart-total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  padding-top: 20rpx;
+  color: #37474f;
+  font-size: 27rpx;
+}
+
+.cart-total-num {
+  margin-left: 10rpx;
+  color: #1976d2;
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+/* ===== 4. 提交 ===== */
+.primary-btn {
+  margin-top: 24rpx;
+  border-radius: 999rpx;
+  background: #1976d2;
+  color: #ffffff;
+}
+
+.submit-btn {
+  margin-top: 28rpx;
+}
+
+.submit-hint {
+  margin-top: 14rpx;
+  color: #90a4ae;
+  font-size: 23rpx;
+  text-align: center;
+}

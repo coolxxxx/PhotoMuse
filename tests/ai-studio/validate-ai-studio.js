@@ -24,7 +24,17 @@ const requiredFunctions = [
   'getAIStudioRuntimeConfig',
   'adminUpsertAIStudioRuntimeConfig',
   'callAIStudioCustomerService',
-  'dispatchAIStudioJob'
+  'dispatchAIStudioJob',
+  // 多主题套系 / 周边与样张扩展（与其他并行改动共用本校验清单）
+  'listAIStudioSamples',
+  'adminUpsertAIStudioSamples',
+  'listAIStudioMerchandise',
+  'selectAIStudioMerch',
+  'adminUpdateMerchProduction',
+  'exportAIStudioPrintFile',
+  'analyzeAIStudioPhoto',
+  'getAIStudioBusinessConfig',
+  'adminUpsertAIStudioBusinessConfig'
 ];
 
 function read(relativePath) {
@@ -50,6 +60,10 @@ function main() {
   assert(config.PRODUCT_EXAMPLES.resume_photo_29_9.beforeImage, '简历形象照应配置生活照示意图');
   assert(config.PRODUCT_EXAMPLES.resume_photo_29_9.afterImage, '简历形象照应配置职业形象照示意图');
   assert(config.AUTHORIZATION_TEXT.length >= 5, '授权确认文本应覆盖本人/成年/制作用途/展示限制/违规用途');
+  assert(config.PORTRAIT_PRICING && config.PORTRAIT_PRICING.maxThemes >= 1, '写真套图应提供多主题阶梯定价配置 PORTRAIT_PRICING');
+  assert(config.STATUS_LABELS.merch_pending, '状态字典应包含周边待制作状态');
+  assert(config.STATUS_LABELS.in_production, '状态字典应包含周边制作中状态');
+  assert(config.STATUS_LABELS.completed, '状态字典应包含已完结状态');
 
   const appJson = JSON.parse(read('app.json'));
   requiredPages.forEach(page => {
@@ -68,6 +82,8 @@ function main() {
   assert(createOrder.includes('queryPasswordHash'), 'orders should store query password as hash only');
   assert(createOrder.includes('portrait_suite_69'), '下单白名单应包含 69.9 AI 写真套图');
   assert(createOrder.includes('theme_id'), '写真套图订单应记录所选写真主题');
+  assert(createOrder.includes('themes'), 'createAIStudioOrder 应支持多主题 themes 入参');
+  assert(createOrder.includes('baseThemePrice'), 'createAIStudioOrder 应按 baseThemePrice 服务端阶梯计价');
 
   const adminGridPreview = read('cloudfunctions/adminUploadAIStudioGridPreview/index.js');
   assert(exists('cloudfunctions/adminUploadAIStudioGridPreview/package.json'), 'adminUploadAIStudioGridPreview package.json missing');
@@ -78,6 +94,7 @@ function main() {
   assert(exists('cloudfunctions/selectAIStudioPortraitCells/package.json'), 'selectAIStudioPortraitCells package.json missing');
   assert(selectCells.includes('selected_cells'), '用户选片应写入选中的分镜格子');
   assert(selectCells.includes('queryPasswordHash'), '免登录选片应校验查询密码哈希');
+  assert(selectCells.includes('themeId'), '用户选片应支持按主题（themeId）选片');
 
   const queryOrder = read('cloudfunctions/queryAIStudioOrder/index.js');
   assert(queryOrder.includes('queryPasswordHash'), 'credential query should verify password hash');

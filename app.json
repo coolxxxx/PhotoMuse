@@ -3,7 +3,8 @@
     "pages/aiStudio/index",
     "pages/aiStudio/detail/detail",
     "pages/aiStudio/adminLogin/adminLogin",
-    "pages/aiStudio/admin/admin"
+    "pages/aiStudio/admin/admin",
+    "pages/aiStudio/showcase/showcase"
   ],
   "window": {
     "backgroundTextStyle": "light",

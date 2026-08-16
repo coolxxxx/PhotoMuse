@@ -78,6 +78,90 @@ const PORTRAIT_THEMES = [
   { themeId: 'family', name: '亲子合照' }
 ];
 
+// 多主题阶梯定价服务端默认值（ai_studio_business_config 集合 configId='default' 可覆盖，
+// 与 createAIStudioOrder 的 DEFAULT_PORTRAIT_PRICING 同构，不 cross-require）
+const DEFAULT_BUSINESS_CONFIG = {
+  baseThemePrice: 69.9,
+  extraThemePrice: 39.9,
+  maxThemes: 3,
+  photosPerTheme: 5
+};
+
+// 周边商品内置种子（ai_studio_merchandise 集合为空/读取异常时兜底，
+// 与 listAIStudioMerchandise / selectAIStudioMerch 的 DEFAULT_MERCH 同构）
+const DEFAULT_MERCH = [
+  {
+    merchId: 'wall_8',
+    name: '挂墙主视觉·8寸实木框',
+    category: 'wall',
+    desc: '进口实木框搭配高清微喷，进门第一眼就是写真馆质感',
+    price: 49,
+    imageRatio: '4:5',
+    printSpec: { widthMM: 203, heightMM: 254, dpi: 300, bleedMM: 3 },
+    sortOrder: 1
+  },
+  {
+    merchId: 'wall_12',
+    name: '挂墙主视觉·12寸大画幅',
+    category: 'wall',
+    desc: '12 寸大画幅细节数倍放大，撑起整面墙的高光主视觉',
+    price: 79,
+    imageRatio: '5:6',
+    printSpec: { widthMM: 254, heightMM: 305, dpi: 300, bleedMM: 3 },
+    sortOrder: 2
+  },
+  {
+    merchId: 'desk_5',
+    name: '水晶摆台·5寸',
+    category: 'desk',
+    desc: '高透水晶面板摆台，随手一放就是工位治愈角',
+    price: 29,
+    imageRatio: '5:7',
+    printSpec: { widthMM: 127, heightMM: 178, dpi: 300, bleedMM: 3 },
+    sortOrder: 3
+  },
+  {
+    merchId: 'calendar',
+    name: '定制挂历·13页',
+    category: 'calendar',
+    desc: '13 页月历编排，一年十二个月天天有你的高光',
+    price: 39,
+    imageRatio: '1:1.41',
+    printSpec: { widthMM: 210, heightMM: 297, dpi: 300, bleedMM: 3 },
+    sortOrder: 4
+  },
+  {
+    merchId: 'wallet',
+    name: '钱包照套装·6张',
+    category: 'wallet',
+    desc: '6 张随身卡位尺寸，把最喜欢的瞬间放进口袋',
+    price: 9.9,
+    imageRatio: '4:3',
+    printSpec: { widthMM: 89, heightMM: 64, dpi: 300, bleedMM: 3 },
+    sortOrder: 5
+  },
+  {
+    merchId: 'pendant',
+    name: '亚克力挂件·圆形5cm×2个',
+    category: 'pendant',
+    desc: '圆形亚克力挂件一对，挂包挂钥匙都好看',
+    price: 19,
+    imageRatio: '1:1',
+    printSpec: { widthMM: 50, heightMM: 50, dpi: 300, bleedMM: 3 },
+    sortOrder: 6
+  },
+  {
+    merchId: 'album',
+    name: '精装相册·10P 方形',
+    category: 'album',
+    desc: '方形精装 10P 翻页即影集，自留送礼两相宜',
+    price: 69,
+    imageRatio: '1:1',
+    printSpec: { widthMM: 254, heightMM: 254, dpi: 300, bleedMM: 3 },
+    sortOrder: 7
+  }
+];
+
 const AUTH_VERSION = 'ai-studio-auth-v1';
 const MAX_CUSTOMER_PHOTOS = 3;
 const MIN_CELL_INDEX = 1;
@@ -129,7 +213,10 @@ const DEFAULT_CONFIG = {
   ]
 };
 
-const SUPPORTED_ACTIONS = ['catalog', 'queryOrder', 'paymentQR', 'runtimeConfig', 'createOrder', 'registerPhoto', 'getOrder', 'selectCells'];
+const SUPPORTED_ACTIONS = [
+  'catalog', 'queryOrder', 'paymentQR', 'runtimeConfig', 'createOrder', 'registerPhoto', 'getOrder', 'selectCells',
+  'businessConfig', 'samples', 'merchandise', 'analyzePhoto', 'selectMerch'
+];
 
 exports.main = async (event = {}) => {
   try {
@@ -170,6 +257,16 @@ exports.main = async (event = {}) => {
         return await handleGetOrder(payload);
       case 'selectCells':
         return await handleSelectCells(payload);
+      case 'businessConfig':
+        return await handleBusinessConfig();
+      case 'samples':
+        return await handleSamples();
+      case 'merchandise':
+        return await handleMerchandise();
+      case 'analyzePhoto':
+        return await handleAnalyzePhoto(payload, apiKey);
+      case 'selectMerch':
+        return await handleSelectMerch(payload);
       default:
         return fail('VALIDATION_ERROR', '不支持的 action');
     }
@@ -273,14 +370,31 @@ async function handleCreateOrder(payload) {
   const isPortrait = Boolean(product && product.productType === 'portrait');
   const styleInput = cleanText(payload.styleId, 20);
   const style = ORDER_STYLES.find(item => item.styleId === styleInput);
-  let theme = null;
+
+  let pricing = null;
+  let portraitThemes = [];
   if (isPortrait) {
-    theme = PORTRAIT_THEMES.find(item => item.themeId === cleanText(payload.themeId, 40));
+    pricing = await getBusinessPricing();
+    const themeValidationError = fail('VALIDATION_ERROR', `请选择 1-${pricing.maxThemes} 个有效写真主题`);
+    // themes（themeId 数组）优先；兼容旧调用只传单个 themeId
+    const rawThemeIds = Array.isArray(payload.themes) && payload.themes.length > 0
+      ? payload.themes
+      : (cleanText(payload.themeId, 40) ? [payload.themeId] : []);
+    const uniqueThemeIds = Array.from(new Set(rawThemeIds.map(item => cleanText(item, 40)).filter(Boolean)));
+    if (uniqueThemeIds.length < 1 || uniqueThemeIds.length > pricing.maxThemes) {
+      return themeValidationError;
+    }
+    const resolvedThemes = [];
+    for (const themeId of uniqueThemeIds) {
+      const hit = PORTRAIT_THEMES.find(item => item.themeId === themeId);
+      if (!hit) return themeValidationError;
+      resolvedThemes.push({ themeId: hit.themeId, themeName: hit.name });
+    }
+    portraitThemes = resolvedThemes;
   }
 
   if (!product) return fail('VALIDATION_ERROR', '请选择有效套餐');
   if (!style && (!isPortrait || styleInput)) return fail('VALIDATION_ERROR', '请选择有效风格');
-  if (isPortrait && !theme) return fail('VALIDATION_ERROR', '请选择有效的写真主题');
 
   const contactPhone = normalizePhone(payload.contactPhone);
   const queryPassword = cleanText(payload.queryPassword, 32);
@@ -292,6 +406,11 @@ async function handleCreateOrder(payload) {
     return fail('AUTHORIZATION_REQUIRED', '请先确认本人/成年人授权');
   }
 
+  // 服务端阶梯计价：首主题按 baseThemePrice，后续主题每个加 extraThemePrice（仅写真订单，standard 流程不读取定价集合）
+  const themeCount = portraitThemes.length;
+  const portraitPrice = pricing ? round1(pricing.baseThemePrice + (themeCount - 1) * pricing.extraThemePrice) : 0;
+  const portraitDeliveryCount = pricing ? themeCount * pricing.photosPerTheme : 0;
+
   const webToken = crypto.randomBytes(24).toString('hex');
   const orderId = createOrderId();
   const now = Date.now();
@@ -300,12 +419,12 @@ async function handleCreateOrder(payload) {
     _openid: '',
     productId: product.productId,
     productName: product.name,
-    price: product.price,
-    deliveryCount: product.deliveryCount,
+    price: isPortrait ? portraitPrice : product.price,
+    deliveryCount: isPortrait ? portraitDeliveryCount : product.deliveryCount,
     productionLine: product.productionLine,
     product_type: product.productType,
-    theme_id: isPortrait ? theme.themeId : '',
-    theme_name: isPortrait ? theme.name : '',
+    theme_id: isPortrait ? portraitThemes[0].themeId : '',
+    theme_name: isPortrait ? portraitThemes[0].themeName : '',
     styleId: style ? style.styleId : '',
     styleName: style ? style.name : '',
     usage: cleanText(payload.usage, 80),
@@ -314,7 +433,6 @@ async function handleCreateOrder(payload) {
     spec: cleanText(payload.spec, 40),
     customerNote: cleanText(payload.customerNote, 300),
     scene_desc: cleanText(payload.sceneDesc, 300),
-    selected_cells: [],
     contactPhone,
     queryPasswordHash: hashQueryPassword(queryPassword),
     web_token_hash: hashWebToken(webToken),
@@ -338,6 +456,18 @@ async function handleCreateOrder(payload) {
     createdAt: db.serverDate(),
     updatedAt: db.serverDate()
   };
+
+  if (isPortrait) {
+    // 多主题套系：选片内嵌到每个主题；theme_id/theme_name 保留第一个主题以兼容旧管理端展示
+    order.themes = portraitThemes.map(item => ({
+      themeId: item.themeId,
+      themeName: item.themeName,
+      selectedCells: []
+    }));
+    order.theme_count = themeCount;
+  } else {
+    order.selected_cells = [];
+  }
 
   await db.collection('ai_studio_orders').add({ data: order });
 
@@ -434,37 +564,109 @@ async function handleSelectCells(payload) {
   const cells = normalizeCells(payload.cells);
   if (!cells) return fail('VALIDATION_ERROR', '请选择 1-5 个分镜');
 
-  const order = await findOwnedOrder(payload, orderId);
-  if (!order) return fail('NOT_FOUND', '订单不存在或查询信息不匹配');
-
-  if (order.product_type !== 'portrait') {
-    return fail('VALIDATION_ERROR', '该订单不是写真套图订单');
-  }
-  if (order.order_status !== 'grid_preview') {
-    return fail('INVALID_STATUS', '当前状态不能选片');
-  }
-  const deliveryCount = normalizeNumber(order.deliveryCount) || 5;
-  if (cells.length < 1 || cells.length > deliveryCount) {
-    return fail('VALIDATION_ERROR', '请选择 1-5 个分镜');
-  }
-
-  await db.collection('ai_studio_orders').where({ orderId }).update({
+  // 代理到 selectAIStudioPortraitCells，保持分主题选片语义（themeId、全部主题选完才 cell_selected）
+  const callResult = await cloud.callFunction({
+    name: 'selectAIStudioPortraitCells',
     data: {
-      selected_cells: cells,
-      order_status: 'cell_selected',
-      cell_selected_at: db.serverDate(),
-      updatedAt: db.serverDate()
-    }
-  });
-
-  return {
-    success: true,
-    order: {
       orderId,
-      order_status: 'cell_selected',
-      selected_cells: cells
+      cells,
+      themeId: cleanText(payload.themeId, 40),
+      webToken: cleanText(payload.webToken, 200),
+      contactPhone: cleanText(payload.contactPhone, 20),
+      queryPassword: cleanText(payload.queryPassword, 32)
     }
-  };
+  }).catch(() => null);
+
+  if (!callResult || !callResult.result) {
+    return fail('CELLS_FAILED', '选片服务不可用，请稍后重试');
+  }
+  return callResult.result;
+}
+
+// ---------------------------------------------------------------------------
+// 开放能力扩展 action 处理器（目录读取 + 内部函数代理透传）
+// ---------------------------------------------------------------------------
+
+async function handleBusinessConfig() {
+  // 定价单例：ai_studio_business_config configId='default'，读不到/异常一律回退默认值
+  const config = await getBusinessPricing();
+  return { success: true, config };
+}
+
+async function handleSamples() {
+  try {
+    const result = await db.collection('ai_studio_samples')
+      .where({ enabled: true })
+      .orderBy('sortOrder', 'asc')
+      .limit(50)
+      .get();
+    const rows = result.data || [];
+    return {
+      success: true,
+      data: rows.map(doc => ({
+        sampleId: doc._id,
+        themeId: cleanText(doc.themeId, 32),
+        fileID: cleanText(doc.fileID, 300),
+        caption: cleanText(doc.caption, 100),
+        sortOrder: normalizeNumber(doc.sortOrder)
+      }))
+    };
+  } catch (error) {
+    console.error('photomuseOpenApi samples failed:', error);
+    return { success: true, data: [] };
+  }
+}
+
+async function handleMerchandise() {
+  try {
+    const result = await db.collection('ai_studio_merchandise')
+      .where({ enabled: true })
+      .orderBy('sortOrder', 'asc')
+      .limit(50)
+      .get();
+    const rows = (result.data || []).map(toPublicMerch);
+    if (rows.length < 1) return { success: true, data: DEFAULT_MERCH };
+    rows.sort((a, b) => a.sortOrder - b.sortOrder);
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error('photomuseOpenApi merchandise failed:', error);
+    return { success: true, data: DEFAULT_MERCH };
+  }
+}
+
+async function handleAnalyzePhoto(payload, apiKey) {
+  // 内部代理 analyzeAIStudioPhoto（复用其 apiKey 鉴权通道），业务结果原样透传
+  const fileID = cleanText(payload.fileID || payload.fileId, 300);
+  let callResult;
+  try {
+    callResult = await cloud.callFunction({
+      name: 'analyzeAIStudioPhoto',
+      data: { fileID, apiKey }
+    });
+  } catch (error) {
+    console.error('photomuseOpenApi analyzePhoto failed:', error);
+    return fail('ANALYSIS_FAILED', '照片分析服务不可用');
+  }
+  const result = callResult && callResult.result;
+  if (result && typeof result === 'object') return result;
+  return fail('ANALYSIS_FAILED', '照片分析服务不可用');
+}
+
+async function handleSelectMerch(payload) {
+  // 内部代理 selectAIStudioMerch（webToken/三元组通道由其自行校验），payload 原样透传
+  let callResult;
+  try {
+    callResult = await cloud.callFunction({
+      name: 'selectAIStudioMerch',
+      data: { ...payload }
+    });
+  } catch (error) {
+    console.error('photomuseOpenApi selectMerch failed:', error);
+    return fail('MERCH_FAILED', (error && error.message) || '周边选择失败');
+  }
+  const result = callResult && callResult.result;
+  if (result && typeof result === 'object') return result;
+  return fail('MERCH_FAILED', '周边选择失败');
 }
 
 // ---------------------------------------------------------------------------
@@ -512,6 +714,47 @@ async function readCollection(name) {
   return result.data || [];
 }
 
+async function getBusinessPricing() {
+  // 与 createAIStudioOrder.getBusinessPricing 同构：单例读取 + 字段校验 + 默认值兜底
+  const fallback = { ...DEFAULT_BUSINESS_CONFIG };
+  try {
+    const result = await db.collection('ai_studio_business_config')
+      .where({ configId: 'default' })
+      .limit(1)
+      .get();
+    const record = result.data && result.data[0];
+    if (!record) return fallback;
+    const baseThemePrice = pickPrice(record.baseThemePrice, fallback.baseThemePrice);
+    const extraThemePrice = pickPrice(record.extraThemePrice, fallback.extraThemePrice);
+    const maxThemes = pickInteger(record.maxThemes, 1, 5, fallback.maxThemes);
+    const photosPerTheme = pickInteger(record.photosPerTheme, 1, 15, fallback.photosPerTheme);
+    return { baseThemePrice, extraThemePrice, maxThemes, photosPerTheme };
+  } catch (error) {
+    console.error('getBusinessPricing failed, fallback to defaults:', error);
+    return fallback;
+  }
+}
+
+function toPublicMerch(doc) {
+  // 与 listAIStudioMerchandise.toPublicMerch 同构的公开快照
+  const spec = doc.printSpec || {};
+  return {
+    merchId: cleanText(doc.merchId || doc._id, 64),
+    name: cleanText(doc.name, 60),
+    category: cleanText(doc.category, 32),
+    desc: cleanText(doc.desc, 120),
+    price: normalizeNumber(doc.price),
+    imageRatio: cleanText(doc.imageRatio, 16),
+    printSpec: {
+      widthMM: normalizeNumber(spec.widthMM),
+      heightMM: normalizeNumber(spec.heightMM),
+      dpi: normalizeNumber(spec.dpi) || 300,
+      bleedMM: normalizeNumber(spec.bleedMM) || 3
+    },
+    sortOrder: normalizeNumber(doc.sortOrder)
+  };
+}
+
 function sanitizeConfig(config) {
   return {
     modelSettings: (config.modelSettings || []).map(stripPrivateFields),
@@ -538,7 +781,7 @@ function sanitizeOrder(order) {
 }
 
 function toPublicFile(file) {
-  return {
+  const pub = {
     fileId: file._id,
     fileType: file.fileType,
     fileID: file.fileID,
@@ -547,6 +790,8 @@ function toPublicFile(file) {
     status: file.status,
     createdAt: file.createdAt
   };
+  if (file.themeId) pub.themeId = file.themeId;
+  return pub;
 }
 
 function cleanText(value, maxLength) {
@@ -617,6 +862,22 @@ function normalizeCells(value) {
 function normalizeNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function pickPrice(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1 || parsed > 99999) return fallback;
+  return round1(parsed);
+}
+
+function pickInteger(value, min, max, fallback) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) return fallback;
+  return parsed;
+}
+
+function round1(value) {
+  return Math.round(value * 10) / 10;
 }
 
 function fail(code, message) {

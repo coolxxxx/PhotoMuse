@@ -7,21 +7,24 @@
    │
    ├── CloudBase Web SDK（匿名登录）
    │      ├── callFunction → photomuseOpenApi（apiKey 信封：catalog / createOrder /
-   │      │     registerPhoto / getOrder / selectCells / queryOrder / paymentQR）
-   │      └── uploadFile → 云存储 ai-studio/{orderId}/web-customer/、customer-retake/
-   │      └── getTempFileURL → 收款码 / 预览图 / 成片临时链接
+   │      │     registerPhoto / getOrder / selectCells / queryOrder / paymentQR /
+   │      │     businessConfig / samples / merchandise / analyzePhoto / selectMerch）
+   │      └── uploadFile → 云存储 ai-studio/{orderId}/web-customer/、customer-retake/、
+   │      │     ai-studio/analysis/web-{ts}.{ext}（AI 主题推荐分析用图，不登记订单）
+   │      └── getTempFileURL → 收款码 / 预览图 / 样张 / 成片临时链接
 ```
 
 **站点页面**
 
 | 文件 | 作用 |
 |------|------|
-| `index.html` | 在线下单：套餐 → 主题/风格 → 联系方式 → 上传照片 → 授权确认 → 提交 |
-| `order.html` | 订单详情（需下单浏览器本地凭证 webToken）：状态轮询、收款码、选片、成片、补拍补传 |
-| `query.html` | 免登录查询：订单号 + 手机号 + 查询密码 三元组查询，同样支持选片 |
+| `index.html` | 在线下单：套餐 → 多主题选择（样张横滑 + 阶梯价格条 + AI 帮我选主题）→ 联系方式 → 上传照片 → 授权确认 → 提交 |
+| `order.html` | 订单详情（需下单浏览器本地凭证 webToken）：状态轮询、收款码、分主题选片、成片、周边好物、补拍补传 |
+| `query.html` | 免登录查询：订单号 + 手机号 + 查询密码 三元组查询，同样支持分主题选片与周边清单展示 |
+| `showcase.html` | 周边场景模拟：7 品类切换、6 款纯 CSS 实物场景（挂墙/摆台/挂历/钱包照/亚克力挂件/相册）、照片切换条、已选清单与提交（selectMerch） |
 | `js/config.js` | 站点配置（环境 ID 与 API Key），部署时修改 |
 | `js/api.js` | SDK 初始化 / 匿名登录 / callFunction / 上传 / 临时链接 / toast / loading |
-| `js/order-view.js` | 订单视图渲染，order.html 与 query.html 复用 |
+| `js/order-view.js` | 订单视图渲染，order.html 与 query.html 复用（含分主题选片与周边好物区块） |
 | `css/style.css` | 全站样式（CSS 变量令牌） |
 | `nginx.conf` | nginx server 块示例 |
 
@@ -148,10 +151,15 @@ CloudBase Web SDK `callFunction` / `uploadFile` 需要登录态，站点使用�
 ## 七、部署自检清单
 
 - [ ] 打开 `https://photomuse.example.com`，无「未配置 API Key」横幅，首页能加载出 3 个套餐卡与 5 个写真主题；
-- [ ] 选套餐、填手机号 / 查询密码、勾选 3 项授权、上传 1 张 jpg，提交后自动跳转订单页；
+- [ ] 写真套餐：主题可多选（默认最多 3 个，超限 toast 拦截），价格条实时显示「基础价 + 加价明细 + 合计 + 成片张数」；
+- [ ] 主题卡下方样张横滑可浏览（需商家已在管理端上传样张），点击样张新标签页打开大图；无样张主题显示「样张制作中」；
+- [ ] 「AI 帮我选主题」：选一张正脸照 → 出现评分面板（summary + 评分条 + top2 推荐徽章）→「采用推荐」一键勾选；未配置视觉模型时展示 CONFIG_MISSING 的 message 提示；
+- [ ] 选套餐、填手机号 / 查询密码、勾选 3 项授权、上传 1 张 jpg，提交后自动跳转订单页（写真订单以 `themes` 数组提交，金额与服务端阶梯计价一致）；
 - [ ] 订单页能看到订单号与状态徽章；未支付时展示收款码图与备注说明（需商家后台已配置收款码）；
 - [ ] 换浏览器 / 无痕窗口打开 `query.html`，用「订单号 + 手机号 + 查询密码」能查到同一订单；
-- [ ] 商家上传网格预览后，订单页出现 3×5 宫格选择器，选择超过 `deliveryCount`（默认 5）张时出现 toast 拦截，确认选片成功；
+- [ ] 商家上传各主题网格预览后，订单页按主题分卡展示「预览图 + 15 宫格 + 已选徽章」，`selectCells` 携带 themeId（webToken 或三元组鉴权），每主题超限 toast 拦截；旧单主题订单仍渲染单主题视图；
+- [ ] 选片完成（cell_selected）后订单页出现「周边好物」商品网格，点「去搭配」进入 `showcase.html` 场景模拟（7 品类 + 6 款纯 CSS 场景 + 照片切换条 + 清单合计）；
+- [ ] 提交周边选择后订单状态变为「周边待制作」，展示已选清单 + merch_total + 制作/发货进度（含 trackingNo）；徽章映射含 merch_pending / in_production / completed；
 - [ ] 交付后成片九宫格可显示，点击能在新标签页打开原图临时链接；
 - [ ] 故意上传 >10MB 文件、第 4 张照片、非图片文件，前端均有明确提示且不发起上传。
 
@@ -165,6 +173,10 @@ CloudBase Web SDK `callFunction` / `uploadFile` 需要登录态，站点使用�
 | 提示「CloudBase SDK 未加载」 | `imgcache.qq.com` 的 SDK 脚本加载失败（网络原因），可改用 `https://unpkg.com/@cloudbase/js-sdk@latest/dist/cloudbase.full.js` 等镜像源 |
 | 提示「无效的 API Key」(FORBIDDEN) | `js/config.js` 的 `OPEN_API_KEY` 与云函数环境变量 `AI_STUDIO_OPEN_API_KEYS` 不一致，或环境变量未保存 / 云函数未重启 |
 | callFunction 报匿名登录相关错误 | 控制台未启用「匿名登录」（第六节） |
+| 「AI 帮我选主题」提示视觉分析模型未配置（CONFIG_MISSING） | `analyzeAIStudioPhoto` 需要 `ai_studio_model_settings` 中配置 `photo_analysis` 场景（openai_compatible + 支持视觉的模型）；未配置时页面直接展示后端 message，可先人工选主题 |
+| 主题卡一直显示「样张制作中」 | 商家尚未在管理端上传样张（`adminUpsertAIStudioSamples`），或样张 fileID 临时链接换取失败——刷新重试 |
+| 多主题选片提交后仍停留在「网格预览待选片」 | 正常设计：全部主题都完成选片订单才进入 cell_selected；每个主题确认后会提示「本主题已选，还有主题待选」 |
+| showcase 提交周边返回「周边成片文件不属于该订单」 | 搭配用成片必须取该订单的 delivery / generated 文件；请从订单页「去搭配」重新进入，勿手工拼 URL |
 | 换设备打不开 order.html，提示没有访问凭证 | 正常设计：`webToken` 只在下单时返回一次，保存在下单浏览器 localStorage；请用 query.html 三元组查询 |
 | 忘记查询密码 | 三元组即订单凭证，无法自助找回，请联系商家核实身份后处理 |
 | 订单页不显示收款码 | 商家后台尚未配置收款码（`paymentQR` 返回 `config: null` 时卡片自动隐藏），先在小程序管理端上传收款码 |
