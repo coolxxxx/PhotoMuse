@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>订单查询 · 光影集 PhotoMuse</title>
+  <meta name="description" content="凭订单号、手机号与查询密码查询光影集 PhotoMuse 订单，支持选片与成片查看。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
+
+  <header class="topbar">
+    <div class="brand-name">光影集 PhotoMuse</div>
+    <div class="brand-slogan">不用出门的影楼 · 上传一张照片，收获整套专业形象</div>
+  </header>
+  <nav class="nav">
+    <a href="index.html">在线下单</a>
+    <a href="query.html" class="active">订单查询</a>
+  </nav>
+
+  <main class="page">
+    <noscript><div class="warn-box">本站需要启用 JavaScript 才能查询订单。</div></noscript>
+
+    <section class="card">
+      <div class="card-head"><h2>订单查询（免登录）</h2></div>
+      <form id="query-form">
+        <label class="field">
+          <span class="field-label">订单号</span>
+          <input id="q-order-id" type="text" maxlength="80" placeholder="下单成功后返回的订单号" autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field-label">手机号</span>
+          <input id="q-phone" type="tel" maxlength="11" inputmode="numeric" placeholder="下单时填写的手机号" autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field-label">查询密码</span>
+          <input id="q-password" type="password" maxlength="32" placeholder="下单时设置的查询密码（至少 6 位）">
+        </label>
+        <button class="btn" id="query-btn" type="submit" data-requires-key>查询订单</button>
+      </form>
+      <p class="muted small">查询凭证仅保存在本浏览器会话中，刷新页面自动回填；三元组即订单凭证，请妥善保管。</p>
+    </section>
+
+    <section class="card hidden" id="query-bar">
+      <div class="toolbar">
+        <span class="muted" id="query-status-label"></span>
+        <button class="btn btn-sm btn-outline" id="q-refresh">刷新订单</button>
+      </div>
+    </section>
+
+    <div id="order-view"></div>
+  </main>
+
+  <footer class="footer">光影集 PhotoMuse · 上传一张照片，生成证件照、形象照与 AI 写真</footer>
+
+  <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.7.0/cloudbase.full.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/order-view.js"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      const SS_KEY = 'pm_query_creds';
+      const $ = (id) => document.getElementById(id);
+      const esc = (v) => String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+      const els = {
+        form: $('query-form'),
+        orderId: $('q-order-id'),
+        phone: $('q-phone'),
+        password: $('q-password'),
+        queryBtn: $('query-btn'),
+        queryBar: $('query-bar'),
+        statusLabel: $('query-status-label'),
+        refresh: $('q-refresh'),
+        view: $('order-view')
+      };
+
+      let creds = null;
+
+      PM.setupConfigBanner();
+
+      const doQuery = async (silent) => {
+        const orderId = els.orderId.value.trim();
+        const phone = els.phone.value.trim();
+        const pwd = els.password.value.trim();
+        if (!orderId) { PM.toast('请输入订单号', 'error'); return; }
+        if (!/^1[3-9]\d{9}$/.test(phone)) { PM.toast('请填写正确的 11 位手机号', 'error'); return; }
+        if (pwd.length < 6 || pwd.length > 32) { PM.toast('查询密码需 6-32 位', 'error'); return; }
+
+        creds = { orderId: orderId, contactPhone: phone, queryPassword: pwd };
+        if (!silent) { PM.showLoading('查询中…'); }
+        try {
+          const res = await PM.callApi('queryOrder', creds);
+          /* 凭证存 sessionStorage，便于刷新自动回填（仅本会话） */
+          sessionStorage.setItem(SS_KEY, JSON.stringify(creds));
+          els.queryBar.classList.remove('hidden');
+          els.statusLabel.textContent = '订单 ' + orderId;
+          await PMOrderView.render(els.view, {
+            order: res.order || {},
+            files: res.files || [],
+            creds: creds,
+            onUpdated: () => doQuery(true)
+          });
+        } catch (e) {
+          if (!silent) {
+            PM.toast(e.message || '查询失败，请重试', 'error');
+          } else {
+            els.view.innerHTML = `<section class="card"><div class="warn-box">刷新失败：${esc(e.message || '请重试')}</div></section>`;
+          }
+        } finally {
+          PM.hideLoading();
+        }
+      };
+
+      els.form.addEventListener('submit', (e) => { e.preventDefault(); doQuery(false); });
+      els.refresh.addEventListener('click', () => { if (creds) { doQuery(false); } });
+
+      /* 刷新页面时恢复凭证并自动查询 */
+      try {
+        const raw = sessionStorage.getItem(SS_KEY);
+        if (raw) {
+          const c = JSON.parse(raw);
+          if (c && c.orderId && c.contactPhone && c.queryPassword) {
+            els.orderId.value = c.orderId;
+            els.phone.value = c.contactPhone;
+            els.password.value = c.queryPassword;
+            doQuery(true);
+          }
+        }
+      } catch (e) { /* 凭证解析失败则忽略 */ }
+    })();
+  </script>
+</body>
+</html>

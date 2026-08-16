@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>在线下单 · 光影集 PhotoMuse</title>
+  <meta name="description" content="光影集 PhotoMuse 在线下单：上传一张照片，生成证件照、职业形象照与多主题 AI 写真。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
+
+  <header class="topbar">
+    <div class="brand-name">光影集 PhotoMuse</div>
+    <div class="brand-slogan">不用出门的影楼 · 上传一张照片，收获整套专业形象</div>
+  </header>
+  <nav class="nav">
+    <a href="index.html" class="active">在线下单</a>
+    <a href="query.html">订单查询</a>
+  </nav>
+
+  <main class="page">
+    <noscript><div class="warn-box">本站需要启用 JavaScript 才能下单。</div></noscript>
+
+    <section class="card">
+      <div class="card-head"><h2>选择套餐</h2></div>
+      <div id="product-list"><div class="img-loading">套餐加载中…</div></div>
+      <div id="catalog-error" class="hidden">
+        <div class="warn-box">套餐加载失败，请检查网络后重试。</div>
+        <button class="btn btn-outline" id="catalog-retry">重新加载</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="portrait-section">
+      <div class="card-head"><h2>选择写真主题（五选一）</h2></div>
+      <div id="theme-list" class="option-list"></div>
+      <label class="field">
+        <span class="field-label">场景描述（选填）</span>
+        <textarea id="scene-desc" rows="3" maxlength="200" placeholder="想要的效果、服装道具、背景氛围…"></textarea>
+      </label>
+    </section>
+
+    <section class="card hidden" id="standard-section">
+      <div class="card-head"><h2>选择照片风格</h2></div>
+      <div id="style-list" class="option-list"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>联系方式与查询密码</h2></div>
+      <label class="field">
+        <span class="field-label">手机号</span>
+        <input id="contact-phone" type="tel" maxlength="11" inputmode="numeric" placeholder="用于订单联系与查询">
+      </label>
+      <label class="field">
+        <span class="field-label">查询密码（6-32 位）</span>
+        <input id="query-password" type="text" maxlength="32" placeholder="与订单号、手机号一起用于查询订单">
+      </label>
+      <p class="muted small">查询密码仅保存哈希，请牢记；凭「订单号 + 手机号 + 查询密码」可在任意设备查询订单与选片。</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>上传照片</h2><span class="badge badge-gray">最多 3 张</span></div>
+      <label class="file-label">点击选择照片
+        <input id="photo-input" type="file" accept="image/*" multiple hidden>
+      </label>
+      <div id="photo-preview" class="photo-preview-list"></div>
+      <p class="muted small">最多 3 张，每张不超过 10MB，支持 jpg / png / webp。请上传清晰正脸照：光线充足、脸部无遮挡、不要多人合照。</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>授权确认</h2></div>
+      <div class="auth-list">
+        <label class="auth-item"><input type="checkbox" id="auth-1"><span>我确认提交的照片为本人照片，或已获得照片中人物的明确授权。</span></label>
+        <label class="auth-item"><input type="checkbox" id="auth-2"><span>我确认照片中人物已满 18 周岁。</span></label>
+        <label class="auth-item"><input type="checkbox" id="auth-3"><span>我授权商家将这些照片用于本次证件照成片制作。</span></label>
+      </div>
+    </section>
+
+    <button class="btn" id="submit-btn" data-requires-key>提交订单</button>
+    <div id="submit-error" class="actions hidden"></div>
+    <p class="muted small center">提交即表示同意以上授权 · 成片一般 1-3 个工作日内交付</p>
+  </main>
+
+  <footer class="footer">光影集 PhotoMuse · 上传一张照片，生成证件照、形象照与 AI 写真</footer>
+
+  <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.7.0/cloudbase.full.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      const MAX_PHOTOS = 3;
+      const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+      const MAX_PHOTO_MB = 10;
+      const OK_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+      const LINE_LABELS = { auto: '自动产线', semi_auto: '半自动产线', manual_ai: '人工精修', manual: '人工产线' };
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (v) => String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const priceText = (n) => {
+        const v = Number(n);
+        return (isFinite(v) && v > 0) ? '¥' + String(Math.round(v * 100) / 100) : '';
+      };
+      const fmtSize = (n) => {
+        const v = Number(n);
+        if (!isFinite(v) || v <= 0) return '';
+        return v < 1024 * 1024 ? Math.max(1, Math.round(v / 1024)) + 'KB' : (v / 1024 / 1024).toFixed(1) + 'MB';
+      };
+      const extOf = (file) => {
+        const m = /\.([A-Za-z0-9]+)$/.exec(file.name || '');
+        let ext = m ? m[1].toLowerCase() : '';
+        if (ext === 'jpeg' || ext === 'jpe') ext = 'jpg';
+        if (!ext) ext = file.type === 'image/png' ? 'png' : (file.type === 'image/webp' ? 'webp' : 'jpg');
+        return ext;
+      };
+
+      const els = {
+        productList: $('product-list'),
+        catalogError: $('catalog-error'),
+        retry: $('catalog-retry'),
+        portraitSection: $('portrait-section'),
+        themeList: $('theme-list'),
+        sceneDesc: $('scene-desc'),
+        standardSection: $('standard-section'),
+        styleList: $('style-list'),
+        phone: $('contact-phone'),
+        password: $('query-password'),
+        photoInput: $('photo-input'),
+        photoPreview: $('photo-preview'),
+        auth1: $('auth-1'),
+        auth2: $('auth-2'),
+        auth3: $('auth-3'),
+        submitBtn: $('submit-btn'),
+        submitError: $('submit-error')
+      };
+
+      const state = {
+        products: [], themes: [], styles: [],
+        productId: '', themeId: '', styleId: '',
+        files: [], urls: []
+      };
+
+      const isPortrait = (p) => !!p && p.productType === 'portrait';
+      const currentProduct = () => state.products.find((p) => p.productId === state.productId) || null;
+
+      /* ---------- 套餐目录 ---------- */
+      const loadCatalog = async () => {
+        els.productList.innerHTML = '<div class="img-loading">套餐加载中…</div>';
+        els.catalogError.classList.add('hidden');
+        try {
+          PM.showLoading('正在加载套餐…');
+          const res = await PM.callApi('catalog');
+          PM.hideLoading();
+          state.products = res.products || [];
+          state.themes = res.themes || [];
+          state.styles = res.styles || [];
+          renderProducts();
+          renderThemes();
+          renderStyles();
+          if (state.products.length) { selectProduct(state.products[0].productId); }
+        } catch (e) {
+          PM.hideLoading();
+          els.productList.innerHTML = '';
+          els.catalogError.classList.remove('hidden');
+          PM.toast(e.message || '套餐加载失败', 'error');
+        }
+      };
+
+      const renderProducts = () => {
+        els.productList.innerHTML = state.products.map((p) => `
+          <label class="product-card">
+            <input type="radio" name="product" value="${esc(p.productId)}" hidden>
+            <div class="product-head">
+              <span class="product-name">${esc(p.name)}</span>
+              <span class="product-price">${esc(priceText(p.price))}</span>
+            </div>
+            <p class="product-desc">${esc(p.description || '')}</p>
+            <div class="tag-row">
+              <span class="tag">交付 ${esc(p.deliveryCount != null ? p.deliveryCount : '-')} 张</span>
+              ${p.productionLine ? `<span class="tag">${esc(LINE_LABELS[p.productionLine] || p.productionLine)}</span>` : ''}
+              ${isPortrait(p) ? '<span class="tag tag-blue">AI 写真</span>' : ''}
+            </div>
+          </label>`).join('');
+        els.productList.querySelectorAll('input[name="product"]').forEach((r) => {
+          r.addEventListener('change', () => selectProduct(r.value));
+        });
+      };
+
+      const selectProduct = (id) => {
+        state.productId = id;
+        els.productList.querySelectorAll('.product-card').forEach((c) => {
+          const input = c.querySelector('input');
+          const on = !!input && input.value === id;
+          c.classList.toggle('selected', on);
+          if (on && input) { input.checked = true; }
+        });
+        const portrait = isPortrait(currentProduct());
+        els.portraitSection.classList.toggle('hidden', !portrait);
+        els.standardSection.classList.toggle('hidden', portrait);
+        if (portrait && !state.themeId && state.themes.length) { selectTheme(state.themes[0].themeId); }
+        if (!portrait && !state.styleId && state.styles.length) { selectStyle(state.styles[0].styleId); }
+      };
+
+      const renderThemes = () => {
+        els.themeList.innerHTML = state.themes.map((t) => `
+          <label class="option-card">
+            <input type="radio" name="theme" value="${esc(t.themeId)}" hidden>
+            <div class="option-name">${esc(t.name)}</div>
+            <p class="option-desc">${esc(t.desc || t.description || '')}</p>
+          </label>`).join('');
+        els.themeList.querySelectorAll('input[name="theme"]').forEach((r) => {
+          r.addEventListener('change', () => selectTheme(r.value));
+        });
+      };
+
+      const selectTheme = (id) => {
+        state.themeId = id;
+        els.themeList.querySelectorAll('.option-card').forEach((c) => {
+          const input = c.querySelector('input');
+          const on = !!input && input.value === id;
+          c.classList.toggle('selected', on);
+          if (on && input) { input.checked = true; }
+        });
+        const theme = state.themes.find((t) => t.themeId === id);
+        els.sceneDesc.placeholder = (theme && theme.sceneHint)
+          ? '参考：' + theme.sceneHint
+          : '想要的效果、服装道具、背景氛围…';
+      };
+
+      const renderStyles = () => {
+        els.styleList.innerHTML = state.styles.map((s) => `
+          <label class="option-card">
+            <input type="radio" name="style" value="${esc(s.styleId)}" hidden>
+            <div class="option-name">${esc(s.name)}</div>
+            ${s.notes ? `<p class="option-desc">${esc(s.notes)}</p>` : ''}
+          </label>`).join('');
+        els.styleList.querySelectorAll('input[name="style"]').forEach((r) => {
+          r.addEventListener('change', () => selectStyle(r.value));
+        });
+      };
+
+      const selectStyle = (id) => {
+        state.styleId = id;
+        els.styleList.querySelectorAll('.option-card').forEach((c) => {
+          const input = c.querySelector('input');
+          const on = !!input && input.value === id;
+          c.classList.toggle('selected', on);
+          if (on && input) { input.checked = true; }
+        });
+      };
+
+      /* ---------- 照片选择（前端校验 + 缩略图预览 + 删除） ---------- */
+      els.photoInput.addEventListener('change', () => {
+        addFiles(Array.from(els.photoInput.files || []));
+        els.photoInput.value = '';
+      });
+
+      const addFiles = (list) => {
+        list.forEach((f) => {
+          if (state.files.length >= MAX_PHOTOS) { PM.toast(`最多上传 ${MAX_PHOTOS} 张照片`, 'error'); return; }
+          const typeOk = OK_MIME_TYPES.indexOf(f.type) >= 0 || /\.(jpe?g|png|webp)$/i.test(f.name || '');
+          if (!typeOk) { PM.toast(`「${f.name}」格式不支持，仅支持 jpg/png/webp`, 'error'); return; }
+          if (f.size > MAX_PHOTO_BYTES) { PM.toast(`「${f.name}」超过 ${MAX_PHOTO_MB}MB 限制`, 'error'); return; }
+          state.files.push(f);
+        });
+        renderPreview();
+      };
+
+      const renderPreview = () => {
+        state.urls.forEach((u) => URL.revokeObjectURL(u));
+        state.urls = [];
+        els.photoPreview.innerHTML = state.files.map((f, i) => {
+          const url = URL.createObjectURL(f);
+          state.urls.push(url);
+          return `
+            <div class="photo-item">
+              <img src="${url}" alt="照片预览">
+              <button type="button" class="photo-remove" data-index="${i}" aria-label="删除">×</button>
+              <div class="photo-meta">${esc(f.name)} · ${fmtSize(f.size)}</div>
+            </div>`;
+        }).join('');
+        els.photoPreview.querySelectorAll('.photo-remove').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            state.files.splice(Number(btn.dataset.index), 1);
+            renderPreview();
+          });
+        });
+      };
+
+      /* ---------- 提交 ---------- */
+      els.retry.addEventListener('click', () => loadCatalog());
+
+      const saveOrderLocal = (order) => {
+        /* webToken 只在下单成功时返回一次，立即落本地（多订单共存） */
+        try {
+          const arr = JSON.parse(localStorage.getItem('pm_orders') || '[]');
+          arr.push({ orderId: order.orderId, webToken: order.webToken, createdAt: Date.now() });
+          localStorage.setItem('pm_orders', JSON.stringify(arr));
+        } catch (e) { /* 本地存储不可用时忽略 */ }
+      };
+
+      const showError = (html) => {
+        els.submitError.innerHTML = html;
+        els.submitError.classList.remove('hidden');
+        els.submitError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+
+      els.submitBtn.addEventListener('click', async () => {
+        if (els.submitBtn.disabled) { return; }
+        const product = currentProduct();
+        if (!product) { PM.toast('请选择套餐', 'error'); return; }
+        const portrait = isPortrait(product);
+        if (portrait && !state.themeId) { PM.toast('请选择写真主题', 'error'); return; }
+        if (!portrait && !state.styleId) { PM.toast('请选择照片风格', 'error'); return; }
+        const phone = els.phone.value.trim();
+        if (!/^1[3-9]\d{9}$/.test(phone)) { PM.toast('请填写正确的 11 位手机号', 'error'); els.phone.focus(); return; }
+        const pwd = els.password.value.trim();
+        if (pwd.length < 6 || pwd.length > 32) { PM.toast('查询密码需 6-32 位', 'error'); els.password.focus(); return; }
+        if (!(els.auth1.checked && els.auth2.checked && els.auth3.checked)) { PM.toast('请勾选全部 3 项授权确认', 'error'); return; }
+        if (!state.files.length) { PM.toast('请至少上传 1 张照片', 'error'); return; }
+
+        const payload = {
+          productId: product.productId,
+          contactPhone: phone,
+          queryPassword: pwd,
+          authorization: {
+            isSelfOrAuthorized: els.auth1.checked,
+            isAdult: els.auth2.checked,
+            agreesProduction: els.auth3.checked
+          }
+        };
+        if (portrait) {
+          payload.themeId = state.themeId;
+          const scene = els.sceneDesc.value.trim();
+          if (scene) { payload.sceneDesc = scene; }
+        } else {
+          payload.styleId = state.styleId;
+        }
+
+        els.submitError.classList.add('hidden');
+        els.submitBtn.disabled = true;
+        els.submitBtn.textContent = '提交中…';
+
+        let order = null;
+        try {
+          PM.showLoading('正在创建订单…');
+          const res = await PM.callApi('createOrder', payload);
+          order = res && res.order;
+          if (!order || !order.orderId) { throw new Error('服务端未返回订单号'); }
+        } catch (e) {
+          PM.hideLoading();
+          els.submitBtn.disabled = false;
+          els.submitBtn.textContent = '提交订单';
+          PM.toast(e.message || '创建订单失败', 'error');
+          return;
+        }
+
+        saveOrderLocal(order);
+
+        for (let i = 0; i < state.files.length; i++) {
+          const f = state.files[i];
+          PM.showLoading(`正在上传照片 ${i + 1}/${state.files.length}…`);
+          try {
+            const cloudPath = `ai-studio/${order.orderId}/web-customer/${Date.now()}-${i}.${extOf(f)}`;
+            const fileID = await PM.uploadFile(cloudPath, f);
+            await PM.callApi('registerPhoto', {
+              orderId: order.orderId,
+              webToken: order.webToken,
+              fileID: fileID,
+              fileName: f.name,
+              size: f.size,
+              mimeType: f.type || ''
+            });
+          } catch (e) {
+            PM.hideLoading();
+            els.submitBtn.textContent = '订单已创建';
+            showError(`
+              <div class="warn-box">照片「${esc(f.name)}」上传失败：${esc(e.message || '网络异常')}。<br>
+              订单已创建，可稍后在查询页补传（订单号：<b>${esc(order.orderId)}</b>）。</div>
+              <a class="btn" href="order.html?orderId=${encodeURIComponent(order.orderId)}">查看订单并补传</a>
+              <a class="btn btn-outline" href="query.html">去订单查询</a>`);
+            return;
+          }
+        }
+
+        PM.hideLoading();
+        location.href = 'order.html?orderId=' + encodeURIComponent(order.orderId);
+      });
+
+      /* ---------- 初始化 ---------- */
+      PM.setupConfigBanner();
+      if (PM.isConfigured()) {
+        loadCatalog();
+      } else {
+        els.productList.innerHTML = '<div class="warn-box">站点未配置 API Key，请联系管理员。</div>';
+      }
+    })();
+  </script>
+</body>
+</html>

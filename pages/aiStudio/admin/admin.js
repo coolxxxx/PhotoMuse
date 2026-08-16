@@ -19,7 +19,18 @@ Page({
     selectedStatus: 'photo_review',
     orders: [],
     isLoading: false,
-    actionOrderId: ''
+    actionOrderId: '',
+    showModelPanel: false,
+    isSavingModel: false,
+    imageSizeOptions: ['1024x1024', '768x1344', '1344x768', '2048x2048'],
+    imageSizeIndex: 0,
+    modelConfig: {
+      apiUrl: '',
+      apiKey: '',
+      model: '',
+      imageSize: '1024x1024',
+      enabled: true
+    }
   },
 
   onLoad() {
@@ -59,6 +70,149 @@ Page({
     if (app.globalData) app.globalData.aiStudioAdminPassword = '';
     wx.showToast({ title: '已退出管理', icon: 'success' });
     wx.redirectTo({ url: '/pages/aiStudio/adminLogin/adminLogin' });
+  },
+
+  toggleModelPanel() {
+    const showModelPanel = !this.data.showModelPanel;
+    this.setData({ showModelPanel });
+    if (showModelPanel) this.loadModelSettings();
+  },
+
+  async loadModelSettings() {
+    try {
+      const res = await callFunction('getAIStudioRuntimeConfig', {});
+      const settings = (((res.config || {}).modelSettings) || []).find(item => item.scene === 'image_generation') || {};
+      const imageSize = settings.imageSize || '1024x1024';
+
+      this.setData({
+        modelConfig: {
+          apiUrl: settings.apiUrl || '',
+          apiKey: '',
+          model: settings.model || '',
+          imageSize,
+          enabled: settings.enabled !== false
+        },
+        imageSizeIndex: Math.max(0, this.data.imageSizeOptions.indexOf(imageSize))
+      });
+    } catch (error) {
+      wx.showToast({ title: error.message || '读取模型设置失败', icon: 'none' });
+    }
+  },
+
+  onModelFieldInput(e) {
+    const field = e.currentTarget.dataset.field;
+    if (!field) return;
+    this.setData({ [`modelConfig.${field}`]: e.detail.value });
+  },
+
+  onImageSizeChange(e) {
+    const index = Number(e.detail.value);
+    const imageSize = this.data.imageSizeOptions[index];
+    if (!imageSize) return;
+    this.setData({ imageSizeIndex: index, 'modelConfig.imageSize': imageSize });
+  },
+
+  onModelEnabledChange(e) {
+    this.setData({ 'modelConfig.enabled': !!e.detail.value });
+  },
+
+  async saveModelSettings() {
+    const config = this.data.modelConfig;
+    const apiUrl = (config.apiUrl || '').trim();
+    const model = (config.model || '').trim();
+    const apiKey = (config.apiKey || '').trim();
+
+    if (!apiUrl || !model) {
+      wx.showToast({ title: '请填写接口地址和模型名称', icon: 'none' });
+      return;
+    }
+
+    const modelSetting = {
+      scene: 'image_generation',
+      enabled: !!config.enabled,
+      provider: 'openai_compatible',
+      model,
+      apiUrl,
+      imageSize: config.imageSize,
+      publicName: 'AI 生图接口'
+    };
+    if (apiKey) modelSetting.apiKey = apiKey;
+
+    this.setData({ isSavingModel: true });
+    try {
+      await callFunction('adminUpsertAIStudioRuntimeConfig', {
+        adminPassword: getAdminPassword(),
+        modelSettings: [modelSetting]
+      });
+      wx.showToast({ title: '模型设置已保存', icon: 'success' });
+      this.setData({ showModelPanel: false, 'modelConfig.apiKey': '' });
+    } catch (error) {
+      wx.showToast({ title: error.message || '保存失败', icon: 'none' });
+    } finally {
+      this.setData({ isSavingModel: false });
+    }
+  },
+
+  generateReferenceImage(e) {
+    this.runImageGeneration(e.currentTarget.dataset.id, 'reference');
+  },
+
+  generateGridImage(e) {
+    this.runImageGeneration(e.currentTarget.dataset.id, 'grid');
+  },
+
+  generateCellImage(e) {
+    const orderId = e.currentTarget.dataset.id;
+    const order = this.data.orders.find(item => item.orderId === orderId);
+    const cells = ((order && order.selected_cells) || [])
+      .map(cell => Number(cell))
+      .filter(cell => Number.isInteger(cell) && cell > 0)
+      .sort((a, b) => a - b);
+
+    if (!cells.length) {
+      wx.showToast({ title: '该订单暂无已选分镜', icon: 'none' });
+      return;
+    }
+
+    wx.showActionSheet({
+      itemList: cells.slice(0, 6).map(cell => `分镜 ${cell} 号`),
+      success: res => {
+        const cell = cells[res.tapIndex];
+        if (cell) this.runImageGeneration(orderId, 'cell', cell);
+      }
+    });
+  },
+
+  async runImageGeneration(orderId, stage, cell) {
+    if (this.data.actionOrderId) return;
+
+    this.setData({ actionOrderId: `gen:${orderId}` });
+    wx.showLoading({ title: 'AI 出图中，可能需要 1-2 分钟', mask: true });
+
+    try {
+      const payload = {
+        adminPassword: getAdminPassword(),
+        orderId,
+        stage
+      };
+      if (stage === 'cell' && cell) payload.cell = cell;
+
+      const res = await callFunction('generateAIStudioImage', payload);
+      wx.hideLoading();
+
+      const fileID = res.file && res.file.fileID;
+      if (fileID) {
+        const urlMap = await getTempUrlMap([fileID]);
+        const url = urlMap[fileID];
+        if (url) wx.previewImage({ current: url, urls: [url] });
+      }
+      this.loadOrders();
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '生成失败', icon: 'none' });
+    } finally {
+      this.setData({ actionOrderId: '' });
+    }
   },
 
   setupPaymentQR() {
@@ -159,7 +313,8 @@ Page({
         statusText: STATUS_LABELS[order.order_status] || order.order_status,
         photoCheckText: PHOTO_CHECK_LABELS[order.photo_check] || order.photo_check,
         customerFiles: (order.files || []).filter(file => file.fileType === 'customer_photo' && file.status === 'uploaded'),
-        deliveryFiles: (order.files || []).filter(file => file.fileType === 'delivery')
+        deliveryFiles: (order.files || []).filter(file => file.fileType === 'delivery'),
+        generatedFiles: (order.files || []).filter(file => (file.fileType === 'generated' || file.fileType === 'grid_preview') && file.status === 'uploaded')
       })));
 
       this.setData({ orders });
@@ -379,6 +534,7 @@ async function hydrateOrderImages(orders) {
   orders.forEach(order => {
     order.customerFiles.forEach(file => fileIds.push(file.fileID));
     order.deliveryFiles.forEach(file => fileIds.push(file.fileID));
+    order.generatedFiles.forEach(file => fileIds.push(file.fileID));
   });
 
   const urlMap = await getTempUrlMap(fileIds);
@@ -394,7 +550,12 @@ async function hydrateOrderImages(orders) {
       ...file,
       tempUrl: urlMap[file.fileID] || ''
     })),
-    deliveryUrls: order.deliveryFiles.map(file => urlMap[file.fileID]).filter(Boolean)
+    deliveryUrls: order.deliveryFiles.map(file => urlMap[file.fileID]).filter(Boolean),
+    generatedFiles: order.generatedFiles.map(file => ({
+      ...file,
+      tempUrl: urlMap[file.fileID] || ''
+    })),
+    generatedUrls: order.generatedFiles.map(file => urlMap[file.fileID]).filter(Boolean)
   }));
 }
 

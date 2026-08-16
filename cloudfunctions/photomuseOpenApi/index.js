@@ -52,6 +52,37 @@ const STYLES = [
   { styleId: 'PT-01', category: 'portrait', name: '自然光人像写真', productionLine: 'manual' }
 ];
 
+// ---------------------------------------------------------------------------
+// 网站独立版下单常量（createAIStudioOrder 的服务端同构副本，不 cross-require，
+// 与上方 catalog 目录常量相互独立，新增套餐时两处同步维护）
+// ---------------------------------------------------------------------------
+
+const ORDER_PRODUCTS = [
+  { productId: 'id_photo_9_9', name: '3.9 证件照体验版', price: 3.9, deliveryCount: 1, productionLine: 'auto', productType: 'standard' },
+  { productId: 'resume_photo_29_9', name: '29.9 简历形象照', price: 29.9, deliveryCount: 3, productionLine: 'semi_auto', productType: 'standard' },
+  { productId: 'portrait_suite_69', name: '69.9 AI 写真套图', price: 69.9, deliveryCount: 5, productionLine: 'manual_ai', productType: 'portrait' }
+];
+
+const ORDER_STYLES = [
+  { styleId: 'ID-01', category: 'id_photo', name: '标准白底证件照', productionLine: 'auto' },
+  { styleId: 'ID-02', category: 'id_photo', name: '蓝底报名照', productionLine: 'auto' },
+  { styleId: 'ID-03', category: 'id_photo', name: '灰底商务证件照', productionLine: 'auto' },
+  { styleId: 'BZ-01', category: 'business', name: '白衬衫简历照', productionLine: 'semi_auto' }
+];
+
+const PORTRAIT_THEMES = [
+  { themeId: 'guofeng', name: '古风写真' },
+  { themeId: 'sports', name: '运动活力' },
+  { themeId: 'casual', name: '休闲日常' },
+  { themeId: 'travel', name: '旅拍风光' },
+  { themeId: 'family', name: '亲子合照' }
+];
+
+const AUTH_VERSION = 'ai-studio-auth-v1';
+const MAX_CUSTOMER_PHOTOS = 3;
+const MIN_CELL_INDEX = 1;
+const MAX_CELL_INDEX = 15;
+
 // 与 getAIStudioRuntimeConfig 保持一致的内置默认运行配置（公开脱敏输出用）
 const DEFAULT_CONFIG = {
   modelSettings: [
@@ -98,7 +129,7 @@ const DEFAULT_CONFIG = {
   ]
 };
 
-const SUPPORTED_ACTIONS = ['catalog', 'queryOrder', 'paymentQR', 'runtimeConfig'];
+const SUPPORTED_ACTIONS = ['catalog', 'queryOrder', 'paymentQR', 'runtimeConfig', 'createOrder', 'registerPhoto', 'getOrder', 'selectCells'];
 
 exports.main = async (event = {}) => {
   try {
@@ -131,6 +162,14 @@ exports.main = async (event = {}) => {
         return await handlePaymentQR();
       case 'runtimeConfig':
         return await handleRuntimeConfig();
+      case 'createOrder':
+        return await handleCreateOrder(payload);
+      case 'registerPhoto':
+        return await handleRegisterPhoto(payload);
+      case 'getOrder':
+        return await handleGetOrder(payload);
+      case 'selectCells':
+        return await handleSelectCells(payload);
       default:
         return fail('VALIDATION_ERROR', '不支持的 action');
     }
@@ -226,13 +265,218 @@ async function handleRuntimeConfig() {
 }
 
 // ---------------------------------------------------------------------------
+// 网站独立版 action 处理器（订单所有权用 web_token 哈希校验）
+// ---------------------------------------------------------------------------
+
+async function handleCreateOrder(payload) {
+  const product = ORDER_PRODUCTS.find(item => item.productId === payload.productId);
+  const isPortrait = Boolean(product && product.productType === 'portrait');
+  const styleInput = cleanText(payload.styleId, 20);
+  const style = ORDER_STYLES.find(item => item.styleId === styleInput);
+  let theme = null;
+  if (isPortrait) {
+    theme = PORTRAIT_THEMES.find(item => item.themeId === cleanText(payload.themeId, 40));
+  }
+
+  if (!product) return fail('VALIDATION_ERROR', '请选择有效套餐');
+  if (!style && (!isPortrait || styleInput)) return fail('VALIDATION_ERROR', '请选择有效风格');
+  if (isPortrait && !theme) return fail('VALIDATION_ERROR', '请选择有效的写真主题');
+
+  const contactPhone = normalizePhone(payload.contactPhone);
+  const queryPassword = cleanText(payload.queryPassword, 32);
+  if (!contactPhone) return fail('VALIDATION_ERROR', '请填写用于查询订单的手机号');
+  if (queryPassword.length < 6) return fail('VALIDATION_ERROR', '查询密码至少 6 位');
+
+  const authorization = payload.authorization || {};
+  if (!authorization.isSelfOrAuthorized || !authorization.isAdult || !authorization.agreesProduction) {
+    return fail('AUTHORIZATION_REQUIRED', '请先确认本人/成年人授权');
+  }
+
+  const webToken = crypto.randomBytes(24).toString('hex');
+  const orderId = createOrderId();
+  const now = Date.now();
+  const order = {
+    orderId,
+    _openid: '',
+    productId: product.productId,
+    productName: product.name,
+    price: product.price,
+    deliveryCount: product.deliveryCount,
+    productionLine: product.productionLine,
+    product_type: product.productType,
+    theme_id: isPortrait ? theme.themeId : '',
+    theme_name: isPortrait ? theme.name : '',
+    styleId: style ? style.styleId : '',
+    styleName: style ? style.name : '',
+    usage: cleanText(payload.usage, 80),
+    backgroundColor: cleanText(payload.backgroundColor, 20),
+    clothingOption: cleanText(payload.clothingOption, 40),
+    spec: cleanText(payload.spec, 40),
+    customerNote: cleanText(payload.customerNote, 300),
+    scene_desc: cleanText(payload.sceneDesc, 300),
+    selected_cells: [],
+    contactPhone,
+    queryPasswordHash: hashQueryPassword(queryPassword),
+    web_token_hash: hashWebToken(webToken),
+    payment_status: 'unpaid',
+    order_status: 'waiting_photos',
+    photo_check: 'unchecked',
+    adult_identity_authorization: 'confirmed',
+    case_permission: 'unconfirmed',
+    refund_status: 'none',
+    upsell_status: 'not_upsold',
+    reference_photo_count: 0,
+    delivery_file_count: 0,
+    authorization: {
+      version: AUTH_VERSION,
+      isSelfOrAuthorized: true,
+      isAdult: true,
+      agreesProduction: true,
+      acceptedAt: now
+    },
+    source: 'web',
+    createdAt: db.serverDate(),
+    updatedAt: db.serverDate()
+  };
+
+  await db.collection('ai_studio_orders').add({ data: order });
+
+  // webToken 仅此一次返回，服务端只落哈希
+  return {
+    success: true,
+    order: {
+      orderId,
+      webToken,
+      order_status: order.order_status
+    }
+  };
+}
+
+async function handleRegisterPhoto(payload) {
+  const orderId = cleanText(payload.orderId, 80);
+  const webToken = cleanText(payload.webToken, 128);
+  const fileID = cleanText(payload.fileID || payload.fileId, 300);
+
+  if (!orderId || !webToken || !fileID.startsWith('cloud://')) {
+    return fail('VALIDATION_ERROR', '上传文件参数无效');
+  }
+
+  const tokenHash = hashWebToken(webToken);
+  const order = await findWebOrder(orderId, tokenHash);
+  if (!order) return fail('NOT_FOUND', '订单不存在或令牌不匹配');
+
+  if (!['waiting_photos', 'photo_review'].includes(order.order_status)) {
+    return fail('INVALID_STATUS', '当前订单状态不允许继续上传照片');
+  }
+
+  const countResult = await db.collection('ai_studio_files')
+    .where({ orderId, fileType: 'customer_photo', status: 'uploaded' })
+    .count();
+
+  if (countResult.total >= MAX_CUSTOMER_PHOTOS) {
+    return fail('PHOTO_LIMIT_EXCEEDED', '最多上传 3 张参考照片');
+  }
+
+  const addResult = await db.collection('ai_studio_files').add({
+    data: {
+      orderId,
+      _openid: order._openid || '',
+      fileType: 'customer_photo',
+      fileID,
+      fileName: cleanText(payload.fileName, 120),
+      size: normalizeNumber(payload.size),
+      mimeType: cleanText(payload.mimeType, 60),
+      status: 'uploaded',
+      createdAt: db.serverDate(),
+      updatedAt: db.serverDate()
+    }
+  });
+  const nextCount = countResult.total + 1;
+
+  await db.collection('ai_studio_orders').where({ orderId, web_token_hash: tokenHash }).update({
+    data: {
+      reference_photo_count: nextCount,
+      updatedAt: db.serverDate()
+    }
+  });
+
+  return {
+    success: true,
+    fileId: addResult._id,
+    referencePhotoCount: nextCount
+  };
+}
+
+async function handleGetOrder(payload) {
+  const orderId = cleanText(payload.orderId, 80);
+  const webToken = cleanText(payload.webToken, 128);
+  if (!orderId || !webToken) return fail('NOT_FOUND', '订单不存在或令牌不匹配');
+
+  const order = await findWebOrder(orderId, hashWebToken(webToken));
+  if (!order) return fail('NOT_FOUND', '订单不存在或令牌不匹配');
+
+  const filesResult = await db.collection('ai_studio_files')
+    .where({ orderId, _openid: order._openid })
+    .orderBy('createdAt', 'asc')
+    .get();
+
+  return {
+    success: true,
+    order: sanitizeOrder(order),
+    files: (filesResult.data || []).map(toPublicFile)
+  };
+}
+
+async function handleSelectCells(payload) {
+  const orderId = cleanText(payload.orderId, 80);
+  if (!orderId) return fail('VALIDATION_ERROR', '订单号无效');
+
+  const cells = normalizeCells(payload.cells);
+  if (!cells) return fail('VALIDATION_ERROR', '请选择 1-5 个分镜');
+
+  const order = await findOwnedOrder(payload, orderId);
+  if (!order) return fail('NOT_FOUND', '订单不存在或查询信息不匹配');
+
+  if (order.product_type !== 'portrait') {
+    return fail('VALIDATION_ERROR', '该订单不是写真套图订单');
+  }
+  if (order.order_status !== 'grid_preview') {
+    return fail('INVALID_STATUS', '当前状态不能选片');
+  }
+  const deliveryCount = normalizeNumber(order.deliveryCount) || 5;
+  if (cells.length < 1 || cells.length > deliveryCount) {
+    return fail('VALIDATION_ERROR', '请选择 1-5 个分镜');
+  }
+
+  await db.collection('ai_studio_orders').where({ orderId }).update({
+    data: {
+      selected_cells: cells,
+      order_status: 'cell_selected',
+      cell_selected_at: db.serverDate(),
+      updatedAt: db.serverDate()
+    }
+  });
+
+  return {
+    success: true,
+    order: {
+      orderId,
+      order_status: 'cell_selected',
+      selected_cells: cells
+    }
+  };
+}
+
+// ---------------------------------------------------------------------------
 // 审计
 // ---------------------------------------------------------------------------
 
 function writeAudit(actorOpenid, action, payload = {}) {
   const orderId = cleanText(payload.orderId, 80);
+  const productId = cleanText(payload.productId, 64);
   const auditPayload = { apiAction: action };
   if (orderId) auditPayload.orderId = orderId;
+  if (productId) auditPayload.productId = productId;
 
   return db.collection('ai_studio_audit_logs').add({
     data: {
@@ -289,7 +533,7 @@ function stripPrivateFields(item) {
 }
 
 function sanitizeOrder(order) {
-  const { queryPasswordHash, ...safeOrder } = order;
+  const { queryPasswordHash, web_token_hash, ...safeOrder } = order;
   return safeOrder;
 }
 
@@ -317,6 +561,62 @@ function normalizePhone(value) {
 
 function hashQueryPassword(value) {
   return crypto.createHash('sha256').update(String(value)).digest('hex');
+}
+
+function hashWebToken(value) {
+  return crypto.createHash('sha256').update(String(value)).digest('hex');
+}
+
+function createOrderId() {
+  return `AIStudio-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function findWebOrder(orderId, tokenHash) {
+  const result = await db.collection('ai_studio_orders')
+    .where({ orderId, web_token_hash: tokenHash })
+    .limit(1)
+    .get();
+  return result.data && result.data[0];
+}
+
+async function findOwnedOrder(payload, orderId) {
+  const webToken = cleanText(payload.webToken, 128);
+  if (webToken) {
+    const webOrder = await findWebOrder(orderId, hashWebToken(webToken));
+    if (webOrder) return webOrder;
+  }
+
+  const contactPhone = normalizePhone(payload.contactPhone);
+  const queryPassword = cleanText(payload.queryPassword, 32);
+  if (contactPhone && queryPassword.length >= 6) {
+    const result = await db.collection('ai_studio_orders')
+      .where({
+        orderId,
+        contactPhone,
+        queryPasswordHash: hashQueryPassword(queryPassword)
+      })
+      .limit(1)
+      .get();
+    return result.data && result.data[0];
+  }
+
+  return null;
+}
+
+function normalizeCells(value) {
+  if (!Array.isArray(value)) return null;
+  const unique = new Set();
+  for (const item of value) {
+    if (!Number.isInteger(item) || item < MIN_CELL_INDEX || item > MAX_CELL_INDEX) return null;
+    unique.add(item);
+  }
+  const cells = Array.from(unique);
+  return cells.length >= 1 ? cells : null;
+}
+
+function normalizeNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 }
 
 function fail(code, message) {

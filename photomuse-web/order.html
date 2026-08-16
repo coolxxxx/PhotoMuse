@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>订单详情 · 光影集 PhotoMuse</title>
+  <meta name="description" content="查看光影集 PhotoMuse 订单状态、扫码支付、网格选片与成片交付。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
+
+  <header class="topbar">
+    <div class="brand-name">光影集 PhotoMuse</div>
+    <div class="brand-slogan">不用出门的影楼 · 上传一张照片，收获整套专业形象</div>
+  </header>
+  <nav class="nav">
+    <a href="index.html">在线下单</a>
+    <a href="query.html">订单查询</a>
+  </nav>
+
+  <main class="page">
+    <noscript><div class="warn-box">本站需要启用 JavaScript 才能查看订单。</div></noscript>
+
+    <section class="card" id="toolbar-card">
+      <div class="toolbar">
+        <span class="muted" id="order-id-label">订单</span>
+        <button class="btn btn-sm btn-outline" id="refresh-btn" data-requires-key>手动刷新</button>
+      </div>
+      <p class="muted small" style="margin:8px 0 0">订单状态每 15 秒自动刷新一次。</p>
+    </section>
+
+    <div id="order-view"></div>
+  </main>
+
+  <footer class="footer">光影集 PhotoMuse · 上传一张照片，生成证件照、形象照与 AI 写真</footer>
+
+  <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.7.0/cloudbase.full.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/order-view.js"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      const POLL_INTERVAL = 15000;
+      const $ = (id) => document.getElementById(id);
+      const esc = (v) => String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+      const view = $('order-view');
+      const idLabel = $('order-id-label');
+      const refreshBtn = $('refresh-btn');
+      const toolbarCard = $('toolbar-card');
+
+      PM.setupConfigBanner();
+
+      const params = new URLSearchParams(location.search);
+      const orderId = (params.get('orderId') || '').trim();
+
+      const findEntry = (id) => {
+        try {
+          const arr = JSON.parse(localStorage.getItem('pm_orders') || '[]');
+          return arr.find((o) => o && o.orderId === id) || null;
+        } catch (e) { return null; }
+      };
+
+      const entry = orderId ? findEntry(orderId) : null;
+
+      const showFallback = (msg) => {
+        toolbarCard.classList.add('hidden');
+        view.innerHTML = `
+          <section class="card">
+            <div class="card-head"><h2>无法查看订单</h2></div>
+            <div class="warn-box">${esc(msg)}</div>
+            <p class="muted small">订单访问凭证（webToken）仅在下单成功时返回一次，保存在下单浏览器的本地存储中。
+            换设备或清除浏览器数据后，请使用「订单号 + 手机号 + 查询密码」在查询页查看订单。</p>
+            <a class="btn" href="query.html">去订单查询</a>
+            <a class="btn btn-outline" href="index.html">返回下单</a>
+          </section>`;
+      };
+
+      if (!orderId || !entry) {
+        showFallback(orderId
+          ? '本浏览器没有该订单的访问凭证。'
+          : '缺少订单号参数，请从下单页进入。');
+      } else {
+        const creds = { webToken: entry.webToken };
+        let loading = false;
+        let stopped = false;
+
+        idLabel.textContent = '订单 ' + orderId;
+
+        const load = async (silent) => {
+          if (loading || stopped) { return; }
+          loading = true;
+          if (!silent) { PM.showLoading('正在加载订单…'); }
+          try {
+            const res = await PM.callApi('getOrder', { orderId: orderId, webToken: creds.webToken });
+            await PMOrderView.render(view, {
+              order: res.order || {},
+              files: res.files || [],
+              creds: creds,
+              onUpdated: () => load(true)
+            });
+            refreshBtn.disabled = false;
+          } catch (e) {
+            if (String(e.code) === 'NOT_FOUND' || /不存在|不匹配/.test(e.message || '')) {
+              stopped = true;
+              showFallback('订单不存在或访问凭证已失效（' + esc(e.message || 'NOT_FOUND') + '）。');
+            } else if (!silent) {
+              PM.toast(e.message || '加载失败，请重试', 'error');
+            }
+          } finally {
+            loading = false;
+            PM.hideLoading();
+          }
+        };
+
+        refreshBtn.addEventListener('click', () => load(false));
+        load(false);
+        setInterval(() => { if (!document.hidden) { load(true); } }, POLL_INTERVAL);
+      }
+    })();
+  </script>
+</body>
+</html>

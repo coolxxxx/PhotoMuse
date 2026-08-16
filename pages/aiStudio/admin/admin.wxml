@@ -10,7 +10,39 @@
       <view class="header-title">订单管理</view>
       <view class="header-desc">仅白名单运营 openid 可审核、拒单和交付。</view>
     </view>
-    <button size="mini" class="action-btn payment-qr" loading="{{actionOrderId === 'payment-qr'}}" bindtap="setupPaymentQR">收款设置</button>
+    <view class="header-actions">
+      <button size="mini" class="action-btn payment-qr" loading="{{actionOrderId === 'payment-qr'}}" bindtap="setupPaymentQR">收款设置</button>
+      <button size="mini" class="action-btn model-btn {{showModelPanel ? 'active' : ''}}" bindtap="toggleModelPanel">模型设置</button>
+    </view>
+  </view>
+
+  <view wx:if="{{showModelPanel}}" class="model-panel">
+    <view class="panel-title">AI 生图模型设置</view>
+    <view class="form-row">
+      <view class="form-label">接口地址</view>
+      <input class="form-input" value="{{modelConfig.apiUrl}}" placeholder="https://open.bigmodel.cn/api/paas/v4/images/generations" placeholder-class="input-placeholder" data-field="apiUrl" bindinput="onModelFieldInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">API Key</view>
+      <input class="form-input" password value="{{modelConfig.apiKey}}" placeholder="留空则不修改已保存的 Key" placeholder-class="input-placeholder" data-field="apiKey" bindinput="onModelFieldInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">模型名称</view>
+      <input class="form-input" value="{{modelConfig.model}}" placeholder="cogview-4" placeholder-class="input-placeholder" data-field="model" bindinput="onModelFieldInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">图片尺寸</view>
+      <picker class="form-picker" mode="selector" range="{{imageSizeOptions}}" value="{{imageSizeIndex}}" bindchange="onImageSizeChange">
+        <view class="picker-value">{{modelConfig.imageSize}}</view>
+      </picker>
+    </view>
+    <view class="form-row switch-row">
+      <view class="form-label">启用生图接口</view>
+      <switch checked="{{modelConfig.enabled}}" color="#1976d2" bindchange="onModelEnabledChange" />
+    </view>
+    <view class="panel-footer">
+      <button size="mini" class="action-btn save-model" loading="{{isSavingModel}}" bindtap="saveModelSettings">保存设置</button>
+    </view>
   </view>
 
   <scroll-view scroll-x class="status-tabs">
@@ -61,12 +93,29 @@
       ></image>
     </view>
 
+    <view class="image-row gen-row" wx:if="{{item.generatedFiles.length}}">
+      <image
+        wx:for="{{item.generatedFiles}}"
+        wx:for-item="genFile"
+        wx:key="fileId"
+        class="gen-thumb"
+        src="{{genFile.tempUrl}}"
+        mode="aspectFill"
+        data-url="{{genFile.tempUrl}}"
+        data-urls="{{item.generatedUrls}}"
+        bindtap="previewImage"
+      ></image>
+    </view>
+
     <view class="actions">
       <button size="mini" class="action-btn pass" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="passReview">通过</button>
       <button size="mini" class="action-btn retake" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="requestRetake">重拍</button>
       <button size="mini" class="action-btn reject" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="rejectOrder">拒单</button>
       <button wx:if="{{item.payment_status === 'unpaid'}}" size="mini" class="action-btn paid" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="markOrderPaid">标记已付</button>
       <button wx:if="{{item.product_type === 'portrait' && (item.order_status === 'queued' || item.order_status === 'grid_preview' || item.order_status === 'cell_selected')}}" size="mini" class="action-btn grid" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="chooseGridPreview">上传网格</button>
+      <button wx:if="{{item.order_status === 'queued' || item.order_status === 'grid_preview' || item.order_status === 'cell_selected'}}" size="mini" class="action-btn gen-ref" data-id="{{item.orderId}}" loading="{{actionOrderId === 'gen:' + item.orderId}}" bindtap="generateReferenceImage">生成参考图</button>
+      <button wx:if="{{item.product_type === 'portrait' && (item.order_status === 'queued' || item.order_status === 'grid_preview' || item.order_status === 'cell_selected')}}" size="mini" class="action-btn gen-grid" data-id="{{item.orderId}}" loading="{{actionOrderId === 'gen:' + item.orderId}}" bindtap="generateGridImage">生成网格</button>
+      <button wx:if="{{item.product_type === 'portrait' && item.order_status === 'cell_selected' && item.selected_cells.length > 0}}" size="mini" class="action-btn gen-cell" data-id="{{item.orderId}}" loading="{{actionOrderId === 'gen:' + item.orderId}}" bindtap="generateCellImage">生成分镜图</button>
       <button size="mini" class="action-btn deliver" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="chooseDelivery">上传交付</button>
     </view>
   </view>

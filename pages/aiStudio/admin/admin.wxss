@@ -54,11 +54,112 @@
   min-width: 0;
 }
 
+.header-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .payment-qr {
   flex-shrink: 0;
   color: #1976d2;
   background: #ffffff;
   border: 2rpx solid #1976d2;
+}
+
+.model-btn {
+  flex-shrink: 0;
+  color: #6a1b9a;
+  background: #ffffff;
+  border: 2rpx solid #6a1b9a;
+}
+
+.model-btn.active {
+  color: #ffffff;
+  background: #6a1b9a;
+}
+
+.model-panel {
+  margin-bottom: 22rpx;
+  padding: 26rpx;
+  border-radius: 24rpx;
+  background: #ffffff;
+  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+}
+
+.panel-title {
+  margin-bottom: 20rpx;
+  color: #1f2d3d;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-bottom: 18rpx;
+}
+
+.form-label {
+  flex-shrink: 0;
+  width: 150rpx;
+  color: #455a64;
+  font-size: 25rpx;
+  font-weight: 600;
+}
+
+.form-input {
+  flex: 1;
+  min-width: 0;
+  height: 68rpx;
+  padding: 0 20rpx;
+  border-radius: 14rpx;
+  background: #f2f6fa;
+  color: #263238;
+  font-size: 25rpx;
+  box-sizing: border-box;
+}
+
+.input-placeholder {
+  color: #9fb3c8;
+  font-size: 23rpx;
+}
+
+.form-picker {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-value {
+  height: 68rpx;
+  padding: 0 20rpx;
+  border-radius: 14rpx;
+  background: #f2f6fa;
+  color: #263238;
+  font-size: 25rpx;
+  line-height: 68rpx;
+  box-sizing: border-box;
+}
+
+.switch-row {
+  justify-content: space-between;
+}
+
+.switch-row .form-label {
+  width: auto;
+}
+
+.panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6rpx;
+}
+
+.save-model {
+  color: #ffffff;
+  background: #6a1b9a;
 }
 
 .header-title {
@@ -223,6 +324,30 @@
 .grid {
   color: #ffffff;
   background: #1976d2;
+}
+
+.gen-ref {
+  color: #ffffff;
+  background: #7b1fa2;
+}
+
+.gen-grid {
+  color: #ffffff;
+  background: #5e35b1;
+}
+
+.gen-cell {
+  color: #ffffff;
+  background: #00897b;
+}
+
+.gen-row {
+  padding-top: 6rpx;
+  border-top: 2rpx dashed #e3f2fd;
+}
+
+.gen-thumb {
+  border: 2rpx solid #e1bee7;
 }
 
 .empty-state {

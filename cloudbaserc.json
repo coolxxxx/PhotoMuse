@@ -162,6 +162,13 @@
       },
       "runtime": "Nodejs16.13",
       "memory": 256
+    },
+    {
+      "name": "generateAIStudioImage",
+      "timeout": 120,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
     }
   ],
   "region": "ap-shanghai"

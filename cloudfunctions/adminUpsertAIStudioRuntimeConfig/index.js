@@ -75,7 +75,12 @@ function normalizeModelSetting(input = {}) {
     temperature: clampNumber(input.temperature, 0, 2, 0.4),
     requiresHumanQC: input.requiresHumanQC !== false,
     outputType: cleanText(input.outputType, 40),
-    publicName: cleanText(input.publicName, 80)
+    publicName: cleanText(input.publicName, 80),
+    // 生图接口私有配置（仅入库存；读取侧由 getAIStudioRuntimeConfig 的 stripPrivateFields 剥离 apiKey）
+    apiUrl: cleanText(input.apiUrl, 300),
+    apiKey: cleanText(input.apiKey, 300),
+    imageSize: cleanText(input.imageSize, 20) || '1024x1024',
+    requestPath: cleanText(input.requestPath, 120)
   };
 }
 
