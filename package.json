@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "test": "node tests/ai-studio/validate-ai-studio.js && node tests/static/check-contracts.js && node tests/static/check-visual-integrity.js && node tests/integration/run-integration-tests.js",
+    "deploy": "node scripts/deploy.js",
+    "deploy:dry": "node scripts/deploy.js --dry-run",
     "test:validate": "node tests/ai-studio/validate-ai-studio.js",
     "test:static": "node tests/static/check-contracts.js && node tests/static/check-visual-integrity.js",
     "test:visual": "node tests/static/check-visual-integrity.js",

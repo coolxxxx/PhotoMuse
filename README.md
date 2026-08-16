@@ -43,15 +43,10 @@
 
 ## 快速开始
 
-1. **导入项目**：用微信开发者工具打开本目录，填入你自己的 `appid`（`project.config.json`）
-2. **开通云开发**：创建环境后，把 `app.js` 与 `cloudbaserc.json` 中的 `env` / `envId` 换成你的环境 ID
-3. **建集合**：在云开发控制台创建上文 8 个 `ai_studio_*` 集合（含 `ai_studio_payment_config`）
-4. **部署云函数**：右键 `cloudfunctions/` 下各函数目录 → 上传并部署（或使用 CloudBase CLI 按 `cloudbaserc.json` 批量部署）
-5. **配置管理员**：为 `admin*` 与 `dispatchAIStudioJob` 函数设置环境变量
-   - `AI_STUDIO_ADMIN_OPENIDS`：管理员的 OPENID（逗号分隔）
-   - `AI_STUDIO_ADMIN_PASSWORD`：管理口令
-6. **配置开放接口（可选）**：为 `photomuseOpenApi` 设置 `AI_STUDIO_OPEN_API_KEYS`（逗号分隔），并按需开启 HTTP 云接入，详见 `docs/开放接口接入指南.md`
-7. **运行校验**：`npm test`
+1. **部署后端（一键）**：`npm i -g @cloudbase/cli && tcb login`，在 `cloudbaserc.json` 填好管理口令与开放 API Key 后执行 `npm run deploy`——自动部署 31 个云函数（含超时/内存/环境变量配置）并创建 11 个数据库集合。详见 `docs/部署指南.md`
+2. **小程序**：微信开发者工具打开本目录，填入你自己的 `appid`（`project.config.json`），真机回归路径见 `docs/上线检查清单.md`
+3. **网站独立版**：`photomuse-web/` 改 `js/config.js` 后挂 nginx 或 `tcb hosting deploy`，控制台开匿名登录与安全域名（两步），详见 `docs/Web版部署指南.md`
+4. **运行校验**：`npm test`（四层：断言 / 契约核对 / 视觉完整性 / 46 个集成用例）
 
 ## 安全设计
 

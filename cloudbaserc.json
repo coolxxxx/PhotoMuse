@@ -244,6 +244,13 @@
       "envVariables": {},
       "runtime": "Nodejs16.13",
       "memory": 256
+    },
+    {
+      "name": "initAIStudioCollections",
+      "timeout": 60,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
     }
   ],
   "region": "ap-shanghai"
