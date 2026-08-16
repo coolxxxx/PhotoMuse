@@ -7,6 +7,7 @@
 
   <view class="header">
     <view class="header-main">
+      <view class="header-eyebrow">OPERATIONS — PhotoMuse</view>
       <view class="header-title">订单管理</view>
       <view class="header-desc">仅白名单运营 openid 可审核、拒单和交付。</view>
     </view>
@@ -40,7 +41,7 @@
     </view>
     <view class="form-row switch-row">
       <view class="form-label">启用生图接口</view>
-      <switch checked="{{modelConfig.enabled}}" color="#1976d2" bindchange="onModelEnabledChange" />
+      <switch checked="{{modelConfig.enabled}}" color="#1976D2" bindchange="onModelEnabledChange" />
     </view>
     <view class="panel-footer">
       <button size="mini" class="action-btn save-model" loading="{{isSavingModel}}" bindtap="saveModelSettings">保存设置</button>
@@ -94,7 +95,7 @@
             <switch
               class="sample-switch"
               checked="{{sample.enabled}}"
-              color="#2e7d32"
+              color="#2E6B3F"
               data-group-index="{{groupIndex}}"
               data-item-index="{{itemIndex}}"
               bindchange="onSampleEnabledChange"
@@ -152,7 +153,7 @@
         <view class="order-title">{{item.productName}}</view>
         <view class="order-meta">{{item.orderId}}</view>
       </view>
-      <view class="status-pill">{{item.statusText}}</view>
+      <view class="status-badge st-{{item.order_status}}">{{item.statusText}}</view>
     </view>
 
     <view class="order-info">

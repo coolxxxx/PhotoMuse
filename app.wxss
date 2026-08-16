@@ -1,4 +1,4 @@
-/* app.wxss 全局样式文件 */
+/* app.wxss 全局样式文件 —— PhotoMuse Editorial 设计令牌（品牌蓝 × 杂志纸面） */
 
 /* 重置样式 */
 page, view, text, image, button, input, textarea {
@@ -7,8 +7,18 @@ page, view, text, image, button, input, textarea {
   box-sizing: border-box;
 }
 
-/* 全局变量 */
+/* 全局变量：PhotoMuse Editorial 令牌（其他页面直接 var() 引用） */
 page {
+  --pm-primary:#1976D2; --pm-primary-deep:#0D47A1; --pm-primary-soft:#E8F1FB; --pm-primary-line:#BAD3F0;
+  --pm-ink:#1B1F24; --pm-ink-2:#565B63; --pm-ink-3:#9AA0A8; --pm-ink-4:#C9CDD3;
+  --pm-bg:#FAFAF9; --pm-card:#FFFFFF; --pm-card-soft:#F4F4F1;
+  --pm-hairline:#E7E5E0; --pm-hairline-strong:#D8D6D0;
+  --pm-success:#2E6B3F; --pm-success-soft:#EAF2EC; --pm-warning:#C66A2E; --pm-warning-soft:#F7EFE6; --pm-danger:#B23A3A; --pm-danger-soft:#F6EAEA;
+  --pm-radius:6rpx; --pm-radius-card:8rpx;
+  --pm-serif:Georgia,'Nimbus Roman','Songti SC','STSong',SimSun,serif;
+  --pm-shadow-card:0 2rpx 12rpx rgba(27,31,36,0.05);
+
+  /* @deprecated 旧版绿色主题，一律使用 --pm-* */
   --primary-color: #4CAF50;
   --primary-light: #81C784;
   --primary-dark: #388E3C;
@@ -23,10 +33,10 @@ page {
   --warning-color: #FF9800;
   --error-color: #F44336;
   --info-color: #2196F3;
-  
+
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: var(--background-color);
-  color: var(--text-primary);
+  background-color: var(--pm-bg);
+  color: var(--pm-ink);
   font-size: 32rpx;
   line-height: 1.5;
 }
@@ -42,7 +52,7 @@ page {
 .btn {
   display: inline-block;
   padding: 28rpx 60rpx;
-  border-radius: 8rpx;
+  border-radius: var(--pm-radius);
   font-size: 32rpx;
   font-weight: 500;
   text-align: center;
@@ -52,47 +62,48 @@ page {
 }
 
 .btn-primary {
-  background-color: var(--primary-color);
-  color: var(--white);
+  background-color: var(--pm-primary);
+  color: var(--pm-card);
 }
 
 .btn-primary:active {
-  background-color: var(--primary-dark);
+  background-color: var(--pm-primary-deep);
 }
 
 .btn-secondary {
-  background-color: var(--white);
-  color: var(--primary-color);
-  border: 2rpx solid var(--primary-color);
+  background-color: var(--pm-card);
+  color: var(--pm-primary);
+  border: 2rpx solid var(--pm-primary);
 }
 
 .btn-secondary:active {
-  background-color: var(--primary-light);
-  color: var(--white);
+  background-color: var(--pm-primary-soft);
+  color: var(--pm-primary-deep);
 }
 
 .btn-disabled {
-  background-color: var(--text-light);
-  color: var(--white);
+  background-color: var(--pm-ink-4);
+  color: var(--pm-card);
   opacity: 0.6;
   pointer-events: none;
 }
 
 /* 卡片样式 */
 .card {
-  background-color: var(--white);
-  border-radius: 12rpx;
+  background-color: var(--pm-card);
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius-card);
   padding: 30rpx;
   margin: 20rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  box-shadow: var(--pm-shadow-card);
 }
 
 /* 输入框样式 */
 .input {
   width: 100%;
   padding: 24rpx;
-  border: 2rpx solid var(--border-color);
-  border-radius: 8rpx;
+  border: 2rpx solid var(--pm-hairline-strong);
+  border-radius: var(--pm-radius);
   font-size: 32rpx;
   margin-bottom: 20rpx;
   transition: border-color 0.3s ease;
@@ -100,12 +111,12 @@ page {
 
 .input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--pm-primary);
 }
 
 .input-disabled {
-  background-color: var(--background-color);
-  color: var(--text-light);
+  background-color: var(--pm-card-soft);
+  color: var(--pm-ink-3);
   pointer-events: none;
 }
 
@@ -114,34 +125,34 @@ h1 {
   font-size: 48rpx;
   font-weight: 600;
   margin-bottom: 20rpx;
-  color: var(--text-primary);
+  color: var(--pm-ink);
 }
 
 h2 {
   font-size: 42rpx;
   font-weight: 600;
   margin-bottom: 16rpx;
-  color: var(--text-primary);
+  color: var(--pm-ink);
 }
 
 h3 {
   font-size: 36rpx;
   font-weight: 600;
   margin-bottom: 12rpx;
-  color: var(--text-primary);
+  color: var(--pm-ink);
 }
 
 /* 文本样式 */
 .text-primary {
-  color: var(--text-primary);
+  color: var(--pm-ink);
 }
 
 .text-secondary {
-  color: var(--text-secondary);
+  color: var(--pm-ink-2);
 }
 
 .text-light {
-  color: var(--text-light);
+  color: var(--pm-ink-3);
 }
 
 .text-center {
@@ -196,7 +207,7 @@ h3 {
   justify-content: space-between;
   align-items: center;
   padding: 24rpx 30rpx;
-  border-bottom: 2rpx solid var(--border-color);
+  border-bottom: 1rpx solid var(--pm-hairline);
 }
 
 .list-item:last-child {
@@ -215,30 +226,30 @@ h3 {
 .tag {
   display: inline-block;
   padding: 6rpx 20rpx;
-  border-radius: 50rpx;
+  border-radius: var(--pm-radius);
   font-size: 24rpx;
   margin-right: 10rpx;
   margin-bottom: 10rpx;
 }
 
 .tag-primary {
-  background-color: var(--primary-light);
-  color: var(--primary-dark);
+  background-color: var(--pm-primary-soft);
+  color: var(--pm-primary-deep);
 }
 
 .tag-success {
-  background-color: #E8F5E9;
-  color: var(--success-color);
+  background-color: var(--pm-success-soft);
+  color: var(--pm-success);
 }
 
 .tag-warning {
-  background-color: #FFF3E0;
-  color: var(--warning-color);
+  background-color: var(--pm-warning-soft);
+  color: var(--pm-warning);
 }
 
 .tag-error {
-  background-color: #FFEBEE;
-  color: var(--error-color);
+  background-color: var(--pm-danger-soft);
+  color: var(--pm-danger);
 }
 
 /* 弹窗样式 */
@@ -256,8 +267,8 @@ h3 {
 }
 
 .modal-content {
-  background-color: var(--white);
-  border-radius: 12rpx;
+  background-color: var(--pm-card);
+  border-radius: var(--pm-radius-card);
   width: 80%;
   max-width: 600rpx;
   padding: 40rpx;
@@ -272,7 +283,7 @@ h3 {
 
 .modal-body {
   font-size: 32rpx;
-  color: var(--text-secondary);
+  color: var(--pm-ink-2);
   margin-bottom: 30rpx;
   text-align: center;
 }
@@ -294,7 +305,7 @@ h3 {
   justify-content: center;
   align-items: center;
   padding: 100rpx 0;
-  color: var(--text-light);
+  color: var(--pm-ink-3);
 }
 
 .empty-state-icon {
@@ -319,12 +330,12 @@ h3 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--pm-hairline-strong);
   border-radius: 3rpx;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-light);
+  background: var(--pm-ink-4);
 }
 
 /* 动画效果 */

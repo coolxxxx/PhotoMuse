@@ -4,262 +4,346 @@
     <view class="nav-title">光影集 PhotoMuse</view>
   </view>
 
+  <!-- Hero：杂志刊头 -->
   <view class="hero">
-    <view class="eyebrow">ID PHOTO SERVICE</view>
-    <view class="hero-title">光影集 · 证件照制作</view>
-    <view class="hero-desc">不用出门的影楼：上传正脸照，确认授权，进入半自动审核与交付流程。</view>
+    <view class="hero-eyebrow">PHOTOMUSE STUDIO — No.01</view>
+    <view class="hero-title">光影·集</view>
+    <view class="hero-rule"></view>
+    <view class="hero-sub">不用出门的影楼</view>
   </view>
 
-  <view class="section">
-    <view class="section-title">选择套餐</view>
-    <view class="product-list">
+  <!-- №01 选择套餐：行式列表 -->
+  <view class="pm-section">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">01</text>
+      <text class="pm-sec-title">选择套餐</text>
+      <view class="pm-sec-line"></view>
+    </view>
+    <view class="pm-product-list">
       <view
         wx:for="{{products}}"
         wx:key="productId"
-        class="product-card {{selectedProductId === item.productId ? 'selected' : ''}}"
+        class="pm-product-row {{selectedProductId === item.productId ? 'selected' : ''}}"
         data-id="{{item.productId}}"
         bindtap="selectProduct"
       >
-        <view class="product-head">
-          <text class="product-name">{{item.name}}</text>
-          <text class="product-price">￥{{item.price}}</text>
+        <view class="pm-product-main">
+          <view class="pm-product-name-row">
+            <text class="pm-product-no">0{{index + 1}}</text>
+            <text class="pm-product-name">{{item.name}}</text>
+          </view>
+          <text class="pm-product-desc">{{item.description}}</text>
         </view>
-        <text class="product-desc">{{item.description}}</text>
+        <text class="pm-product-price">¥{{item.price}}</text>
       </view>
     </view>
   </view>
 
-  <view class="section example-section" wx:if="{{currentExample}}">
-    <view class="section-title">效果范例</view>
-    <view class="example-subtitle">{{currentExample.subtitle}}</view>
-    <view class="example-preview">
-      <view class="example-card before">
+  <!-- №02 效果范例：纸面卡 + 发丝边 -->
+  <view class="pm-section" wx:if="{{currentExample}}">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">02</text>
+      <text class="pm-sec-title">效果范例</text>
+      <view class="pm-sec-line"></view>
+    </view>
+    <view class="pm-example-subtitle">{{currentExample.subtitle}}</view>
+    <view class="pm-example-preview">
+      <view class="pm-example-card">
         <image class="example-image" src="{{currentExample.beforeImage}}" mode="aspectFill"></image>
-        <view class="example-label">{{currentExample.beforeLabel}}</view>
+        <view class="pm-example-label">{{currentExample.beforeLabel}}</view>
       </view>
-      <view class="example-arrow">→</view>
-      <view class="example-card after">
+      <view class="pm-example-arrow">→</view>
+      <view class="pm-example-card">
         <image class="example-image" src="{{currentExample.afterImage}}" mode="aspectFill"></image>
-        <view class="example-label">{{currentExample.afterLabel}}</view>
+        <view class="pm-example-label">{{currentExample.afterLabel}}</view>
       </view>
     </view>
-    <view class="example-title">{{currentExample.title}}</view>
-    <view class="feature-list">
-      <view wx:for="{{currentExample.features}}" wx:key="*this" class="feature-item">{{item}}</view>
+    <view class="pm-example-title">{{currentExample.title}}</view>
+    <view class="pm-feature-list">
+      <view wx:for="{{currentExample.features}}" wx:key="*this" class="pm-feature-item">{{item}}</view>
     </view>
   </view>
 
-  <view class="section" wx:if="{{isPortrait && currentTheme}}">
-    <view class="section-title">写真主题</view>
-    <view class="example-subtitle">{{currentTheme.desc}}</view>
-    <view class="theme-hint">{{currentTheme.sceneHint}}</view>
+  <!-- №03 写真主题（当前主题引言） -->
+  <view class="pm-section" wx:if="{{isPortrait && currentTheme}}">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">03</text>
+      <text class="pm-sec-title">写真主题</text>
+      <view class="pm-sec-line"></view>
+    </view>
+    <view class="pm-example-subtitle">{{currentTheme.desc}}</view>
+    <view class="pm-theme-hint">{{currentTheme.sceneHint}}</view>
   </view>
 
-  <view class="section guide-section" wx:if="{{currentExample}}">
-    <view class="section-title">拍照引导</view>
-    <view class="guide-grid">
-      <view wx:for="{{currentExample.tips}}" wx:key="*this" class="guide-item">
-        <view class="guide-index">{{index + 1}}</view>
-        <view class="guide-text">{{item}}</view>
+  <!-- №04 拍照引导（通用） -->
+  <view class="pm-section" wx:if="{{currentExample}}">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">04</text>
+      <text class="pm-sec-title">拍照引导</text>
+      <view class="pm-sec-line"></view>
+    </view>
+    <view class="pm-guide-list">
+      <view wx:for="{{currentExample.tips}}" wx:key="*this" class="pm-guide-item">
+        <text class="pm-guide-no">{{index + 1}}</text>
+        <text class="pm-guide-text">{{item}}</text>
       </view>
     </view>
   </view>
 
-  <view class="section guide-section" wx:if="{{isPortrait && currentTheme}}">
-    <view class="section-title">拍照引导</view>
-    <view class="guide-grid">
-      <view wx:for="{{currentThemeTips}}" wx:key="*this" class="guide-item">
-        <view class="guide-index">{{index + 1}}</view>
-        <view class="guide-text">{{item}}</view>
+  <!-- №05 拍照引导（主题场景） -->
+  <view class="pm-section" wx:if="{{isPortrait && currentTheme}}">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">05</text>
+      <text class="pm-sec-title">拍照引导</text>
+      <view class="pm-sec-line"></view>
+    </view>
+    <view class="pm-guide-list">
+      <view wx:for="{{currentThemeTips}}" wx:key="*this" class="pm-guide-item">
+        <text class="pm-guide-no">{{index + 1}}</text>
+        <text class="pm-guide-text">{{item}}</text>
       </view>
     </view>
   </view>
 
-  <view class="section" wx:if="{{!isPortrait}}">
-    <view class="section-title">选择风格</view>
-    <view class="style-grid">
+  <!-- №06 选择风格（证件照模式） -->
+  <view class="pm-section" wx:if="{{!isPortrait}}">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">06</text>
+      <text class="pm-sec-title">选择风格</text>
+      <view class="pm-sec-line"></view>
+    </view>
+    <view class="pm-style-grid">
       <view
         wx:for="{{styles}}"
         wx:key="styleId"
-        class="style-chip {{selectedStyleId === item.styleId ? 'selected' : ''}}"
+        class="pm-style-chip {{selectedStyleId === item.styleId ? 'selected' : ''}}"
         data-id="{{item.styleId}}"
         bindtap="selectStyle"
       >
-        <text>{{item.styleId}}</text>
-        <text>{{item.name}}</text>
+        <text class="pm-style-code">{{item.styleId}}</text>
+        <text class="pm-style-name">{{item.name}}</text>
       </view>
     </view>
   </view>
 
-  <view class="section" wx:if="{{isPortrait}}">
-    <view class="section-title">选择写真主题</view>
-    <view class="theme-grid">
-      <view wx:for="{{portraitThemes}}" wx:key="themeId" class="theme-card">
-        <view
-          class="theme-chip {{selectedThemeIds.indexOf(item.themeId) > -1 ? 'selected' : ''}}"
-          data-id="{{item.themeId}}"
-          bindtap="selectTheme"
-        >
-          <view class="theme-name-row">
-            <text class="theme-name">{{item.name}}</text>
-            <view class="theme-check">{{selectedThemeIds.indexOf(item.themeId) > -1 ? '✓' : '+'}}</view>
+  <!-- №07 选择写真主题 + 拍立得样张 + 价格条 -->
+  <view class="pm-section" wx:if="{{isPortrait}}">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">07</text>
+      <text class="pm-sec-title">选择写真主题</text>
+      <view class="pm-sec-line"></view>
+    </view>
+    <view class="pm-theme-list">
+      <view wx:for="{{portraitThemes}}" wx:key="themeId" class="pm-theme-block">
+        <view class="pm-theme-row">
+          <view
+            class="pm-theme-chip {{selectedThemeIds.indexOf(item.themeId) > -1 ? 'selected' : ''}}"
+            data-id="{{item.themeId}}"
+            bindtap="selectTheme"
+          >
+            <text class="pm-theme-name">{{item.name}}</text>
+            <text class="pm-theme-check">{{selectedThemeIds.indexOf(item.themeId) > -1 ? '✓' : '+'}}</text>
           </view>
-          <text class="theme-desc">{{item.desc}}</text>
+          <text class="pm-theme-desc">{{item.desc}}</text>
         </view>
         <scroll-view
           wx:if="{{samplesByTheme[item.themeId].length > 0}}"
           scroll-x
-          class="sample-scroll"
+          class="pm-sample-scroll"
         >
-          <view class="sample-row">
+          <view class="pm-sample-row">
             <view
               wx:for="{{samplesByTheme[item.themeId]}}"
               wx:for-item="sample"
               wx:for-index="sampleIndex"
               wx:key="sampleId"
-              class="sample-card"
+              class="pm-polaroid"
               data-theme="{{item.themeId}}"
               data-index="{{sampleIndex}}"
               bindtap="previewSample"
             >
-              <image class="sample-image" src="{{sample.tempFileUrl}}" mode="aspectFill" lazy-load></image>
-              <view wx:if="{{sample.caption}}" class="sample-caption">{{sample.caption}}</view>
+              <image class="pm-polaroid-photo" src="{{sample.tempFileUrl}}" mode="aspectFill" lazy-load></image>
+              <view wx:if="{{sample.caption}}" class="pm-polaroid-caption">{{sample.caption}}</view>
             </view>
           </view>
         </scroll-view>
-        <view wx:else class="sample-empty">样张制作中</view>
+        <view wx:else class="pm-sample-empty">样张制作中</view>
       </view>
     </view>
 
-    <view class="price-bar">
-      <view class="price-info">
-        <view class="price-detail">{{priceBar.priceDetail}}</view>
-        <view class="price-count">已选 {{priceBar.themeCount}} / {{priceBar.maxThemes}} 个主题</view>
+    <view class="pm-price-bar">
+      <view class="pm-price-left">
+        <view class="pm-price-detail">{{priceBar.priceDetail}}</view>
+        <view class="pm-price-count">已选 {{priceBar.themeCount}} / {{priceBar.maxThemes}} 个主题</view>
       </view>
-      <view class="price-total">
-        <view class="price-amount">{{priceBar.priceTotal}}</view>
-        <view class="price-photos">{{priceBar.photoText}}</view>
+      <view class="pm-price-right">
+        <block wx:if="{{priceBar.themeCount > 0}}">
+          <view class="pm-price-total">{{priceBar.priceTotal}}</view>
+          <view class="pm-price-photos">{{priceBar.photoText}}</view>
+        </block>
+        <view wx:else class="pm-price-hint">选择主题开始计价</view>
       </view>
     </view>
   </view>
 
-  <view class="section" wx:if="{{isPortrait}}">
-    <view class="section-title">场景描述</view>
+  <!-- №08 场景描述 -->
+  <view class="pm-section" wx:if="{{isPortrait}}">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">08</text>
+      <text class="pm-sec-title">场景描述</text>
+      <view class="pm-sec-line"></view>
+    </view>
     <textarea
-      class="note-input scene-input"
+      class="pm-textarea pm-scene-input"
       maxlength="300"
       placeholder="想拍什么场景、穿什么、什么氛围？选填，供 AI 绘图参考（≤300 字）"
+      placeholder-class="pm-placeholder"
       value="{{sceneDesc}}"
       bindinput="onSceneDescInput"
     />
   </view>
 
-  <view class="section">
-    <view class="section-title">制作要求</view>
+  <!-- №09 制作要求 -->
+  <view class="pm-section">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">09</text>
+      <text class="pm-sec-title">制作要求</text>
+      <view class="pm-sec-line"></view>
+    </view>
     <input
-      class="text-input"
+      class="pm-input"
       type="number"
       maxlength="11"
       placeholder="手机号：用于订单查询和交付通知"
+      placeholder-class="pm-placeholder"
       value="{{contactPhone}}"
       bindinput="onPhoneInput"
     />
     <input
-      class="text-input"
+      class="pm-input"
       password
       maxlength="32"
       placeholder="查询密码：至少 6 位，请牢记"
+      placeholder-class="pm-placeholder"
       value="{{queryPassword}}"
       bindinput="onQueryPasswordInput"
     />
     <picker mode="selector" range="{{specOptions}}" value="{{specIndex}}" bindchange="onSpecChange">
-      <view class="form-row">
-        <text>用途规格</text>
-        <text>{{specOptions[specIndex]}} →</text>
+      <view class="pm-form-row">
+        <text class="pm-form-label">用途规格</text>
+        <text class="pm-form-value">{{specOptions[specIndex]}} →</text>
       </view>
     </picker>
     <picker mode="selector" range="{{backgroundOptions}}" value="{{backgroundIndex}}" bindchange="onBackgroundChange">
-      <view class="form-row">
-        <text>底色</text>
-        <text>{{backgroundOptions[backgroundIndex]}} →</text>
+      <view class="pm-form-row">
+        <text class="pm-form-label">底色</text>
+        <text class="pm-form-value">{{backgroundOptions[backgroundIndex]}} →</text>
       </view>
     </picker>
     <picker mode="selector" range="{{clothingOptions}}" value="{{clothingIndex}}" bindchange="onClothingChange">
-      <view class="form-row">
-        <text>服装</text>
-        <text>{{clothingOptions[clothingIndex]}} →</text>
+      <view class="pm-form-row">
+        <text class="pm-form-label">服装</text>
+        <text class="pm-form-value">{{clothingOptions[clothingIndex]}} →</text>
       </view>
     </picker>
     <textarea
-      class="note-input"
+      class="pm-textarea"
       maxlength="300"
       placeholder="可填写补充要求，例如：考试报名、不要过度美颜、保留发型等"
+      placeholder-class="pm-placeholder"
       value="{{customerNote}}"
       bindinput="onNoteInput"
     />
-    <view class="privacy-tip">订单默认绑定当前微信；手机号和查询密码用于换设备或联系客服时核验订单。</view>
+    <view class="pm-privacy-tip">订单默认绑定当前微信；手机号和查询密码用于换设备或联系客服时核验订单。</view>
   </view>
 
-  <view class="section">
-    <view class="section-title">上传正脸照</view>
+  <!-- №10 上传正脸照 -->
+  <view class="pm-section">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">10</text>
+      <text class="pm-sec-title">上传正脸照</text>
+      <view class="pm-sec-line"></view>
+    </view>
     <view
       wx:if="{{isPortrait}}"
-      class="ai-analyze-btn {{isAnalyzing ? 'analyzing' : ''}}"
+      class="pm-ai-btn {{isAnalyzing ? 'analyzing' : ''}}"
       bindtap="runThemeAnalysis"
     >
       {{isAnalyzing ? 'AI 分析中…' : 'AI 帮我选主题'}}
     </view>
-    <view class="upload-tip">请上传 1-3 张清晰正脸照；不戴帽子、墨镜、口罩，不要多人合照。</view>
-    <view class="photo-grid">
-      <view wx:for="{{photos}}" wx:key="tempFilePath" class="photo-item">
+    <view class="pm-upload-tip">请上传 1-3 张清晰正脸照；不戴帽子、墨镜、口罩，不要多人合照。</view>
+    <view class="pm-photo-grid">
+      <view wx:for="{{photos}}" wx:key="tempFilePath" class="pm-photo-item">
         <image src="{{item.tempFilePath}}" mode="aspectFill"></image>
-        <view class="remove-photo" data-index="{{index}}" bindtap="removePhoto">×</view>
+        <view class="pm-remove-photo" data-index="{{index}}" bindtap="removePhoto">×</view>
       </view>
-      <view wx:if="{{photos.length < 3}}" class="photo-add" bindtap="choosePhotos">
-        <view class="add-plus">＋</view>
+      <view wx:if="{{photos.length < 3}}" class="pm-photo-add" bindtap="choosePhotos">
+        <view class="pm-add-plus">＋</view>
         <view>添加照片</view>
       </view>
     </view>
   </view>
 
-  <view class="section analysis-section" wx:if="{{isPortrait && analysisResult}}">
-    <view class="section-title">AI 主题推荐</view>
-    <view class="analysis-summary">{{analysisResult.summary}}</view>
-    <view wx:for="{{analysisResult.scores}}" wx:key="themeId" class="score-row">
-      <view class="score-head">
-        <text class="score-name">{{item.themeName}}</text>
-        <view wx:if="{{index < 2}}" class="recommend-badge">推荐</view>
-        <text class="score-value">{{item.score}} 分</text>
-      </view>
-      <view class="score-track">
-        <view class="score-fill" style="width: {{item.score}}%;"></view>
-      </view>
-      <view class="score-reason">{{item.reason}}</view>
+  <!-- №11 AI 主题推荐 -->
+  <view class="pm-section" wx:if="{{isPortrait && analysisResult}}">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">11</text>
+      <text class="pm-sec-title">AI 主题推荐</text>
+      <view class="pm-sec-line"></view>
     </view>
-    <button class="secondary-btn apply-btn" bindtap="applyAnalysisRecommendation">采用推荐</button>
+    <view class="pm-analysis-summary">{{analysisResult.summary}}</view>
+    <view wx:for="{{analysisResult.scores}}" wx:key="themeId" class="pm-score-row">
+      <view class="pm-score-head">
+        <text class="pm-score-name">{{item.themeName}}</text>
+        <view wx:if="{{index < 2}}" class="pm-recommend-badge">推荐</view>
+        <text class="pm-score-value">{{item.score}} 分</text>
+      </view>
+      <view class="pm-score-track">
+        <view class="pm-score-fill" style="width: {{item.score}}%;"></view>
+      </view>
+      <view class="pm-score-reason">{{item.reason}}</view>
+    </view>
+    <button class="pm-btn-ghost pm-apply-btn" bindtap="applyAnalysisRecommendation">采用推荐</button>
   </view>
 
-  <view class="section">
-    <view class="section-title">授权确认</view>
-    <view class="auth-list">
-      <view wx:for="{{authorizationText}}" wx:key="*this" class="auth-text">{{index + 1}}. {{item}}</view>
+  <!-- №12 授权确认 -->
+  <view class="pm-section">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">12</text>
+      <text class="pm-sec-title">授权确认</text>
+      <view class="pm-sec-line"></view>
     </view>
-    <view class="switch-row">
+    <view class="pm-auth-list">
+      <view wx:for="{{authorizationText}}" wx:key="*this" class="pm-auth-text">{{index + 1}}. {{item}}</view>
+    </view>
+    <view class="pm-switch-row">
       <text>本人或已获明确授权</text>
       <switch checked="{{authorization.isSelfOrAuthorized}}" data-field="isSelfOrAuthorized" bindchange="onAuthChange" />
     </view>
-    <view class="switch-row">
+    <view class="pm-switch-row">
       <text>照片中人物已满 18 周岁</text>
       <switch checked="{{authorization.isAdult}}" data-field="isAdult" bindchange="onAuthChange" />
     </view>
-    <view class="switch-row">
+    <view class="pm-switch-row">
       <text>同意仅用于本次制作</text>
       <switch checked="{{authorization.agreesProduction}}" data-field="agreesProduction" bindchange="onAuthChange" />
     </view>
   </view>
 
   <button
-    class="submit-btn"
+    class="pm-submit-btn"
     loading="{{isSubmitting}}"
     disabled="{{isSubmitting || (isPortrait && selectedThemeIds.length === 0)}}"
     bindtap="submitOrder"
@@ -267,55 +351,71 @@
     {{isPortrait ? '提交写真订单' : '提交证件照订单'}}
   </button>
 
-  <view class="section query-section">
-    <view class="query-head" bindtap="toggleQueryPanel">
-      <view>
-        <view class="section-title query-title">查询订单</view>
-        <view class="query-desc">换设备或联系客服时，可用订单号、手机号和查询密码查看订单。</view>
+  <!-- №13 查询订单：行式折叠条 -->
+  <view class="pm-section pm-query-section">
+    <view class="pm-query-head" bindtap="toggleQueryPanel">
+      <view class="pm-query-head-main">
+        <view class="pm-sec-head">
+          <text class="pm-sec-mark">№</text>
+          <text class="pm-sec-no">13</text>
+          <text class="pm-sec-title">查询订单</text>
+          <view class="pm-sec-line"></view>
+        </view>
+        <view class="pm-query-desc">换设备或联系客服时，可用订单号、手机号和查询密码查看订单。</view>
       </view>
-      <view class="query-toggle">{{showQueryPanel ? '收起' : '展开'}}</view>
+      <view class="pm-query-toggle">{{showQueryPanel ? '收起' : '展开'}}</view>
     </view>
-    <view wx:if="{{showQueryPanel}}" class="query-form">
+    <view wx:if="{{showQueryPanel}}" class="pm-query-form">
       <input
-        class="text-input"
+        class="pm-input"
         placeholder="订单号，例如 AIStudio-..."
+        placeholder-class="pm-placeholder"
         value="{{queryOrderId}}"
         bindinput="onQueryOrderIdInput"
       />
       <input
-        class="text-input"
+        class="pm-input"
         type="number"
         maxlength="11"
         placeholder="下单手机号"
+        placeholder-class="pm-placeholder"
         value="{{queryContactPhone}}"
         bindinput="onQueryPhoneInput"
       />
       <input
-        class="text-input"
+        class="pm-input"
         password
         maxlength="32"
         placeholder="查询密码"
+        placeholder-class="pm-placeholder"
         value="{{queryOrderPassword}}"
         bindinput="onQueryOrderPasswordInput"
       />
-      <button class="secondary-btn" bindtap="queryOrder">查询订单</button>
+      <button class="pm-btn-ghost pm-query-btn" bindtap="queryOrder">查询订单</button>
     </view>
   </view>
 
-  <view class="section orders-section">
-    <view class="section-title">我的订单</view>
-    <view wx:if="{{orders.length === 0}}" class="empty-state">暂无证件照订单，提交后会显示在这里。</view>
-    <view wx:for="{{orders}}" wx:key="orderId" class="order-card" data-id="{{item.orderId}}" bindtap="openOrder">
-      <view>
-        <view class="order-title">{{item.productName}}</view>
-        <view class="order-meta">{{item.styleName}} · {{item.reference_photo_count}} 张参考图</view>
-        <view wx:if="{{item.reviewNote}}" class="order-note">{{item.reviewNote}}</view>
+  <!-- №14 我的订单：纸面卡 -->
+  <view class="pm-section pm-orders-section">
+    <view class="pm-sec-head">
+      <text class="pm-sec-mark">№</text>
+      <text class="pm-sec-no">14</text>
+      <text class="pm-sec-title">我的订单</text>
+      <view class="pm-sec-line"></view>
+    </view>
+    <view wx:if="{{orders.length === 0}}" class="pm-empty-state">暂无证件照订单，提交后会显示在这里。</view>
+    <view wx:for="{{orders}}" wx:key="orderId" class="pm-order-card" data-id="{{item.orderId}}" bindtap="openOrder">
+      <view class="pm-order-main">
+        <view class="pm-order-title">{{item.productName}}</view>
+        <view class="pm-order-id">{{item.orderId}}</view>
+        <view class="pm-order-meta">{{item.styleName}} · {{item.reference_photo_count}} 张参考图</view>
+        <view wx:if="{{item.reviewNote}}" class="pm-order-note">{{item.reviewNote}}</view>
       </view>
-      <view class="order-status">{{item.statusText}}</view>
+      <view class="pm-order-status st-{{item.order_status}}">{{item.statusText}}</view>
     </view>
   </view>
 
-  <view class="admin-entry" bindtap="openAdminLogin">
+  <view class="pm-admin-entry" bindtap="openAdminLogin">
     管理登录
   </view>
 </view>

@@ -1,58 +1,131 @@
-/* 场景模拟展示页：蓝白体系（#1976D2 / #F5F9FF）+ 实物色（米白墙 / 木色 / 深棕） */
+/* 场景模拟 · Editorial 纸面化外围（品牌令牌 --pm-*）+ 六款纯 CSS 实景
+   外围 chrome 一律 var() 引用令牌；场景内部墙面/木色/深棕/水晶/金属为
+   实物拟真色系（非品牌令牌），主要色已抽成页面级 --pm-scene-* 变量，
+   其余一次性实物色以字面量保留并注释标明。 */
 
 .showcase-page {
+  /* ---- 实物色系（场景拟真，非品牌令牌）---- */
+  --pm-scene-wall: #f8f3ea;        /* 米白墙面 */
+  --pm-scene-wall-deep: #e9dfcc;   /* 墙面近地投影 */
+  --pm-scene-wood: #c9a075;        /* 木色桌面 */
+  --pm-scene-wood-deep: #b0855c;   /* 桌面暗部 */
+  --pm-scene-frame: #5d4037;       /* 深棕画框 */
+  --pm-scene-frame-light: #7b5a4f; /* 画框受光面 */
+  --pm-scene-leather: #6d4c41;     /* 皮革（钱包/书脊） */
+  --pm-scene-leather-deep: #4e342e;
+  --pm-scene-metal: #9aa2ab;       /* 金属件（挂环） */
+  --pm-scene-cord: #8d6e63;        /* 挂绳/挂线 */
+  --pm-scene-paper: #fffdf9;       /* 挂历纸 */
+
   min-height: 100vh;
-  padding: 24rpx;
+  padding: 24rpx 24rpx 48rpx;
   box-sizing: border-box;
-  background: #f5f9ff;
+  background: var(--pm-bg);
 }
 
+/* ===== 刊头 ===== */
 .top-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18rpx;
+  padding-bottom: 18rpx;
+  margin-bottom: 24rpx;
+  border-bottom: 2rpx solid var(--pm-hairline);
 }
 
 .back-btn {
   display: inline-flex;
   align-items: center;
-  min-height: 64rpx;
-  padding: 0 22rpx;
-  border-radius: 999rpx;
-  background: #ffffff;
-  color: #1976d2;
-  font-size: 28rpx;
+  justify-content: center;
+  min-height: 56rpx;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  border: 2rpx solid var(--pm-hairline-strong);
+  border-radius: var(--pm-radius);
+  background: var(--pm-card);
+  color: var(--pm-primary);
+  font-size: 26rpx;
   font-weight: 700;
-  box-shadow: 0 6rpx 18rpx rgba(25, 118, 210, 0.08);
+  letter-spacing: 2rpx;
 }
 
 .nav-title {
-  flex: 1;
-  padding-right: 24rpx;
-  color: #1f2d3d;
-  font-size: 30rpx;
-  font-weight: 800;
-  text-align: center;
+  color: var(--pm-ink);
+  font-family: var(--pm-serif);
+  font-size: 32rpx;
+  font-weight: 700;
+  letter-spacing: 8rpx;
 }
 
+.nav-spacer {
+  width: 108rpx;
+  flex-shrink: 0;
+}
+
+/* 提示条：纸面便签 + 品牌蓝侧线 */
 .hint-bar {
-  margin-bottom: 20rpx;
-  padding: 16rpx 20rpx;
-  border-radius: 16rpx;
-  color: #1976d2;
-  background: #e3f2fd;
-  font-size: 25rpx;
-  line-height: 1.5;
+  margin-bottom: 24rpx;
+  padding: 18rpx 22rpx;
+  border: 1rpx solid var(--pm-hairline);
+  border-left: 6rpx solid var(--pm-primary);
+  border-radius: var(--pm-radius);
+  background: var(--pm-card);
+  color: var(--pm-ink-2);
+  font-size: 24rpx;
+  line-height: 1.6;
 }
 
-/* ===== 1. 品类切换条 ===== */
-.chip-bar {
+/* ===== 纸面卡 + № 编号区块头 ===== */
+.panel {
   margin-bottom: 24rpx;
-  padding: 18rpx;
-  border-radius: 20rpx;
-  background: #ffffff;
-  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+  padding: 28rpx;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius-card);
+  background: var(--pm-card);
+  box-shadow: var(--pm-shadow-card);
+}
+
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  padding-bottom: 16rpx;
+  margin-bottom: 22rpx;
+  border-bottom: 2rpx solid var(--pm-hairline);
+}
+
+.sec-no {
+  font-family: var(--pm-serif);
+  font-style: italic;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--pm-primary);
+}
+
+.sec-num {
+  margin-left: 8rpx;
+  font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
+  font-size: 24rpx;
+  letter-spacing: 2rpx;
+  color: var(--pm-ink-3);
+}
+
+.sec-dot {
+  margin: 0 12rpx;
+  font-size: 24rpx;
+  color: var(--pm-ink-4);
+}
+
+.sec-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
+  color: var(--pm-ink);
+}
+
+/* ===== №01 品类切换条：直角小方签 ===== */
+.chip-bar {
+  width: 100%;
   white-space: nowrap;
 }
 
@@ -66,45 +139,51 @@
   align-items: center;
   padding: 14rpx 26rpx;
   margin-right: 14rpx;
-  border-radius: 16rpx;
-  background: #eef3f8;
-  color: #37474f;
+  border: 2rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius);
+  background: var(--pm-card);
+  box-shadow: var(--pm-shadow-card);
 }
 
 .chip-name {
   font-size: 26rpx;
   font-weight: 700;
+  letter-spacing: 2rpx;
+  color: var(--pm-ink);
 }
 
 .chip-price {
-  margin-top: 4rpx;
+  margin-top: 6rpx;
+  font-family: var(--pm-serif);
+  font-style: italic;
   font-size: 22rpx;
-  color: #78909c;
+  color: var(--pm-ink-3);
 }
 
 .chip-active {
-  background: #1976d2;
-  color: #ffffff;
-  box-shadow: 0 8rpx 18rpx rgba(25, 118, 210, 0.32);
+  border-color: var(--pm-primary);
+  background: var(--pm-primary);
+}
+
+.chip-active .chip-name {
+  color: var(--pm-card);
 }
 
 .chip-active .chip-price {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--pm-primary-soft);
 }
 
-/* ===== 2. 场景模拟区 ===== */
+/* ===== №02 场景模拟区 ===== */
 .scene-card {
-  margin-bottom: 24rpx;
-  padding: 24rpx;
-  border-radius: 24rpx;
-  background: #ffffff;
-  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+  padding: 28rpx;
 }
 
+/* 场景舞台：外围统一发丝边 + 直角 + 纸面投影 */
 .scene-stage {
   position: relative;
   width: 100%;
-  border-radius: 20rpx;
+  border: 1rpx solid var(--pm-hairline-strong);
+  border-radius: var(--pm-radius-card);
   overflow: hidden;
 }
 
@@ -112,7 +191,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  background: #eef3f8;
+  background: var(--pm-card-soft);
 }
 
 .photo-empty {
@@ -120,19 +199,30 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  color: #90a4ae;
+  color: var(--pm-ink-3);
   font-size: 24rpx;
-  background: #e8eef5;
+  background: var(--pm-card-soft);
 }
 
 .photo-empty-sm {
   font-size: 20rpx;
 }
 
-/* --- 挂墙：客厅墙场景 --- */
+/* 场景说明：衬线斜体小字 */
+.scene-caption {
+  margin-top: 18rpx;
+  text-align: center;
+  font-family: var(--pm-serif);
+  font-style: italic;
+  font-size: 23rpx;
+  letter-spacing: 2rpx;
+  color: var(--pm-ink-3);
+}
+
+/* --- 挂墙：客厅墙场景（实物色系，非品牌令牌） --- */
 .scene-wall {
   height: 620rpx;
-  background: linear-gradient(180deg, #f8f3ea 0%, #f1e9da 70%, #e9dfcc 100%);
+  background: linear-gradient(180deg, var(--pm-scene-wall) 0%, #f1e9da 70%, var(--pm-scene-wall-deep) 100%);
 }
 
 .wall-baseboard {
@@ -141,9 +231,9 @@
   right: 0;
   bottom: 0;
   height: 34rpx;
-  background: #dccfb8;
-  border-top: 3rpx solid #cbbca0;
-  box-shadow: 0 -8rpx 14rpx rgba(93, 64, 55, 0.1);
+  background: #dccfb8; /* 实物色系，非品牌令牌：踢脚线 */
+  border-top: 3rpx solid #cbbca0; /* 实物色系，非品牌令牌 */
+  box-shadow: 0 -8rpx 14rpx rgba(93, 64, 55, 0.1); /* 实物投影 */
 }
 
 .wall-frame-group {
@@ -161,7 +251,7 @@
   height: 12rpx;
   margin-left: -6rpx;
   border-radius: 50%;
-  background: #5d4037;
+  background: var(--pm-scene-frame);
 }
 
 .frame-cord {
@@ -170,7 +260,7 @@
   width: 4rpx;
   height: 44rpx;
   border-radius: 2rpx;
-  background: #8d6e63;
+  background: var(--pm-scene-cord);
   transform-origin: 50% 100%;
 }
 
@@ -185,14 +275,14 @@
 }
 
 .wall-frame {
-  background: linear-gradient(145deg, #7b5a4f 0%, #5d4037 100%);
+  background: linear-gradient(145deg, var(--pm-scene-frame-light) 0%, var(--pm-scene-frame) 100%);
   padding: 14rpx;
-  border-radius: 8rpx;
-  box-shadow: 0 22rpx 44rpx rgba(62, 39, 35, 0.35);
+  border-radius: 8rpx; /* 实物画框圆角 */
+  box-shadow: 0 22rpx 44rpx rgba(62, 39, 35, 0.35); /* 实物投影 */
 }
 
 .frame-mat {
-  background: #ffffff;
+  background: #ffffff; /* 实物色系，非品牌令牌：卡纸白 */
   padding: 24rpx;
 }
 
@@ -214,6 +304,7 @@
   height: 384rpx;
 }
 
+/* 沙发：灰布艺（实物色系，非品牌令牌） */
 .sofa {
   position: absolute;
   bottom: 34rpx;
@@ -230,7 +321,7 @@
   right: 70rpx;
   height: 118rpx;
   border-radius: 44rpx 44rpx 14rpx 14rpx;
-  background: #c5cad2;
+  background: #c5cad2; /* 实物色系，非品牌令牌 */
 }
 
 .sofa-cushion {
@@ -239,7 +330,7 @@
   width: 160rpx;
   height: 62rpx;
   border-radius: 24rpx;
-  background: #ced3da;
+  background: #ced3da; /* 实物色系，非品牌令牌 */
 }
 
 .cushion-l {
@@ -256,7 +347,7 @@
   width: 62rpx;
   height: 150rpx;
   border-radius: 31rpx;
-  background: #adb3bd;
+  background: #adb3bd; /* 实物色系，非品牌令牌 */
 }
 
 .sofa-arm-l {
@@ -274,7 +365,7 @@
   right: 56rpx;
   height: 78rpx;
   border-radius: 16rpx;
-  background: #b8bec7;
+  background: #b8bec7; /* 实物色系，非品牌令牌 */
 }
 
 .sofa-shadow {
@@ -284,13 +375,13 @@
   right: 64rpx;
   height: 24rpx;
   border-radius: 50%;
-  background: rgba(62, 39, 35, 0.12);
+  background: rgba(62, 39, 35, 0.12); /* 实物投影 */
 }
 
-/* --- 摆台：桌面 + 水晶摆台 --- */
+/* --- 摆台：桌面 + 水晶摆台（实物色系，非品牌令牌） --- */
 .scene-desk {
   height: 620rpx;
-  background: linear-gradient(180deg, #edf1f6 0%, #e8edf3 52%, #c9a075 52%, #c9a075 100%);
+  background: linear-gradient(180deg, #edf1f6 0%, #e8edf3 52%, var(--pm-scene-wood) 52%, var(--pm-scene-wood) 100%);
 }
 
 .desk-surface {
@@ -299,7 +390,7 @@
   right: 0;
   bottom: 0;
   height: 300rpx;
-  background: linear-gradient(180deg, #c9a075 0%, #bd8f66 60%, #b0855c 100%);
+  background: linear-gradient(180deg, var(--pm-scene-wood) 0%, #bd8f66 60%, var(--pm-scene-wood-deep) 100%); /* #bd8f66 实木过渡色，非品牌令牌 */
   clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%);
 }
 
@@ -316,7 +407,7 @@
     rgba(255, 255, 255, 0.06) 3rpx,
     transparent 3rpx,
     transparent 64rpx
-  );
+  ); /* 实物木纹 */
 }
 
 .stand-group {
@@ -334,7 +425,7 @@
   height: 40rpx;
   margin-left: -160rpx;
   border-radius: 50%;
-  background: rgba(62, 39, 35, 0.28);
+  background: rgba(62, 39, 35, 0.28); /* 实物投影 */
 }
 
 .stand-piece {
@@ -343,9 +434,9 @@
 }
 
 .desk-photo-card {
-  background: #ffffff;
+  background: #ffffff; /* 实物色系，非品牌令牌：相纸白 */
   padding: 16rpx;
-  box-shadow: 0 16rpx 34rpx rgba(62, 39, 35, 0.3);
+  box-shadow: 0 16rpx 34rpx rgba(62, 39, 35, 0.3); /* 实物投影 */
 }
 
 .desk-photo {
@@ -353,6 +444,7 @@
   height: 350rpx;
 }
 
+/* 水晶高光（实物色系，非品牌令牌） */
 .crystal-panel {
   position: absolute;
   top: -8rpx;
@@ -390,15 +482,15 @@
   margin-left: -115rpx;
   border-radius: 12rpx;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.35));
-  box-shadow: 0 8rpx 14rpx rgba(62, 39, 35, 0.2);
+  box-shadow: 0 8rpx 14rpx rgba(62, 39, 35, 0.2); /* 实物投影 */
 }
 
-/* --- 挂历：照片 + 13 个月历点阵 --- */
+/* --- 挂历：照片 + 13 个月历点阵（实物色系，非品牌令牌） --- */
 .scene-calendar {
   height: auto;
   overflow: visible;
   padding: 46rpx 0 40rpx;
-  background: linear-gradient(180deg, #e9eef4 0%, #dfe7f0 100%);
+  background: linear-gradient(180deg, #e9eef4 0%, #dfe7f0 100%); /* 实物色系，非品牌令牌：桌面冷灰背景 */
   display: flex;
   justify-content: center;
 }
@@ -406,9 +498,9 @@
 .calendar-card {
   position: relative;
   width: 500rpx;
-  background: #fffdf9;
-  border-radius: 14rpx;
-  box-shadow: 0 22rpx 46rpx rgba(31, 45, 61, 0.18);
+  background: var(--pm-scene-paper);
+  border-radius: 14rpx; /* 实物纸品圆角 */
+  box-shadow: 0 22rpx 46rpx rgba(31, 45, 61, 0.18); /* 实物投影 */
   transform: rotate(0.6deg);
   padding-bottom: 8rpx;
 }
@@ -418,7 +510,7 @@
   top: -20rpx;
   width: 34rpx;
   height: 34rpx;
-  border: 8rpx solid #97a1ac;
+  border: 8rpx solid #97a1ac; /* 实物色系，非品牌令牌：装订环 */
   border-radius: 50%;
   box-sizing: border-box;
 }
@@ -437,15 +529,17 @@
   height: 620rpx;
   margin: 26rpx auto 0;
   border-radius: 10rpx;
-  background: #eef3f8;
+  background: var(--pm-card-soft);
 }
 
 .cal-range {
   margin: 14rpx 0 4rpx;
   text-align: center;
-  color: #90a4ae;
+  font-family: var(--pm-serif);
+  font-style: italic;
   font-size: 22rpx;
   letter-spacing: 2rpx;
+  color: var(--pm-ink-3);
 }
 
 .cal-months {
@@ -456,13 +550,13 @@
 }
 
 .cal-month {
-  border-top: 2rpx solid #e8e2d6;
+  border-top: 2rpx solid #e8e2d6; /* 实物色系，非品牌令牌：挂历分隔线 */
   padding-top: 4rpx;
 }
 
 .cal-month-name {
   text-align: center;
-  color: #37474f;
+  color: var(--pm-ink-2);
   font-size: 20rpx;
   font-weight: 700;
   line-height: 1.3;
@@ -476,7 +570,7 @@
 
 .cal-week text {
   text-align: center;
-  color: #90a4ae;
+  color: var(--pm-ink-3);
   font-size: 13rpx;
   line-height: 1.4;
 }
@@ -492,7 +586,7 @@
   width: 7rpx;
   height: 7rpx;
   border-radius: 50%;
-  background: #546e7a;
+  background: #546e7a; /* 实物色系，非品牌令牌：挂历印刷点 */
   justify-self: center;
 }
 
@@ -500,10 +594,10 @@
   background: transparent;
 }
 
-/* --- 钱包照：钱包 + 6 张小卡 --- */
+/* --- 钱包照：钱包 + 6 张小卡（实物色系，非品牌令牌） --- */
 .scene-wallet {
   height: 620rpx;
-  background: linear-gradient(180deg, #f3f0ea 0%, #e9e3d7 100%);
+  background: linear-gradient(180deg, #f3f0ea 0%, #e9e3d7 100%); /* 实物色系，非品牌令牌：亚麻桌面 */
 }
 
 .wallet {
@@ -512,9 +606,9 @@
   bottom: 150rpx;
   width: 300rpx;
   height: 236rpx;
-  border-radius: 26rpx;
-  background: linear-gradient(160deg, #6d4c41 0%, #4e342e 100%);
-  box-shadow: 0 18rpx 36rpx rgba(62, 39, 35, 0.35);
+  border-radius: 26rpx; /* 实物皮具圆角 */
+  background: linear-gradient(160deg, var(--pm-scene-leather) 0%, var(--pm-scene-leather-deep) 100%);
+  box-shadow: 0 18rpx 36rpx rgba(62, 39, 35, 0.35); /* 实物投影 */
 }
 
 .wallet-flap {
@@ -524,7 +618,7 @@
   right: 0;
   height: 92rpx;
   border-radius: 26rpx 26rpx 0 0;
-  background: rgba(0, 0, 0, 0.16);
+  background: rgba(0, 0, 0, 0.16); /* 实物皮革压盖 */
 }
 
 .wallet-stitch {
@@ -533,7 +627,7 @@
   left: 12rpx;
   right: 12rpx;
   bottom: 12rpx;
-  border: 3rpx dashed rgba(255, 255, 255, 0.35);
+  border: 3rpx dashed rgba(255, 255, 255, 0.35); /* 实物缝线 */
   border-radius: 18rpx;
 }
 
@@ -545,8 +639,8 @@
   height: 28rpx;
   margin-left: -28rpx;
   border-radius: 10rpx;
-  background: linear-gradient(180deg, #dcc699, #b49a6c);
-  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.25);
+  background: linear-gradient(180deg, #dcc699, #b49a6c); /* 实物色系，非品牌令牌：黄铜扣 */
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.25); /* 实物投影 */
 }
 
 .wallet-cards {
@@ -563,9 +657,9 @@
   width: 150rpx;
   height: 114rpx;
   padding: 8rpx;
-  border-radius: 8rpx;
-  background: #ffffff;
-  box-shadow: 0 8rpx 16rpx rgba(31, 45, 61, 0.2);
+  border-radius: 8rpx; /* 实物小卡圆角 */
+  background: #ffffff; /* 实物色系，非品牌令牌：相纸白 */
+  box-shadow: 0 8rpx 16rpx rgba(31, 45, 61, 0.2); /* 实物投影 */
   overflow: hidden;
 }
 
@@ -611,10 +705,10 @@
   z-index: 1;
 }
 
-/* --- 亚克力挂件：一对圆形挂件 --- */
+/* --- 亚克力挂件：一对圆形挂件（实物色系，非品牌令牌） --- */
 .scene-pendant {
   height: 640rpx;
-  background: linear-gradient(180deg, #eef3f8 0%, #e0e9f2 100%);
+  background: linear-gradient(180deg, #eef3f8 0%, #e0e9f2 100%); /* 实物色系，非品牌令牌：冷灰背景 */
 }
 
 .pendant-group {
@@ -642,7 +736,7 @@
   height: 148rpx;
   margin-left: -2rpx;
   border-radius: 2rpx;
-  background: linear-gradient(180deg, #a1887f, #8d6e63);
+  background: linear-gradient(180deg, #a1887f, var(--pm-scene-cord)); /* #a1887f 实物绳色，非品牌令牌 */
 }
 
 .pendant-ring {
@@ -652,7 +746,7 @@
   width: 44rpx;
   height: 44rpx;
   margin-left: -22rpx;
-  border: 7rpx solid #9aa2ab;
+  border: 7rpx solid var(--pm-scene-metal);
   border-radius: 50%;
   box-sizing: border-box;
 }
@@ -664,15 +758,15 @@
   width: 264rpx;
   height: 264rpx;
   margin-left: -132rpx;
-  border: 3rpx solid rgba(255, 255, 255, 0.9);
+  border: 3rpx solid rgba(255, 255, 255, 0.9); /* 实物亚克力边缘 */
   border-radius: 50%;
   background: radial-gradient(
     circle at 34% 26%,
     rgba(255, 255, 255, 0.85) 0%,
     rgba(255, 255, 255, 0.28) 46%,
     rgba(255, 255, 255, 0.45) 100%
-  );
-  box-shadow: 0 18rpx 36rpx rgba(31, 45, 61, 0.16);
+  ); /* 实物亚克力质感 */
+  box-shadow: 0 18rpx 36rpx rgba(31, 45, 61, 0.16); /* 实物投影 */
 }
 
 .pendant-photo {
@@ -682,11 +776,11 @@
   width: 200rpx;
   height: 200rpx;
   margin: -100rpx 0 0 -100rpx;
-  border: 6rpx solid #ffffff;
+  border: 6rpx solid #ffffff; /* 实物色系，非品牌令牌：白边 */
   border-radius: 50%;
   overflow: hidden;
   box-sizing: border-box;
-  background: #eef3f8;
+  background: var(--pm-card-soft);
 }
 
 .pendant-shine {
@@ -696,16 +790,16 @@
   width: 92rpx;
   height: 92rpx;
   border: 12rpx solid transparent;
-  border-top-color: rgba(255, 255, 255, 0.9);
-  border-right-color: rgba(255, 255, 255, 0.55);
+  border-top-color: rgba(255, 255, 255, 0.9); /* 实物高光 */
+  border-right-color: rgba(255, 255, 255, 0.55); /* 实物高光 */
   border-radius: 50%;
   transform: rotate(28deg);
 }
 
-/* --- 相册：摊开的跨页相册 --- */
+/* --- 相册：摊开的跨页相册（实物色系，非品牌令牌） --- */
 .scene-album {
   height: 640rpx;
-  background: linear-gradient(180deg, #f6f1e8 0%, #eae2d3 100%);
+  background: linear-gradient(180deg, #f6f1e8 0%, #eae2d3 100%); /* 实物色系，非品牌令牌：米色台面 */
 }
 
 .album-wrap {
@@ -719,7 +813,7 @@
 
 .album-depth {
   position: absolute;
-  border-radius: 12rpx;
+  border-radius: 12rpx; /* 实物纸叠圆角 */
 }
 
 .depth-1 {
@@ -727,7 +821,7 @@
   left: -4rpx;
   right: -4rpx;
   bottom: -6rpx;
-  background: #e6dfcf;
+  background: #e6dfcf; /* 实物色系，非品牌令牌：内页边 */
 }
 
 .depth-2 {
@@ -735,7 +829,7 @@
   left: -9rpx;
   right: -9rpx;
   bottom: -12rpx;
-  background: #d8cfb9;
+  background: #d8cfb9; /* 实物色系，非品牌令牌：外页边 */
 }
 
 .album-spread {
@@ -745,9 +839,9 @@
   right: 0;
   height: 420rpx;
   display: flex;
-  border-radius: 12rpx;
-  background: #fdfbf6;
-  box-shadow: 0 18rpx 40rpx rgba(31, 45, 61, 0.22);
+  border-radius: 12rpx; /* 实物纸品圆角 */
+  background: #fdfbf6; /* 实物色系，非品牌令牌：内衬纸 */
+  box-shadow: 0 18rpx 40rpx rgba(31, 45, 61, 0.22); /* 实物投影 */
   z-index: 2;
 }
 
@@ -760,19 +854,19 @@
 
 .page-left {
   border-radius: 12rpx 3rpx 3rpx 12rpx;
-  box-shadow: inset -22rpx 0 26rpx -14rpx rgba(31, 45, 61, 0.22);
+  box-shadow: inset -22rpx 0 26rpx -14rpx rgba(31, 45, 61, 0.22); /* 实物装订凹陷 */
 }
 
 .page-right {
   border-radius: 3rpx 12rpx 12rpx 3rpx;
-  box-shadow: inset 22rpx 0 26rpx -14rpx rgba(31, 45, 61, 0.22);
+  box-shadow: inset 22rpx 0 26rpx -14rpx rgba(31, 45, 61, 0.22); /* 实物装订凹陷 */
 }
 
 .album-photo-card {
-  background: #ffffff;
+  background: #ffffff; /* 实物色系，非品牌令牌：相纸白 */
   padding: 14rpx 14rpx 12rpx;
   border-radius: 4rpx;
-  box-shadow: 0 8rpx 18rpx rgba(31, 45, 61, 0.12);
+  box-shadow: 0 8rpx 18rpx rgba(31, 45, 61, 0.12); /* 实物投影 */
 }
 
 .album-photo {
@@ -785,7 +879,7 @@
   height: 8rpx;
   margin: 14rpx auto 0;
   border-radius: 4rpx;
-  background: #e3ddd0;
+  background: #e3ddd0; /* 实物色系，非品牌令牌：留白衬线 */
 }
 
 .album-spine {
@@ -800,7 +894,7 @@
     rgba(31, 45, 61, 0) 0%,
     rgba(31, 45, 61, 0.38) 50%,
     rgba(31, 45, 61, 0) 100%
-  );
+  ); /* 实物书沟 */
   z-index: 3;
 }
 
@@ -812,21 +906,24 @@
   height: 30rpx;
   margin-left: -105rpx;
   border-radius: 8rpx 8rpx 12rpx 12rpx;
-  background: linear-gradient(180deg, #6d4c41, #4e342e);
-  box-shadow: 0 10rpx 18rpx rgba(62, 39, 35, 0.3);
+  background: linear-gradient(180deg, var(--pm-scene-leather), var(--pm-scene-leather-deep));
+  box-shadow: 0 10rpx 18rpx rgba(62, 39, 35, 0.3); /* 实物投影 */
   z-index: 4;
 }
 
-/* --- 成片切换照片条 --- */
+/* --- 成片切换照片条：直角发丝边缩略 --- */
 .photo-strip-wrap {
-  margin-top: 22rpx;
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid var(--pm-hairline);
 }
 
 .strip-title {
   margin-bottom: 14rpx;
-  color: #1f2d3d;
-  font-size: 28rpx;
+  color: var(--pm-ink);
+  font-size: 26rpx;
   font-weight: 700;
+  letter-spacing: 4rpx;
 }
 
 .photo-strip {
@@ -837,7 +934,7 @@
 .strip-row {
   display: inline-flex;
   align-items: center;
-  padding-bottom: 6rpx;
+  padding-bottom: 20rpx;
 }
 
 .strip-item {
@@ -846,10 +943,10 @@
   width: 120rpx;
   height: 120rpx;
   margin-right: 16rpx;
-  border: 4rpx solid #e3eaf2;
-  border-radius: 16rpx;
+  border: 2rpx solid var(--pm-hairline-strong);
+  border-radius: var(--pm-radius);
   overflow: hidden;
-  background: #eef3f8;
+  background: var(--pm-card-soft);
 }
 
 .strip-image {
@@ -858,90 +955,105 @@
   height: 100%;
 }
 
+/* 当前选中：品牌蓝 2rpx 描边 + 底部小三角（上指，位于缩略图内底边） */
 .strip-active {
-  border-color: #1976d2;
-  box-shadow: 0 8rpx 18rpx rgba(25, 118, 210, 0.3);
+  border-color: var(--pm-primary);
 }
 
+.strip-active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  margin-left: -8rpx;
+  border: 8rpx solid transparent;
+  border-bottom: 8rpx solid var(--pm-primary);
+}
+
+/* 序号方签 */
 .strip-no {
   position: absolute;
-  right: 6rpx;
-  bottom: 6rpx;
-  min-width: 30rpx;
-  height: 30rpx;
+  left: 0;
+  bottom: 0;
+  min-width: 32rpx;
+  height: 32rpx;
   padding: 0 6rpx;
-  border-radius: 15rpx;
-  background: rgba(0, 0, 0, 0.5);
-  color: #ffffff;
+  border-radius: 0;
+  background: var(--pm-ink);
+  color: var(--pm-card);
+  font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
   font-size: 20rpx;
-  line-height: 30rpx;
+  line-height: 32rpx;
   text-align: center;
   box-sizing: border-box;
+}
+
+.strip-active .strip-no {
+  background: var(--pm-primary);
 }
 
 .strip-empty {
   display: inline-flex;
   align-items: center;
   height: 120rpx;
-  color: #90a4ae;
+  color: var(--pm-ink-3);
   font-size: 25rpx;
 }
 
-/* ===== 3. 已选清单 ===== */
+/* ===== №03 已选清单：行式 ===== */
 .cart-section {
-  margin-bottom: 24rpx;
   padding: 28rpx;
-  border-radius: 24rpx;
-  background: #ffffff;
-  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
-}
-
-.section-title {
-  margin-bottom: 20rpx;
-  color: #1f2d3d;
-  font-size: 32rpx;
-  font-weight: 700;
 }
 
 .empty-state {
-  color: #607d8b;
-  font-size: 26rpx;
-  line-height: 1.55;
+  padding: 12rpx 0 4rpx;
+  font-family: var(--pm-serif);
+  font-style: italic;
+  font-size: 25rpx;
+  line-height: 1.6;
+  color: var(--pm-ink-3);
 }
 
 .cart-item {
   display: flex;
   align-items: center;
   padding: 18rpx 0;
-  border-bottom: 1rpx solid #edf2f7;
+  border-bottom: 1rpx solid var(--pm-hairline);
 }
 
 .cart-thumb {
   flex-shrink: 0;
   width: 96rpx;
   height: 96rpx;
-  border-radius: 14rpx;
-  background: #eef3f8;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius);
+  background: var(--pm-card-soft);
 }
 
 .cart-info {
   flex: 1;
   min-width: 0;
-  margin: 0 12rpx;
+  margin: 0 16rpx;
 }
 
 .cart-name {
-  color: #1f2d3d;
+  color: var(--pm-ink);
   font-size: 27rpx;
   font-weight: 600;
+  letter-spacing: 2rpx;
 }
 
 .cart-price {
   margin-top: 6rpx;
-  color: #78909c;
+  font-family: var(--pm-serif);
+  font-style: italic;
   font-size: 24rpx;
+  color: var(--pm-ink-3);
 }
 
+/* qty 步进：方签化 */
 .stepper {
   display: flex;
   align-items: center;
@@ -950,66 +1062,95 @@
 .step-btn {
   width: 52rpx;
   height: 52rpx;
-  border-radius: 12rpx;
-  background: #eef3f8;
-  color: #1976d2;
+  border: 2rpx solid var(--pm-hairline-strong);
+  border-radius: var(--pm-radius);
+  background: var(--pm-card);
+  color: var(--pm-primary);
   font-size: 30rpx;
   font-weight: 700;
-  line-height: 52rpx;
+  line-height: 48rpx;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .step-num {
   min-width: 56rpx;
-  color: #1f2d3d;
+  font-family: var(--pm-serif);
+  color: var(--pm-ink);
   font-size: 28rpx;
   font-weight: 700;
   text-align: center;
 }
 
 .cart-remove {
-  margin-left: 14rpx;
+  margin-left: 16rpx;
   width: 44rpx;
   height: 44rpx;
-  border-radius: 50%;
-  background: #fdecea;
-  color: #d32f2f;
+  border-radius: var(--pm-radius);
+  background: var(--pm-danger-soft);
+  color: var(--pm-danger);
   font-size: 30rpx;
   line-height: 44rpx;
   text-align: center;
 }
 
+/* 合计：衬线大数字 */
 .cart-total {
   display: flex;
   justify-content: flex-end;
   align-items: baseline;
-  padding-top: 20rpx;
-  color: #37474f;
-  font-size: 27rpx;
+  padding-top: 22rpx;
+  color: var(--pm-ink-2);
+  font-size: 26rpx;
+  letter-spacing: 4rpx;
 }
 
 .cart-total-num {
-  margin-left: 10rpx;
-  color: #1976d2;
-  font-size: 38rpx;
-  font-weight: 800;
+  margin-left: 12rpx;
+  font-family: var(--pm-serif);
+  color: var(--pm-primary);
+  font-size: 46rpx;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
-/* ===== 4. 提交 ===== */
+/* ===== №04 提交：满宽直角品牌蓝 ===== */
 .primary-btn {
+  display: block;
+  width: 100%;
   margin-top: 24rpx;
-  border-radius: 999rpx;
-  background: #1976d2;
-  color: #ffffff;
+  padding: 22rpx 24rpx;
+  box-sizing: border-box;
+  border-radius: var(--pm-radius);
+  background: var(--pm-primary);
+  color: var(--pm-card);
+  font-size: 28rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  line-height: 1.4;
+  box-shadow: var(--pm-shadow-card);
+}
+
+.primary-btn::after {
+  border: none;
+}
+
+.primary-btn[disabled] {
+  background: var(--pm-ink-4);
+  color: var(--pm-card);
+  box-shadow: none;
 }
 
 .submit-btn {
   margin-top: 28rpx;
+  letter-spacing: 8rpx;
 }
 
 .submit-hint {
   margin-top: 14rpx;
-  color: #90a4ae;
+  font-family: var(--pm-serif);
+  font-style: italic;
   font-size: 23rpx;
   text-align: center;
+  color: var(--pm-ink-3);
 }

@@ -2,28 +2,44 @@
   <view class="top-nav">
     <view class="back-btn" bindtap="goBack">‹ 返回</view>
     <view class="nav-title">场景模拟</view>
+    <view class="nav-spacer"></view>
   </view>
 
   <view class="hint-bar">选品类、选成片，实时预览周边实物效果；点击场景中的照片或下方缩略图可切换成片。</view>
 
-  <!-- 1. 品类切换条 -->
-  <scroll-view class="chip-bar" scroll-x enable-flex>
-    <view class="chip-row">
-      <view
-        wx:for="{{catalog}}"
-        wx:key="merchId"
-        class="chip {{activeMerchId === item.merchId ? 'chip-active' : ''}}"
-        data-merch-id="{{item.merchId}}"
-        bindtap="switchMerch"
-      >
-        <view class="chip-name">{{item.label}}</view>
-        <view class="chip-price">¥{{item.priceText}}</view>
-      </view>
+  <!-- №01 品类切换条 -->
+  <view class="panel">
+    <view class="sec-head">
+      <text class="sec-no">№</text>
+      <text class="sec-num">01</text>
+      <text class="sec-dot">·</text>
+      <text class="sec-title">品类切换</text>
     </view>
-  </scroll-view>
+    <scroll-view class="chip-bar" scroll-x enable-flex>
+      <view class="chip-row">
+        <view
+          wx:for="{{catalog}}"
+          wx:key="merchId"
+          class="chip {{activeMerchId === item.merchId ? 'chip-active' : ''}}"
+          data-merch-id="{{item.merchId}}"
+          bindtap="switchMerch"
+        >
+          <view class="chip-name">{{item.label}}</view>
+          <view class="chip-price">¥{{item.priceText}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
 
-  <!-- 2. 场景模拟区（纯 CSS/SVG，不依赖图片素材） -->
-  <view class="scene-card">
+  <!-- №02 场景模拟区（纯 CSS/SVG，不依赖图片素材；场景内实物色系保留） -->
+  <view class="panel scene-card">
+    <view class="sec-head">
+      <text class="sec-no">№</text>
+      <text class="sec-num">02</text>
+      <text class="sec-dot">·</text>
+      <text class="sec-title">场景模拟</text>
+    </view>
+
     <!-- 挂墙：客厅墙场景 -->
     <view class="scene-stage scene-wall" wx:if="{{activeMerchId === 'wall_8' || activeMerchId === 'wall_12'}}">
       <view class="wall-frame-group {{activeMerchId === 'wall_12' ? 'size-12' : 'size-8'}}" bindtap="onScenePhotoTap">
@@ -162,6 +178,16 @@
       </view>
     </view>
 
+    <!-- 场景说明：衬线斜体 caption（纯展示，随品类切换） -->
+    <view class="scene-caption">
+      <text wx:if="{{activeMerchId === 'wall_8' || activeMerchId === 'wall_12'}}">挂墙成片 · 客厅墙面悬挂比例示意</text>
+      <text wx:elif="{{activeMerchId === 'desk_5'}}">水晶摆台 · 桌面光影与厚度示意</text>
+      <text wx:elif="{{activeMerchId === 'calendar'}}">13 月挂历 · 照片与月历点阵示意</text>
+      <text wx:elif="{{activeMerchId === 'wallet'}}">钱包照 · 随身小卡六张示意</text>
+      <text wx:elif="{{activeMerchId === 'pendant'}}">亚克力挂件 · 双件成对示意</text>
+      <text wx:elif="{{activeMerchId === 'album'}}">精装相册 · 摊开跨页示意</text>
+    </view>
+
     <!-- 成片切换照片条 -->
     <view class="photo-strip-wrap">
       <view class="strip-title">成片切换</view>
@@ -185,9 +211,14 @@
     </view>
   </view>
 
-  <!-- 3. 已选清单 -->
-  <view class="cart-section">
-    <view class="section-title">已选清单</view>
+  <!-- №03 已选清单 -->
+  <view class="panel cart-section">
+    <view class="sec-head">
+      <text class="sec-no">№</text>
+      <text class="sec-num">03</text>
+      <text class="sec-dot">·</text>
+      <text class="sec-title">已选清单</text>
+    </view>
     <view wx:if="{{cart.length === 0}}" class="empty-state">尚未添加周边。切换上方品类并点击「加入清单」，即可模拟并汇总实物效果。</view>
     <view wx:for="{{cart}}" wx:key="key" class="cart-item">
       <image class="cart-thumb" src="{{item.photoUrl}}" mode="aspectFill"></image>
@@ -207,7 +238,7 @@
       <text class="cart-total-num">¥{{cartTotalText}}</text>
     </view>
 
-    <!-- 4. 提交 -->
+    <!-- №04 提交 -->
     <button
       class="primary-btn submit-btn"
       loading="{{isSubmitting}}"

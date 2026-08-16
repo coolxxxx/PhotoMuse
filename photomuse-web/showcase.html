@@ -9,17 +9,26 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     /* ============================================================
-     * 场景模拟页专属样式（sc- 前缀；蓝白体系复用 style.css 的 CSS 变量）
+     * 场景模拟页专属样式（sc- 前缀；Editorial 令牌复用 style.css 的 CSS 变量）
      * 六款纯 CSS 场景：挂墙客厅 / 木桌摆台 / 13 月挂历 / 钱包+6 卡 /
      * 双圆亚克力挂件 / 相册跨页，无任何图片素材
+     * 六场景实物色保留；外围 chrome 纸面化（颜色经 var() 令牌引用）
      * ============================================================ */
 
     .sc-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-    .sc-nav-title { flex: 1; text-align: center; font-size: 16px; font-weight: 700; color: var(--pm-text); }
+    .sc-nav-title {
+      flex: 1;
+      text-align: center;
+      font-family: var(--serif);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--ink);
+    }
     .sc-order-tag {
       max-width: 120px;
       font-size: 11px;
-      color: var(--pm-text-secondary);
+      color: var(--ink-3);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -28,20 +37,22 @@
     .sc-hint {
       margin-bottom: 12px;
       padding: 9px 12px;
-      border-radius: var(--pm-radius-sm);
-      color: var(--pm-blue-deep);
-      background: var(--pm-blue-light);
+      border: 1px solid var(--primary-line);
+      border-radius: var(--radius);
+      color: var(--primary-deep);
+      background: var(--primary-soft);
       font-size: 12.5px;
       line-height: 1.55;
     }
 
-    /* ===== 1. 品类切换条 ===== */
+    /* ===== 1. 品类切换条（纸面化直角方签） ===== */
     .sc-chipbar {
       margin-bottom: 12px;
       padding: 10px;
-      border-radius: var(--pm-radius);
-      background: var(--pm-card);
-      box-shadow: var(--pm-shadow);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-card);
+      background: var(--card);
+      box-shadow: var(--shadow-card);
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       white-space: nowrap;
@@ -52,27 +63,27 @@
       align-items: center;
       padding: 7px 13px;
       margin-right: 7px;
-      border: none;
-      border-radius: 8px;
-      background: #EEF3F8;
-      color: #37474F;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 3px;
+      background: var(--card);
+      color: var(--ink);
       font-family: inherit;
       cursor: pointer;
     }
-    .sc-chip-name { font-size: 13px; font-weight: 700; }
-    .sc-chip-price { margin-top: 2px; font-size: 11px; color: #78909C; }
-    .sc-chip.active { background: var(--pm-blue); color: #fff; box-shadow: 0 4px 10px rgba(25, 118, 210, 0.32); }
-    .sc-chip.active .sc-chip-price { color: rgba(255, 255, 255, 0.85); }
+    .sc-chip-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+    .sc-chip-price { margin-top: 2px; font-size: 11px; color: var(--ink-3); }
+    .sc-chip.active { border-color: var(--primary); background: var(--primary); color: var(--card); }
+    .sc-chip.active .sc-chip-price { color: var(--primary-line); }
 
     /* ===== 2. 场景模拟区 ===== */
     .sc-stage {
       position: relative;
       width: 100%;
       min-height: 300px;
-      border-radius: 10px;
+      border-radius: var(--radius);
       overflow: hidden;
     }
-    .sc-photo { display: block; width: 100%; height: 100%; object-fit: cover; background: #EEF3F8; }
+    .sc-photo { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--card-soft); }
     .sc-empty {
       display: flex;
       align-items: center;
@@ -80,9 +91,9 @@
       box-sizing: border-box;
       width: 100%;
       height: 100%;
-      color: #90A4AE;
+      color: var(--ink-3);
       font-size: 12px;
-      background: #E8EEF5;
+      background: var(--card-soft);
       text-align: center;
     }
     .sc-photo-target { cursor: pointer; }
@@ -224,15 +235,15 @@
       margin: 14px auto 0;
       border-radius: 5px;
       object-fit: cover;
-      background: #EEF3F8;
+      background: var(--card-soft);
     }
     .sc-cal-empty-photo {
       display: flex; align-items: center; justify-content: center;
       width: 226px; height: 260px;
       margin: 14px auto 0;
       border-radius: 5px;
-      background: #E8EEF5;
-      color: #90A4AE;
+      background: var(--card-soft);
+      color: var(--ink-3);
       font-size: 12px;
       cursor: pointer;
     }
@@ -332,7 +343,7 @@
       border-radius: 50%;
       overflow: hidden;
       box-sizing: border-box;
-      background: #EEF3F8;
+      background: var(--card-soft);
       object-fit: cover;
       display: block;
     }
@@ -343,8 +354,8 @@
       border: 3px solid #FFFFFF;
       border-radius: 50%;
       box-sizing: border-box;
-      background: #E8EEF5;
-      color: #90A4AE;
+      background: var(--card-soft);
+      color: var(--ink-3);
       font-size: 11px;
       display: flex; align-items: center; justify-content: center;
     }
@@ -410,9 +421,15 @@
       z-index: 4;
     }
 
-    /* --- 成片切换照片条 --- */
+    /* --- 成片切换照片条（纸面化直角） --- */
     .sc-strip-wrap { margin-top: 14px; }
-    .sc-strip-title { margin-bottom: 8px; font-size: 13.5px; font-weight: 700; color: var(--pm-text); }
+    .sc-strip-title {
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--ink);
+    }
     .sc-strip { width: 100%; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .sc-strip-row { display: inline-flex; align-items: center; padding-bottom: 4px; }
     .sc-strip-item {
@@ -420,21 +437,21 @@
       box-sizing: border-box;
       width: 60px; height: 60px;
       margin-right: 8px;
-      border: 2px solid #E3EAF2;
-      border-radius: 8px;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 2px;
       overflow: hidden;
-      background: #EEF3F8;
+      background: var(--card-soft);
       padding: 0;
       cursor: pointer;
       flex: 0 0 auto;
     }
     .sc-strip-item img { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .sc-strip-item.active { border-color: var(--pm-blue); box-shadow: 0 4px 9px rgba(25, 118, 210, 0.3); }
+    .sc-strip-item.active { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
     .sc-strip-no {
       position: absolute; right: 3px; bottom: 3px;
       min-width: 15px; height: 15px;
       padding: 0 4px;
-      border-radius: 8px;
+      border-radius: 2px;
       background: rgba(0, 0, 0, 0.5);
       color: #fff;
       font-size: 10px;
@@ -442,57 +459,57 @@
       text-align: center;
       box-sizing: border-box;
     }
-    .sc-strip-empty { display: inline-flex; align-items: center; height: 60px; color: #90A4AE; font-size: 12.5px; }
+    .sc-strip-empty { display: inline-flex; align-items: center; height: 60px; color: var(--ink-3); font-size: 12.5px; }
 
-    /* ===== 3. 已选清单 ===== */
-    .sc-cart-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #EDF2F7; }
+    /* ===== 3. 已选清单（纸面化行式） ===== */
+    .sc-cart-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--hairline); }
     .sc-cart-item:last-of-type { border-bottom: none; }
     .sc-cart-thumb {
       flex: 0 0 auto;
       width: 48px; height: 48px;
-      border-radius: 7px;
-      background: #EEF3F8;
+      border-radius: 2px;
+      background: var(--card-soft);
       object-fit: cover;
-      border: 1px solid var(--pm-border);
+      border: 1px solid var(--hairline);
     }
     .sc-cart-thumb-empty {
       flex: 0 0 auto;
       width: 48px; height: 48px;
-      border-radius: 7px;
-      background: #EEF3F8;
-      border: 1px solid var(--pm-border);
+      border-radius: 2px;
+      background: var(--card-soft);
+      border: 1px solid var(--hairline);
     }
     .sc-cart-info { flex: 1; min-width: 0; margin: 0 8px; }
     .sc-cart-name {
-      font-size: 13.5px; font-weight: 600; color: var(--pm-text);
+      font-size: 13.5px; font-weight: 700; color: var(--ink);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .sc-cart-price { margin-top: 3px; color: #78909C; font-size: 12px; }
+    .sc-cart-price { margin-top: 3px; color: var(--ink-3); font-size: 12px; }
     .sc-stepper { display: flex; align-items: center; gap: 2px; }
     .sc-step-btn {
       width: 26px; height: 26px;
-      border: none;
-      border-radius: 6px;
-      background: #EEF3F8;
-      color: var(--pm-blue);
+      border: 1px solid var(--hairline-strong);
+      border-radius: 2px;
+      background: var(--card);
+      color: var(--primary);
       font-size: 15px;
       font-weight: 700;
-      line-height: 26px;
+      line-height: 24px;
       text-align: center;
       cursor: pointer;
       padding: 0;
     }
-    .sc-step-btn:hover { background: var(--pm-blue-light); }
-    .sc-step-num { min-width: 26px; font-size: 14px; font-weight: 700; color: var(--pm-text); text-align: center; }
+    .sc-step-btn:hover { background: var(--primary-soft); }
+    .sc-step-num { min-width: 26px; font-size: 14px; font-weight: 700; color: var(--ink); text-align: center; }
     .sc-cart-remove {
       margin-left: 8px;
       width: 22px; height: 22px;
-      border: none;
-      border-radius: 50%;
-      background: #FDECEA;
-      color: #D32F2F;
+      border: 1px solid var(--danger);
+      border-radius: 2px;
+      background: var(--danger-soft);
+      color: var(--danger);
       font-size: 14px;
-      line-height: 22px;
+      line-height: 20px;
       text-align: center;
       cursor: pointer;
       padding: 0;
@@ -503,20 +520,30 @@
       justify-content: flex-end;
       align-items: baseline;
       padding-top: 10px;
-      color: #37474F;
+      color: var(--ink-2);
       font-size: 13.5px;
+      letter-spacing: 1px;
     }
-    .sc-cart-total-num { margin-left: 6px; color: var(--pm-blue); font-size: 19px; font-weight: 800; }
-    .sc-submit-hint { margin-top: 8px; color: #90A4AE; font-size: 11.5px; text-align: center; }
-    .sc-empty-state { color: var(--pm-text-secondary); font-size: 12.5px; line-height: 1.55; }
+    .sc-cart-total-num {
+      margin-left: 6px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 19px;
+    }
+    .sc-submit-hint { margin-top: 8px; color: var(--ink-3); font-size: 11.5px; text-align: center; }
+    .sc-empty-state { color: var(--ink-3); font-size: 12.5px; line-height: 1.55; }
   </style>
 </head>
 <body>
   <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
 
-  <header class="topbar">
-    <div class="brand-name">光影集 PhotoMuse</div>
-    <div class="brand-slogan">不用出门的影楼 · 上传一张照片，收获整套专业形象</div>
+  <header class="hero hero--compact">
+    <p class="hero-eyebrow">PHOTOMUSE STUDIO</p>
+    <h1 class="hero-title">光影·集</h1>
+    <div class="hero-rule" aria-hidden="true"></div>
+    <p class="hero-sub">场景模拟 · 周边实物预览</p>
   </header>
 
   <main class="page">

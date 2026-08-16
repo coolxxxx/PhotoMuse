@@ -1,138 +1,185 @@
-.admin-login-page {
-  min-height: 100vh;
-  padding: 40rpx 24rpx;
-  box-sizing: border-box;
-  background: #f5f9ff;
+/* ============================================================
+   管理登录 · Editorial 纸面风
+   设计令牌以页面级变量定义（值与全局规范一致），全部颜色经 var() 引用
+   ============================================================ */
+
+
+.admin-login-page button::after {
+  border: none;
 }
 
+/* ---------------- 顶部导航 ---------------- */
 .page-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18rpx;
+  margin-bottom: 28rpx;
 }
 
 .nav-back {
   display: inline-flex;
   align-items: center;
-  min-height: 64rpx;
-  padding: 0 22rpx;
-  border-radius: 999rpx;
-  background: #ffffff;
-  color: #1976d2;
-  font-size: 28rpx;
-  font-weight: 700;
-  box-shadow: 0 6rpx 18rpx rgba(25, 118, 210, 0.08);
+  justify-content: center;
+  min-height: 52rpx;
+  padding: 0 18rpx;
+  border: 1rpx solid var(--pm-hairline-strong);
+  border-radius: 0;
+  background: var(--pm-card);
+  color: var(--pm-primary);
+  font-size: 22rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
 }
 
 .nav-title {
   flex: 1;
-  padding-right: 24rpx;
-  color: #1f2d3d;
-  font-size: 30rpx;
-  font-weight: 800;
+  padding-right: 140rpx;
+  overflow: hidden;
+  color: var(--pm-ink-3);
+  font-family: var(--pm-serif);
+  font-size: 26rpx;
+  letter-spacing: 4rpx;
   text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
+/* ---------------- 纸面登录卡 ---------------- */
 .login-card {
-  padding: 34rpx 30rpx;
-  border-radius: 28rpx;
-  background: #ffffff;
-  box-shadow: 0 8rpx 28rpx rgba(25, 118, 210, 0.1);
+  padding: 52rpx 36rpx 44rpx;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius-card);
+  background: var(--pm-card);
+  box-shadow: var(--pm-shadow-card);
 }
 
-.login-badge {
-  display: inline-block;
-  margin-bottom: 18rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  color: #1976d2;
-  background: #e3f2fd;
-  font-size: 22rpx;
-  letter-spacing: 2rpx;
+.login-eyebrow {
+  margin-bottom: 14rpx;
+  color: var(--pm-primary);
+  font-family: var(--pm-mono);
+  font-size: 20rpx;
+  letter-spacing: 5rpx;
 }
 
 .login-title {
-  margin-bottom: 14rpx;
-  color: #1f2d3d;
-  font-size: 42rpx;
-  font-weight: 800;
+  margin-bottom: 18rpx;
+  color: var(--pm-ink);
+  font-family: var(--pm-serif);
+  font-size: 64rpx;
+  font-weight: 600;
+  line-height: 1.15;
 }
 
 .login-desc {
-  color: #607d8b;
-  font-size: 27rpx;
-  line-height: 1.6;
+  color: var(--pm-ink-2);
+  font-size: 26rpx;
+  line-height: 1.7;
 }
 
+/* ---------------- 权限说明：行式清单 ---------------- */
 .permission-box {
-  margin: 34rpx 0;
-  padding: 24rpx;
-  border-radius: 22rpx;
-  background: #f7fafc;
+  margin: 38rpx 0;
+  padding: 4rpx 0;
+  border-top: 1rpx solid var(--pm-hairline);
+  border-bottom: 1rpx solid var(--pm-hairline);
 }
 
 .permission-title {
-  margin-bottom: 14rpx;
-  color: #263238;
-  font-size: 29rpx;
-  font-weight: 700;
+  padding: 18rpx 0 8rpx;
+  color: var(--pm-ink-3);
+  font-family: var(--pm-mono);
+  font-size: 22rpx;
+  letter-spacing: 3rpx;
 }
 
 .permission-item {
   position: relative;
-  margin-top: 10rpx;
-  padding-left: 24rpx;
-  color: #455a64;
+  padding: 20rpx 0 20rpx 34rpx;
+  border-bottom: 1rpx solid var(--pm-hairline);
+  color: var(--pm-ink-2);
   font-size: 26rpx;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+.permission-item:last-child {
+  border-bottom: none;
 }
 
 .permission-item::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 16rpx;
-  width: 8rpx;
-  height: 8rpx;
-  border-radius: 50%;
-  background: #43a047;
+  top: 38rpx;
+  width: 18rpx;
+  height: 2rpx;
+  background: var(--pm-primary);
 }
 
-.login-btn {
-  border-radius: 999rpx;
-  background: #1976d2;
-  color: #ffffff;
-  font-size: 31rpx;
-  font-weight: 700;
-}
-
+/* ---------------- 口令输入 ---------------- */
 .password-field {
-  margin-bottom: 26rpx;
+  margin-bottom: 32rpx;
 }
 
 .field-label {
-  margin-bottom: 12rpx;
-  color: #263238;
-  font-size: 27rpx;
-  font-weight: 700;
+  margin-bottom: 14rpx;
+  color: var(--pm-ink-2);
+  font-family: var(--pm-mono);
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
 }
 
 .password-input {
   height: 92rpx;
   padding: 0 24rpx;
-  border-radius: 20rpx;
-  background: #f7fafc;
-  color: #263238;
+  border: 1rpx solid var(--pm-hairline-strong);
+  border-bottom: 2rpx solid var(--pm-hairline-strong);
+  border-radius: 0;
+  background: var(--pm-card);
+  color: var(--pm-ink);
   font-size: 28rpx;
+  letter-spacing: 2rpx;
+  box-sizing: border-box;
 }
 
+.password-input:focus {
+  border-color: var(--pm-primary);
+  border-bottom: 2rpx solid var(--pm-primary);
+}
+
+.input-placeholder {
+  color: var(--pm-ink-3);
+  font-size: 26rpx;
+}
+
+/* ---------------- 登录按钮：满宽直角 ---------------- */
+.login-btn {
+  width: 100%;
+  height: 92rpx;
+  border: 1rpx solid var(--pm-primary);
+  border-radius: 0;
+  background: var(--pm-primary);
+  color: var(--pm-card);
+  font-size: 28rpx;
+  font-weight: 600;
+  letter-spacing: 6rpx;
+  line-height: 90rpx;
+}
+
+.login-btn[disabled] {
+  opacity: 0.6;
+  background: var(--pm-primary);
+  color: var(--pm-card);
+}
+
+/* ---------------- 错误提示：方签横幅 ---------------- */
 .error-message {
-  margin-top: 22rpx;
-  padding: 18rpx;
-  border-radius: 18rpx;
-  color: #e65100;
-  background: #fff7ed;
-  font-size: 25rpx;
-  line-height: 1.45;
+  margin-top: 26rpx;
+  padding: 18rpx 20rpx;
+  border-left: 4rpx solid var(--pm-danger);
+  border-radius: 0;
+  background: var(--pm-danger-soft);
+  color: var(--pm-danger);
+  font-size: 24rpx;
+  letter-spacing: 1rpx;
+  line-height: 1.55;
 }

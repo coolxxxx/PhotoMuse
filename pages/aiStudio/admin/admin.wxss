@@ -1,57 +1,94 @@
-.admin-page {
-  min-height: 100vh;
-  padding: 24rpx;
-  box-sizing: border-box;
-  background: #f5f9ff;
+/* ============================================================
+   订单管理 · Editorial 纸面风
+   设计令牌以页面级变量定义（值与全局规范一致），全部颜色经 var() 引用
+   ============================================================ */
+
+
+.admin-page button::after {
+  border: none;
 }
 
+/* ---------------- 顶部导航 ---------------- */
 .page-nav {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  margin-bottom: 18rpx;
+  margin-bottom: 20rpx;
 }
 
 .nav-back,
 .nav-exit {
   display: inline-flex;
   align-items: center;
-  min-height: 64rpx;
-  padding: 0 22rpx;
-  border-radius: 999rpx;
-  background: #ffffff;
-  color: #1976d2;
-  font-size: 27rpx;
-  font-weight: 700;
-  box-shadow: 0 6rpx 18rpx rgba(25, 118, 210, 0.08);
+  justify-content: center;
+  min-height: 52rpx;
+  padding: 0 18rpx;
+  border: 1rpx solid var(--pm-hairline-strong);
+  border-radius: 0;
+  background: var(--pm-card);
+  color: var(--pm-primary);
+  font-size: 22rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+}
+
+.nav-exit {
+  color: var(--pm-danger);
 }
 
 .nav-title {
   flex: 1;
-  color: #1f2d3d;
-  font-size: 30rpx;
-  font-weight: 800;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--pm-ink-3);
+  font-family: var(--pm-serif);
+  font-size: 26rpx;
+  letter-spacing: 4rpx;
   text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.nav-exit {
-  color: #e65100;
-}
-
+/* ---------------- 纸面页眉 ---------------- */
 .header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 20rpx;
-  padding: 30rpx;
-  border-radius: 24rpx;
-  background: #ffffff;
-  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+  margin-bottom: 24rpx;
+  padding: 34rpx 30rpx;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius-card);
+  background: var(--pm-card);
+  box-shadow: var(--pm-shadow-card);
 }
 
 .header-main {
   flex: 1;
   min-width: 0;
+}
+
+.header-eyebrow {
+  margin-bottom: 10rpx;
+  color: var(--pm-primary);
+  font-family: var(--pm-mono);
+  font-size: 20rpx;
+  letter-spacing: 5rpx;
+}
+
+.header-title {
+  margin-bottom: 12rpx;
+  color: var(--pm-ink);
+  font-family: var(--pm-serif);
+  font-size: 56rpx;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.header-desc {
+  color: var(--pm-ink-2);
+  font-size: 24rpx;
+  line-height: 1.55;
 }
 
 .header-actions {
@@ -63,69 +100,97 @@
   gap: 12rpx;
 }
 
-.payment-qr {
-  flex-shrink: 0;
-  color: #1976d2;
-  background: #ffffff;
-  border: 2rpx solid #1976d2;
+/* ---------------- 小方签按钮基类 ---------------- */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 20rpx;
+  min-height: 52rpx;
+  border-radius: 0;
+  font-size: 22rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  line-height: 1;
 }
 
-.model-btn {
-  flex-shrink: 0;
-  color: #6a1b9a;
-  background: #ffffff;
-  border: 2rpx solid #6a1b9a;
+/* 页眉四设置键：白底蓝字发丝边直角，active 蓝底白字 */
+.payment-qr,
+.model-btn,
+.samples-btn,
+.pricing-btn {
+  background: var(--pm-card);
+  color: var(--pm-primary);
+  border: 1rpx solid var(--pm-hairline-strong);
 }
 
-.model-btn.active {
-  color: #ffffff;
-  background: #6a1b9a;
+.model-btn.active,
+.samples-btn.active,
+.pricing-btn.active {
+  background: var(--pm-primary);
+  color: var(--pm-card);
+  border-color: var(--pm-primary);
 }
 
+/* ---------------- 设置面板：纸面卡 + 行式表单 ---------------- */
 .model-panel {
-  margin-bottom: 22rpx;
-  padding: 26rpx;
-  border-radius: 24rpx;
-  background: #ffffff;
-  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+  margin-bottom: 24rpx;
+  padding: 28rpx;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius-card);
+  background: var(--pm-card);
+  box-shadow: var(--pm-shadow-card);
 }
 
 .panel-title {
   margin-bottom: 20rpx;
-  color: #1f2d3d;
-  font-size: 30rpx;
-  font-weight: 800;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid var(--pm-hairline);
+  color: var(--pm-ink);
+  font-family: var(--pm-serif);
+  font-size: 32rpx;
+  font-weight: 600;
+  letter-spacing: 1rpx;
 }
 
 .form-row {
   display: flex;
   align-items: center;
-  gap: 18rpx;
-  margin-bottom: 18rpx;
+  gap: 20rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--pm-hairline);
 }
 
 .form-label {
   flex-shrink: 0;
-  width: 150rpx;
-  color: #455a64;
-  font-size: 25rpx;
-  font-weight: 600;
+  width: 170rpx;
+  color: var(--pm-ink-2);
+  font-family: var(--pm-mono);
+  font-size: 22rpx;
+  letter-spacing: 1rpx;
 }
 
-.form-input {
+.form-input,
+.picker-value {
   flex: 1;
   min-width: 0;
   height: 68rpx;
-  padding: 0 20rpx;
-  border-radius: 14rpx;
-  background: #f2f6fa;
-  color: #263238;
+  padding: 0 18rpx;
+  border: 1rpx solid var(--pm-hairline-strong);
+  border-radius: 0;
+  background: var(--pm-card);
+  color: var(--pm-ink);
   font-size: 25rpx;
   box-sizing: border-box;
 }
 
+.form-input:focus {
+  border-color: var(--pm-primary);
+}
+
 .input-placeholder {
-  color: #9fb3c8;
+  color: var(--pm-ink-3);
   font-size: 23rpx;
 }
 
@@ -135,14 +200,8 @@
 }
 
 .picker-value {
-  height: 68rpx;
-  padding: 0 20rpx;
-  border-radius: 14rpx;
-  background: #f2f6fa;
-  color: #263238;
-  font-size: 25rpx;
-  line-height: 68rpx;
-  box-sizing: border-box;
+  display: block;
+  line-height: 66rpx;
 }
 
 .switch-row {
@@ -156,121 +215,148 @@
 .panel-footer {
   display: flex;
   justify-content: flex-end;
-  margin-top: 6rpx;
+  margin-top: 20rpx;
 }
 
-.save-model {
-  color: #ffffff;
-  background: #6a1b9a;
+.save-model,
+.save-pricing {
+  background: var(--pm-primary);
+  color: var(--pm-card);
+  border: 1rpx solid var(--pm-primary);
 }
 
-.header-title {
-  margin-bottom: 10rpx;
-  color: #1f2d3d;
-  font-size: 36rpx;
-  font-weight: 800;
-}
-
-.header-desc {
-  color: #607d8b;
-  font-size: 25rpx;
-  line-height: 1.45;
-}
-
+/* ---------------- 状态 tabs：下划线式 ---------------- */
 .status-tabs {
-  margin: 22rpx 0;
+  margin: 28rpx 0 24rpx;
+  border-bottom: 1rpx solid var(--pm-hairline);
   white-space: nowrap;
 }
 
 .status-tab {
   display: inline-block;
-  margin-right: 14rpx;
-  padding: 14rpx 22rpx;
-  border-radius: 999rpx;
-  background: #ffffff;
-  color: #607d8b;
+  margin-right: 30rpx;
+  padding: 10rpx 6rpx 16rpx;
+  border-bottom: 4rpx solid transparent;
+  color: var(--pm-ink-3);
   font-size: 26rpx;
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 .status-tab.active {
-  background: #1976d2;
-  color: #ffffff;
+  border-bottom-color: var(--pm-primary);
+  color: var(--pm-primary);
+  font-weight: 700;
 }
 
+/* ---------------- 订单卡：发丝边白卡直角 ---------------- */
 .order-card {
-  margin-bottom: 22rpx;
-  padding: 26rpx;
-  border-radius: 24rpx;
-  background: #ffffff;
-  box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+  margin-bottom: 24rpx;
+  padding: 28rpx;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius-card);
+  background: var(--pm-card);
+  box-shadow: var(--pm-shadow-card);
 }
 
 .order-head {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 18rpx;
   margin-bottom: 16rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid var(--pm-hairline);
 }
 
 .order-title {
   margin-bottom: 8rpx;
-  color: #263238;
-  font-size: 30rpx;
-  font-weight: 700;
+  color: var(--pm-ink);
+  font-family: var(--pm-serif);
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
-.order-meta,
-.order-info,
-.review-note,
-.empty-state {
-  color: #607d8b;
-  font-size: 24rpx;
-  line-height: 1.5;
+.order-meta {
+  color: var(--pm-ink-3);
+  font-family: var(--pm-mono);
+  font-size: 22rpx;
+  letter-spacing: 1rpx;
 }
 
-.status-pill {
+/* 状态徽章：方签，默认（审核/制作/周边类）primary */
+.status-badge {
   flex-shrink: 0;
   align-self: flex-start;
-  padding: 8rpx 14rpx;
-  border-radius: 999rpx;
-  background: #e3f2fd;
-  color: #1976d2;
-  font-size: 24rpx;
+  padding: 6rpx 12rpx;
+  border-radius: 0;
+  background: var(--pm-primary-soft);
+  color: var(--pm-primary);
+  font-size: 22rpx;
   font-weight: 600;
+  letter-spacing: 2rpx;
+}
+
+/* 交付 / 完结类 = success */
+.st-delivered,
+.st-closed,
+.st-completed {
+  background: var(--pm-success-soft);
+  color: var(--pm-success);
+}
+
+/* 重拍 / 待补图类 = warning */
+.st-waiting_photos,
+.st-revision {
+  background: var(--pm-warning-soft);
+  color: var(--pm-warning);
+}
+
+/* 取消类 = danger */
+.st-cancelled {
+  background: var(--pm-danger-soft);
+  color: var(--pm-danger);
 }
 
 .order-info {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx 20rpx;
+  gap: 10rpx 22rpx;
+  color: var(--pm-ink-2);
+  font-size: 24rpx;
+  line-height: 1.6;
 }
 
 .pay-tag {
   align-self: center;
-  padding: 4rpx 14rpx;
-  border-radius: 999rpx;
-  font-size: 22rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 0;
+  font-size: 20rpx;
   font-weight: 600;
+  letter-spacing: 2rpx;
 }
 
 .pay-tag.unpaid {
-  color: #f57c00;
-  background: #fff3e0;
+  background: var(--pm-warning-soft);
+  color: var(--pm-warning);
 }
 
 .pay-tag.paid-tag {
-  color: #2e7d32;
-  background: #e8f5e9;
+  background: var(--pm-success-soft);
+  color: var(--pm-success);
 }
 
 .review-note {
   margin-top: 16rpx;
-  padding: 16rpx;
-  border-radius: 16rpx;
-  color: #e65100;
-  background: #fff7ed;
+  padding: 14rpx 16rpx;
+  border-left: 4rpx solid var(--pm-warning);
+  background: var(--pm-card-soft);
+  color: var(--pm-ink-2);
+  font-size: 24rpx;
+  line-height: 1.55;
 }
 
+/* 图片行：缩略发丝边直角 */
 .image-row {
   display: flex;
   flex-wrap: wrap;
@@ -281,178 +367,261 @@
 .image-row image {
   width: 150rpx;
   height: 150rpx;
-  border-radius: 16rpx;
-  background: #eef3f8;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14rpx;
-  margin-top: 20rpx;
-}
-
-.action-btn {
-  margin: 0;
-  border-radius: 999rpx;
-  font-size: 24rpx;
-}
-
-.pass {
-  color: #ffffff;
-  background: #2e7d32;
-}
-
-.retake {
-  color: #ffffff;
-  background: #f57c00;
-}
-
-.reject {
-  color: #ffffff;
-  background: #c62828;
-}
-
-.deliver {
-  color: #ffffff;
-  background: #1976d2;
-}
-
-.paid {
-  color: #ffffff;
-  background: #1565c0;
-}
-
-.grid {
-  color: #ffffff;
-  background: #1976d2;
-}
-
-.gen-ref {
-  color: #ffffff;
-  background: #7b1fa2;
-}
-
-.gen-grid {
-  color: #ffffff;
-  background: #5e35b1;
-}
-
-.gen-cell {
-  color: #ffffff;
-  background: #00897b;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: 0;
+  background: var(--pm-card-soft);
 }
 
 .gen-row {
-  padding-top: 6rpx;
-  border-top: 2rpx dashed #e3f2fd;
+  padding-top: 18rpx;
+  border-top: 1rpx solid var(--pm-hairline);
 }
 
 .gen-thumb {
-  border: 2rpx solid #e1bee7;
+  border: 1rpx solid var(--pm-primary-line);
 }
 
+.ticket-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 150rpx;
+  height: 150rpx;
+  border: 1rpx dashed var(--pm-primary-line);
+  border-radius: 0;
+  background: var(--pm-primary-soft);
+  color: var(--pm-primary);
+  font-size: 22rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  box-sizing: border-box;
+}
+
+/* ---------------- 周边清单：行式 + 衬线斜体合计 ---------------- */
+.merch-list {
+  margin-top: 20rpx;
+  padding: 18rpx 20rpx;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: 0;
+  background: var(--pm-card-soft);
+}
+
+.merch-title {
+  margin-bottom: 8rpx;
+  padding-bottom: 12rpx;
+  border-bottom: 1rpx solid var(--pm-hairline-strong);
+  color: var(--pm-ink-2);
+  font-family: var(--pm-mono);
+  font-size: 22rpx;
+  letter-spacing: 3rpx;
+}
+
+.merch-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16rpx;
+  padding: 8rpx 0;
+  border-bottom: 1rpx solid var(--pm-hairline);
+  color: var(--pm-ink-2);
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
+.merch-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.merch-price {
+  flex-shrink: 0;
+  color: var(--pm-ink);
+  font-family: var(--pm-mono);
+  font-size: 24rpx;
+}
+
+.merch-sum {
+  margin-top: 6rpx;
+  padding: 12rpx 0 4rpx;
+  border-top: 1rpx solid var(--pm-hairline-strong);
+  border-bottom: none;
+  color: var(--pm-ink);
+  font-family: var(--pm-serif);
+  font-size: 28rpx;
+}
+
+.merch-sum .merch-price {
+  font-family: var(--pm-serif);
+  font-style: italic;
+  font-size: 28rpx;
+}
+
+/* ---------------- 操作按钮：直角小方签系 ---------------- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 22rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid var(--pm-hairline);
+}
+
+/* 实底系 */
+.pass {
+  background: var(--pm-success);
+  color: var(--pm-card);
+  border: 1rpx solid var(--pm-success);
+}
+
+.retake {
+  background: var(--pm-warning);
+  color: var(--pm-card);
+  border: 1rpx solid var(--pm-warning);
+}
+
+.reject {
+  background: var(--pm-danger);
+  color: var(--pm-card);
+  border: 1rpx solid var(--pm-danger);
+}
+
+.deliver {
+  background: var(--pm-primary);
+  color: var(--pm-card);
+  border: 1rpx solid var(--pm-primary);
+}
+
+/* 白底描边系（对应色字） */
+.paid {
+  background: var(--pm-card);
+  color: var(--pm-success);
+  border: 1rpx solid var(--pm-success);
+}
+
+.grid {
+  background: var(--pm-card);
+  color: var(--pm-primary);
+  border: 1rpx solid var(--pm-primary);
+}
+
+.merch-export {
+  background: var(--pm-card);
+  color: var(--pm-primary);
+  border: 1rpx solid var(--pm-primary);
+}
+
+.merch-start {
+  background: var(--pm-card);
+  color: var(--pm-warning);
+  border: 1rpx solid var(--pm-warning);
+}
+
+.merch-ship {
+  background: var(--pm-card);
+  color: var(--pm-success);
+  border: 1rpx solid var(--pm-success);
+}
+
+/* AI 类：统一中性 */
+.gen-ref,
+.gen-grid,
+.gen-cell {
+  background: var(--pm-card);
+  color: var(--pm-ink-2);
+  border: 1rpx solid var(--pm-hairline-strong);
+}
+
+/* ---------------- 空态 / 加载：纸面 + 衬线 ---------------- */
 .empty-state {
-  padding: 80rpx 0;
+  padding: 90rpx 0;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: var(--pm-radius-card);
+  background: var(--pm-card);
+  color: var(--pm-ink-3);
+  font-family: var(--pm-serif);
+  font-size: 26rpx;
+  letter-spacing: 2rpx;
   text-align: center;
 }
 
-/* ---------------- 样张管理 / 定价设置 ---------------- */
-.samples-btn {
-  flex-shrink: 0;
-  color: #2e7d32;
-  background: #ffffff;
-  border: 2rpx solid #2e7d32;
-}
-
-.samples-btn.active {
-  color: #ffffff;
-  background: #2e7d32;
-}
-
-.pricing-btn {
-  flex-shrink: 0;
-  color: #e65100;
-  background: #ffffff;
-  border: 2rpx solid #e65100;
-}
-
-.pricing-btn.active {
-  color: #ffffff;
-  background: #e65100;
-}
-
-.save-pricing {
-  color: #ffffff;
-  background: #e65100;
-}
-
+/* ---------------- 样张管理 ---------------- */
 .sample-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
-  margin-bottom: 14rpx;
-}
-
-.sample-upload {
-  color: #ffffff;
-  background: #2e7d32;
-}
-
-.sample-generate {
-  color: #ffffff;
-  background: #7b1fa2;
-}
-
-.sample-register {
-  color: #1565c0;
-  background: #ffffff;
-  border: 2rpx solid #1565c0;
-}
-
-.sample-refresh {
-  color: #455a64;
-  background: #ffffff;
-  border: 2rpx solid #90a4ae;
-}
-
-.sample-hint {
-  margin-bottom: 14rpx;
-  color: #90a4ae;
-  font-size: 22rpx;
-  line-height: 1.5;
-}
-
-.sample-group {
   margin-bottom: 16rpx;
 }
 
+.sample-upload {
+  background: var(--pm-primary);
+  color: var(--pm-card);
+  border: 1rpx solid var(--pm-primary);
+}
+
+.sample-generate {
+  background: var(--pm-card);
+  color: var(--pm-ink-2);
+  border: 1rpx solid var(--pm-hairline-strong);
+}
+
+.sample-register {
+  background: var(--pm-card);
+  color: var(--pm-primary);
+  border: 1rpx solid var(--pm-primary);
+}
+
+.sample-refresh {
+  background: var(--pm-card);
+  color: var(--pm-ink-2);
+  border: 1rpx solid var(--pm-hairline-strong);
+}
+
+.sample-hint {
+  margin-bottom: 16rpx;
+  padding: 14rpx 16rpx;
+  border-left: 4rpx solid var(--pm-primary-line);
+  background: var(--pm-card-soft);
+  color: var(--pm-ink-3);
+  font-size: 22rpx;
+  line-height: 1.55;
+}
+
+.sample-group {
+  margin-bottom: 18rpx;
+}
+
 .sample-group-title {
-  margin-bottom: 8rpx;
-  color: #1976d2;
-  font-size: 26rpx;
-  font-weight: 700;
+  margin-bottom: 6rpx;
+  padding: 10rpx 0;
+  border-bottom: 1rpx solid var(--pm-hairline);
+  color: var(--pm-ink-2);
+  font-family: var(--pm-mono);
+  font-size: 22rpx;
+  letter-spacing: 3rpx;
 }
 
 .sample-empty {
-  padding: 14rpx 0;
-  color: #90a4ae;
+  padding: 16rpx 0;
+  color: var(--pm-ink-3);
+  font-family: var(--pm-serif);
   font-size: 24rpx;
+  letter-spacing: 2rpx;
 }
 
 .sample-item {
   display: flex;
   gap: 16rpx;
   padding: 14rpx 0;
-  border-top: 2rpx dashed #eef3f8;
+  border-bottom: 1rpx solid var(--pm-hairline);
 }
 
 .sample-thumb {
   flex-shrink: 0;
   width: 110rpx;
   height: 110rpx;
-  border-radius: 12rpx;
-  background: #eef3f8;
+  border: 1rpx solid var(--pm-hairline);
+  border-radius: 0;
+  background: var(--pm-card-soft);
 }
 
 .sample-fields {
@@ -462,10 +631,11 @@
 
 .sample-input {
   height: 56rpx;
-  padding: 0 16rpx;
-  border-radius: 10rpx;
-  background: #f2f6fa;
-  color: #263238;
+  padding: 0 14rpx;
+  border: 1rpx solid var(--pm-hairline-strong);
+  border-radius: 0;
+  background: var(--pm-card);
+  color: var(--pm-ink);
   font-size: 24rpx;
   box-sizing: border-box;
 }
@@ -489,8 +659,9 @@
 
 .sample-sort-label {
   flex-shrink: 0;
-  color: #455a64;
-  font-size: 23rpx;
+  color: var(--pm-ink-3);
+  font-family: var(--pm-mono);
+  font-size: 22rpx;
 }
 
 .sample-switch {
@@ -500,87 +671,13 @@
 }
 
 .sample-save {
-  color: #ffffff;
-  background: #1976d2;
+  background: var(--pm-primary);
+  color: var(--pm-card);
+  border: 1rpx solid var(--pm-primary);
 }
 
 .sample-remove {
-  color: #c62828;
-  background: #ffffff;
-  border: 2rpx solid #c62828;
-}
-
-/* ---------------- 周边清单 / 制作流转 ---------------- */
-.merch-list {
-  margin-top: 18rpx;
-  padding: 18rpx;
-  border-radius: 16rpx;
-  background: #f8fbff;
-  border: 2rpx solid #e3f2fd;
-}
-
-.merch-title {
-  margin-bottom: 10rpx;
-  color: #1565c0;
-  font-size: 26rpx;
-  font-weight: 700;
-}
-
-.merch-line {
-  display: flex;
-  justify-content: space-between;
-  gap: 16rpx;
-  padding: 6rpx 0;
-  color: #37474f;
-  font-size: 24rpx;
-  line-height: 1.5;
-}
-
-.merch-name {
-  flex: 1;
-  min-width: 0;
-}
-
-.merch-price {
-  flex-shrink: 0;
-  color: #1565c0;
-  font-weight: 600;
-}
-
-.merch-sum {
-  margin-top: 6rpx;
-  padding-top: 12rpx;
-  border-top: 2rpx dashed #bbdefb;
-  color: #0d47a1;
-  font-weight: 700;
-}
-
-.merch-export {
-  color: #ffffff;
-  background: #00695c;
-}
-
-.merch-start {
-  color: #ffffff;
-  background: #ef6c00;
-}
-
-.merch-ship {
-  color: #ffffff;
-  background: #2e7d32;
-}
-
-.ticket-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 150rpx;
-  height: 150rpx;
-  border-radius: 16rpx;
-  background: #e0f2f1;
-  border: 2rpx dashed #00695c;
-  color: #00695c;
-  font-size: 24rpx;
-  font-weight: 700;
-  box-sizing: border-box;
+  background: var(--pm-card);
+  color: var(--pm-danger);
+  border: 1rpx solid var(--pm-danger);
 }

@@ -11,9 +11,11 @@
 <body>
   <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
 
-  <header class="topbar">
-    <div class="brand-name">光影集 PhotoMuse</div>
-    <div class="brand-slogan">不用出门的影楼 · 上传一张照片，收获整套专业形象</div>
+  <header class="hero hero--compact">
+    <p class="hero-eyebrow">PHOTOMUSE STUDIO</p>
+    <h1 class="hero-title">光影·集</h1>
+    <div class="hero-rule" aria-hidden="true"></div>
+    <p class="hero-sub">订单查询 · 不用出门的影楼</p>
   </header>
   <nav class="nav">
     <a href="index.html">在线下单</a>
@@ -24,7 +26,12 @@
     <noscript><div class="warn-box">本站需要启用 JavaScript 才能查询订单。</div></noscript>
 
     <section class="card">
-      <div class="card-head"><h2>订单查询（免登录）</h2></div>
+      <div class="pm-sec-head">
+        <span class="pm-sec-mark" aria-hidden="true">№</span>
+        <span class="pm-sec-no">01</span>
+        <h2 class="pm-sec-title">订单查询（免登录）</h2>
+        <span class="pm-sec-line" aria-hidden="true"></span>
+      </div>
       <form id="query-form">
         <label class="field">
           <span class="field-label">订单号</span>
