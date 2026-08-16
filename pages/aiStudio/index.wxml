@@ -29,7 +29,7 @@
     </view>
   </view>
 
-  <view class="section example-section">
+  <view class="section example-section" wx:if="{{currentExample}}">
     <view class="section-title">效果范例</view>
     <view class="example-subtitle">{{currentExample.subtitle}}</view>
     <view class="example-preview">
@@ -49,7 +49,13 @@
     </view>
   </view>
 
-  <view class="section guide-section">
+  <view class="section" wx:if="{{isPortrait && currentTheme}}">
+    <view class="section-title">写真主题</view>
+    <view class="example-subtitle">{{currentTheme.desc}}</view>
+    <view class="theme-hint">{{currentTheme.sceneHint}}</view>
+  </view>
+
+  <view class="section guide-section" wx:if="{{currentExample}}">
     <view class="section-title">拍照引导</view>
     <view class="guide-grid">
       <view wx:for="{{currentExample.tips}}" wx:key="*this" class="guide-item">
@@ -59,7 +65,17 @@
     </view>
   </view>
 
-  <view class="section">
+  <view class="section guide-section" wx:if="{{isPortrait && currentTheme}}">
+    <view class="section-title">拍照引导</view>
+    <view class="guide-grid">
+      <view wx:for="{{currentThemeTips}}" wx:key="*this" class="guide-item">
+        <view class="guide-index">{{index + 1}}</view>
+        <view class="guide-text">{{item}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{!isPortrait}}">
     <view class="section-title">选择风格</view>
     <view class="style-grid">
       <view
@@ -73,6 +89,33 @@
         <text>{{item.name}}</text>
       </view>
     </view>
+  </view>
+
+  <view class="section" wx:if="{{isPortrait}}">
+    <view class="section-title">选择写真主题</view>
+    <view class="theme-grid">
+      <view
+        wx:for="{{portraitThemes}}"
+        wx:key="themeId"
+        class="theme-chip {{selectedThemeId === item.themeId ? 'selected' : ''}}"
+        data-id="{{item.themeId}}"
+        bindtap="selectTheme"
+      >
+        <text class="theme-name">{{item.name}}</text>
+        <text class="theme-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{isPortrait}}">
+    <view class="section-title">场景描述</view>
+    <textarea
+      class="note-input scene-input"
+      maxlength="300"
+      placeholder="想拍什么场景、穿什么、什么氛围？选填，供 AI 绘图参考（≤300 字）"
+      value="{{sceneDesc}}"
+      bindinput="onSceneDescInput"
+    />
   </view>
 
   <view class="section">
@@ -156,7 +199,7 @@
   </view>
 
   <button class="submit-btn" loading="{{isSubmitting}}" disabled="{{isSubmitting}}" bindtap="submitOrder">
-    提交证件照订单
+    {{isPortrait ? '提交写真订单' : '提交证件照订单'}}
   </button>
 
   <view class="section query-section">

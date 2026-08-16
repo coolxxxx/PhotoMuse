@@ -37,9 +37,12 @@ function exists(relativePath) {
 
 function main() {
   const config = require(path.join(ROOT, 'utils/ai-studio-config.js'));
-  assert.strictEqual(config.PRODUCTS.length, 2, '证件照制作一期应只开放 2 个套餐');
+  assert.strictEqual(config.PRODUCTS.length, 3, '证件照制作应开放 3 个套餐（含 AI 写真套图）');
   assert.strictEqual(config.STYLES.length, 4, '证件照制作一期应只开放 4 个证件照/简历照风格');
   assert.strictEqual(config.PRODUCTS[0].price, 3.9, '引流证件照体验版价格应为 3.9');
+  assert(Array.isArray(config.PORTRAIT_THEMES) && config.PORTRAIT_THEMES.length === 5, 'AI 写真套图应提供 5 个可选主题');
+  assert(config.STATUS_LABELS.grid_preview, '状态字典应包含网格预览待选片状态');
+  assert(config.STATUS_LABELS.cell_selected, '状态字典应包含已选片制作中状态');
   assert(config.PRODUCT_EXAMPLES.id_photo_9_9, '证件照体验版应配置效果范例');
   assert(config.PRODUCT_EXAMPLES.resume_photo_29_9, '简历形象照应配置效果范例');
   assert(config.PRODUCT_EXAMPLES.id_photo_9_9.beforeImage, '证件照体验版应配置普通自拍示意图');
@@ -63,6 +66,18 @@ function main() {
   assert(createOrder.includes("adult_identity_authorization: 'confirmed'"), 'orders must record adult authorization');
   assert(createOrder.includes('contactPhone'), 'orders should keep a contact phone for customer verification');
   assert(createOrder.includes('queryPasswordHash'), 'orders should store query password as hash only');
+  assert(createOrder.includes('portrait_suite_69'), '下单白名单应包含 69.9 AI 写真套图');
+  assert(createOrder.includes('theme_id'), '写真套图订单应记录所选写真主题');
+
+  const adminGridPreview = read('cloudfunctions/adminUploadAIStudioGridPreview/index.js');
+  assert(exists('cloudfunctions/adminUploadAIStudioGridPreview/package.json'), 'adminUploadAIStudioGridPreview package.json missing');
+  assert(adminGridPreview.includes("fileType: 'grid_preview'"), '管理员上传预览网格应登记 grid_preview 文件');
+  assert(adminGridPreview.includes('AI_STUDIO_ADMIN_PASSWORD'), '上传预览网格必须校验管理员口令');
+
+  const selectCells = read('cloudfunctions/selectAIStudioPortraitCells/index.js');
+  assert(exists('cloudfunctions/selectAIStudioPortraitCells/package.json'), 'selectAIStudioPortraitCells package.json missing');
+  assert(selectCells.includes('selected_cells'), '用户选片应写入选中的分镜格子');
+  assert(selectCells.includes('queryPasswordHash'), '免登录选片应校验查询密码哈希');
 
   const queryOrder = read('cloudfunctions/queryAIStudioOrder/index.js');
   assert(queryOrder.includes('queryPasswordHash'), 'credential query should verify password hash');

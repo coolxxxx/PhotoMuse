@@ -109,6 +109,59 @@
       },
       "runtime": "Nodejs16.13",
       "memory": 256
+    },
+    {
+      "name": "adminSetAIStudioPaymentQR",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "getAIStudioPaymentQR",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminMarkAIStudioOrderPaid",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "adminUploadAIStudioGridPreview",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "selectAIStudioPortraitCells",
+      "timeout": 20,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "photomuseOpenApi",
+      "timeout": 20,
+      "envVariables": {
+        "AI_STUDIO_OPEN_API_KEYS": ""
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
     }
   ],
   "region": "ap-shanghai"

@@ -1,6 +1,7 @@
 const {
   PRODUCTS,
   STYLES,
+  PORTRAIT_THEMES,
   STATUS_LABELS,
   PHOTO_CHECK_LABELS,
   AUTHORIZATION_TEXT,
@@ -11,6 +12,7 @@ Page({
   data: {
     products: PRODUCTS,
     styles: STYLES,
+    portraitThemes: PORTRAIT_THEMES,
     statusLabels: STATUS_LABELS,
     photoCheckLabels: PHOTO_CHECK_LABELS,
     authorizationText: AUTHORIZATION_TEXT,
@@ -18,6 +20,11 @@ Page({
     currentExample: PRODUCT_EXAMPLES[PRODUCTS[0].productId],
     selectedProductId: PRODUCTS[0].productId,
     selectedStyleId: STYLES[0].styleId,
+    isPortrait: false,
+    selectedThemeId: '',
+    currentTheme: null,
+    currentThemeTips: [],
+    sceneDesc: '',
     backgroundOptions: ['白底', '蓝底', '红底', '灰底'],
     clothingOptions: ['保持原服装', '白衬衫', '深色西装'],
     specOptions: ['一寸', '二寸', '考试报名', '社保照', '简历头像'],
@@ -62,6 +69,23 @@ Page({
   selectProduct(e) {
     const selectedProductId = e.currentTarget.dataset.id;
     const product = PRODUCTS.find(item => item.productId === selectedProductId);
+    const isPortrait = Boolean(product && product.productType === 'portrait');
+
+    if (isPortrait) {
+      const themeId = this.data.selectedThemeId
+        || (PORTRAIT_THEMES[0] && PORTRAIT_THEMES[0].themeId)
+        || '';
+
+      this.setData(Object.assign({
+        selectedProductId,
+        selectedStyleId: '',
+        selectedThemeId: themeId,
+        isPortrait: true,
+        currentExample: PRODUCT_EXAMPLES[selectedProductId] || null
+      }, buildThemeState(themeId)));
+      return;
+    }
+
     const nextStyle = product && product.productId === 'resume_photo_29_9'
       ? STYLES.find(item => item.styleId === 'ID-03')
       : STYLES[0];
@@ -69,12 +93,25 @@ Page({
     this.setData({
       selectedProductId,
       selectedStyleId: nextStyle ? nextStyle.styleId : this.data.selectedStyleId,
+      selectedThemeId: '',
+      isPortrait: false,
+      currentTheme: null,
+      currentThemeTips: [],
       currentExample: PRODUCT_EXAMPLES[selectedProductId] || PRODUCT_EXAMPLES[PRODUCTS[0].productId]
     });
   },
 
   selectStyle(e) {
     this.setData({ selectedStyleId: e.currentTarget.dataset.id });
+  },
+
+  selectTheme(e) {
+    const themeId = e.currentTarget.dataset.id;
+    this.setData(Object.assign({ selectedThemeId: themeId }, buildThemeState(themeId)));
+  },
+
+  onSceneDescInput(e) {
+    this.setData({ sceneDesc: e.detail.value || '' });
   },
 
   onBackgroundChange(e) {
@@ -196,14 +233,17 @@ Page({
       wx.showToast({ title: '查询密码至少 6 位', icon: 'none' });
       return;
     }
+    if (this.data.isPortrait && !this.data.selectedThemeId) {
+      wx.showToast({ title: '请选择写真主题', icon: 'none' });
+      return;
+    }
 
     this.setData({ isSubmitting: true });
     wx.showLoading({ title: '提交订单中', mask: true });
 
     try {
-      const createRes = await callFunction('createAIStudioOrder', {
+      const orderPayload = {
         productId: this.data.selectedProductId,
-        styleId: this.data.selectedStyleId,
         usage: this.data.specOptions[this.data.specIndex],
         backgroundColor: this.data.backgroundOptions[this.data.backgroundIndex],
         clothingOption: this.data.clothingOptions[this.data.clothingIndex],
@@ -212,7 +252,17 @@ Page({
         contactPhone: this.data.contactPhone,
         queryPassword: this.data.queryPassword,
         authorization: auth
-      });
+      };
+
+      if (this.data.isPortrait) {
+        orderPayload.styleId = '';
+        orderPayload.themeId = this.data.selectedThemeId;
+        orderPayload.sceneDesc = this.data.sceneDesc;
+      } else {
+        orderPayload.styleId = this.data.selectedStyleId;
+      }
+
+      const createRes = await callFunction('createAIStudioOrder', orderPayload);
 
       const orderId = createRes.order.orderId;
 
@@ -241,6 +291,10 @@ Page({
         photos: [],
         customerNote: '',
         queryPassword: '',
+        selectedThemeId: '',
+        sceneDesc: '',
+        currentTheme: null,
+        currentThemeTips: [],
         authorization: {
           isSelfOrAuthorized: false,
           isAdult: false,
@@ -323,6 +377,21 @@ function getFileExtension(path) {
   const cleanPath = String(path || '').split('?')[0];
   const ext = cleanPath.includes('.') ? cleanPath.split('.').pop().toLowerCase() : 'jpg';
   return ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? (ext === 'jpeg' ? 'jpg' : ext) : 'jpg';
+}
+
+function buildThemeState(themeId) {
+  const theme = PORTRAIT_THEMES.find(item => item.themeId === themeId) || null;
+  return {
+    currentTheme: theme,
+    currentThemeTips: theme ? splitSceneHint(theme.sceneHint) : []
+  };
+}
+
+function splitSceneHint(hint) {
+  return String(hint || '')
+    .split(/[，、]/)
+    .map(part => part.trim())
+    .filter(Boolean);
 }
 
 function callFunction(name, data) {

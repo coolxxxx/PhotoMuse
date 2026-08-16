@@ -260,6 +260,54 @@
   background: #eef8ef;
 }
 
+.theme-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.theme-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  width: calc(50% - 8rpx);
+  box-sizing: border-box;
+  padding: 20rpx;
+  border: 2rpx solid #e8eef7;
+  border-radius: 18rpx;
+  background: #fbfdff;
+}
+
+.theme-chip.selected {
+  border-color: #43a047;
+  background: #eef8ef;
+}
+
+.theme-name {
+  color: #1f2d3d;
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
+.theme-chip.selected .theme-name {
+  color: #1b5e20;
+}
+
+.theme-desc {
+  color: #607d8b;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.theme-hint {
+  padding: 20rpx;
+  border-radius: 18rpx;
+  background: #f7fafc;
+  color: #455a64;
+  font-size: 25rpx;
+  line-height: 1.55;
+}
+
 .form-row,
 .switch-row {
   display: flex;
@@ -281,6 +329,11 @@
   background: #f7fafc;
   color: #263238;
   font-size: 26rpx;
+}
+
+.scene-input {
+  min-height: 180rpx;
+  margin-top: 0;
 }
 
 .text-input {

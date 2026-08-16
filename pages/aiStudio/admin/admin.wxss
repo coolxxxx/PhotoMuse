@@ -39,10 +39,26 @@
 }
 
 .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
   padding: 30rpx;
   border-radius: 24rpx;
   background: #ffffff;
   box-shadow: 0 6rpx 20rpx rgba(25, 118, 210, 0.08);
+}
+
+.header-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.payment-qr {
+  flex-shrink: 0;
+  color: #1976d2;
+  background: #ffffff;
+  border: 2rpx solid #1976d2;
 }
 
 .header-title {
@@ -126,6 +142,24 @@
   gap: 12rpx 20rpx;
 }
 
+.pay-tag {
+  align-self: center;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.pay-tag.unpaid {
+  color: #f57c00;
+  background: #fff3e0;
+}
+
+.pay-tag.paid-tag {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+
 .review-note {
   margin-top: 16rpx;
   padding: 16rpx;
@@ -177,6 +211,16 @@
 }
 
 .deliver {
+  color: #ffffff;
+  background: #1976d2;
+}
+
+.paid {
+  color: #ffffff;
+  background: #1565c0;
+}
+
+.grid {
   color: #ffffff;
   background: #1976d2;
 }

@@ -5,6 +5,7 @@ const PRODUCTS = [
     price: 3.9,
     deliveryCount: 1,
     productionLine: 'auto',
+    productType: 'standard',
     description: '1 个规格，1 张高清电子版，适合考试报名、身份照、社保资料。'
   },
   {
@@ -13,7 +14,17 @@ const PRODUCTS = [
     price: 29.9,
     deliveryCount: 3,
     productionLine: 'semi_auto',
+    productType: 'standard',
     description: '1 个商务风格，适合简历、职业平台和工牌头像。'
+  },
+  {
+    productId: 'portrait_suite_69',
+    name: '69.9 AI 写真套图',
+    price: 69.9,
+    deliveryCount: 5,
+    productionLine: 'manual_ai',
+    productType: 'portrait',
+    description: '任选主题，3x5 网格预览选片，交付 5 张高清成片。'
   }
 ];
 
@@ -60,11 +71,46 @@ const STYLES = [
   }
 ];
 
+const PORTRAIT_THEMES = [
+  {
+    themeId: 'guofeng',
+    name: '古风写真',
+    desc: '汉服加身，园林叠影，一键穿越的水墨意境大片。',
+    sceneHint: '汉服、园林长廊、竹林溪水，水墨留白背景，拍出温婉端庄的古风质感'
+  },
+  {
+    themeId: 'sports',
+    name: '运动活力',
+    desc: '球场街头双场景切换，定格你最飒的动感瞬间。',
+    sceneHint: '球场、街头、城市跑道，动感构图配高对比光影，元气氛围直接拉满'
+  },
+  {
+    themeId: 'casual',
+    name: '休闲日常',
+    desc: '咖啡居家街拍三连，把松弛感日常拍成高光时刻。',
+    sceneHint: '咖啡店、居家窗边、街头随拍，自然光加浅景深，轻松拿捏氛围感'
+  },
+  {
+    themeId: 'travel',
+    name: '旅拍风光',
+    desc: '海边古镇山野任你选，一张照片装下整段旅程。',
+    sceneHint: '海边日落、古镇石巷、山野草原，大场景构图配旅行穿搭，出片即封面'
+  },
+  {
+    themeId: 'family',
+    name: '亲子合照',
+    desc: '从温馨互动到全家福，把陪伴拍成值得收藏的样子。',
+    sceneHint: '温馨互动、拥抱对视、全家福站位，柔和暖调光线，幸福感溢出屏幕'
+  }
+];
+
 const STATUS_LABELS = {
   waiting_photos: '待上传照片',
   photo_review: '照片审核中',
   waiting_authorization: '待授权确认',
   queued: '已排单',
+  grid_preview: '网格预览待选片',
+  cell_selected: '已选片，制作中',
   generating: '出图中',
   qc: '质检中',
   delivered: '已交付',
@@ -130,6 +176,7 @@ const PRODUCT_EXAMPLES = {
 module.exports = {
   PRODUCTS,
   STYLES,
+  PORTRAIT_THEMES,
   STATUS_LABELS,
   PHOTO_CHECK_LABELS,
   AUTHORIZATION_TEXT,

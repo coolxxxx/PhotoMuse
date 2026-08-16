@@ -3,6 +3,8 @@ const {
   PHOTO_CHECK_LABELS
 } = require('../../../utils/ai-studio-config');
 
+const GRID_CELLS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
 Page({
   data: {
     orderId: '',
@@ -11,8 +13,15 @@ Page({
     deliveryFiles: [],
     deliveryUrls: [],
     retakePhotos: [],
+    paymentQR: null,
+    paymentChecked: false,
+    gridPreviewUrl: '',
+    gridCells: GRID_CELLS,
+    selectedCells: [],
+    selectedMap: {},
     isLoading: false,
     isUploading: false,
+    isSubmittingCells: false,
     queryMode: false
   },
 
@@ -39,7 +48,12 @@ Page({
 
   async loadDetail() {
     if (!this.data.orderId) return;
-    this.setData({ isLoading: true });
+    this.setData({
+      isLoading: true,
+      paymentQR: null,
+      paymentChecked: false,
+      gridPreviewUrl: ''
+    });
 
     try {
       const res = this.data.queryMode
@@ -52,6 +66,13 @@ Page({
       const deliveryFiles = files.filter(file => file.fileType === 'delivery');
       const deliveryUrls = await getTempUrls(deliveryFiles.map(file => file.fileID));
 
+      // 网格预览图：只取最新一条 grid_preview，且不混入交付图/客户图
+      const gridPreviewFiles = files.filter(file => file.fileType === 'grid_preview');
+      const latestGridFile = gridPreviewFiles[gridPreviewFiles.length - 1];
+      const gridPreviewUrl = latestGridFile
+        ? (await getTempUrls([latestGridFile.fileID]))[0] || ''
+        : '';
+
       this.setData({
         order: {
           ...res.order,
@@ -60,12 +81,34 @@ Page({
         },
         customerFiles: files.filter(file => file.fileType === 'customer_photo'),
         deliveryFiles,
-        deliveryUrls
+        deliveryUrls,
+        gridPreviewUrl
       });
+
+      if (res.order.payment_status === 'unpaid') {
+        this.loadPaymentQR();
+      }
     } catch (error) {
       wx.showToast({ title: error.message || '加载失败', icon: 'none' });
     } finally {
       this.setData({ isLoading: false });
+    }
+  },
+
+  async loadPaymentQR() {
+    try {
+      const res = await callFunction('getAIStudioPaymentQR');
+      const config = res.config;
+      const url = config && config.fileID
+        ? (await getTempUrls([config.fileID]))[0] || ''
+        : '';
+
+      this.setData({
+        paymentQR: url ? { url, note: config.note || '' } : null,
+        paymentChecked: true
+      });
+    } catch (error) {
+      this.setData({ paymentQR: null, paymentChecked: true });
     }
   },
 
@@ -170,6 +213,81 @@ Page({
       current,
       urls: this.data.deliveryUrls
     });
+  },
+
+  previewGridImage() {
+    if (!this.data.gridPreviewUrl) return;
+    wx.previewImage({
+      current: this.data.gridPreviewUrl,
+      urls: [this.data.gridPreviewUrl]
+    });
+  },
+
+  getMaxCellCount() {
+    const order = this.data.order || {};
+    const count = Number(order.deliveryCount);
+    return count > 0 ? count : 5;
+  },
+
+  toggleCell(e) {
+    const cell = Number(e.currentTarget.dataset.cell);
+    const selectedCells = this.data.selectedCells.slice();
+    const index = selectedCells.indexOf(cell);
+
+    if (index >= 0) {
+      selectedCells.splice(index, 1);
+    } else {
+      const max = this.getMaxCellCount();
+      if (selectedCells.length >= max) {
+        wx.showToast({ title: `最多选择 ${max} 个分镜`, icon: 'none' });
+        return;
+      }
+      selectedCells.push(cell);
+    }
+
+    const selectedMap = {};
+    selectedCells.forEach(item => { selectedMap[item] = true; });
+    this.setData({ selectedCells, selectedMap });
+  },
+
+  async submitSelectedCells() {
+    if (this.data.isSubmittingCells) return;
+    if (!this.data.selectedCells.length) {
+      wx.showToast({ title: '请先选择分镜', icon: 'none' });
+      return;
+    }
+
+    const payload = {
+      orderId: this.data.orderId,
+      cells: this.data.selectedCells.slice()
+    };
+
+    if (this.data.queryMode) {
+      const app = getApp();
+      const query = app.globalData && app.globalData.aiStudioOrderQuery;
+      if (!query || query.orderId !== this.data.orderId) {
+        wx.showToast({ title: '请返回证件照制作页重新查询订单', icon: 'none' });
+        return;
+      }
+      payload.contactPhone = query.contactPhone;
+      payload.queryPassword = query.queryPassword;
+    }
+
+    this.setData({ isSubmittingCells: true });
+    wx.showLoading({ title: '提交选片中', mask: true });
+
+    try {
+      await callFunction('selectAIStudioPortraitCells', payload);
+      wx.hideLoading();
+      wx.showToast({ title: '选片已提交', icon: 'success' });
+      this.setData({ selectedCells: [], selectedMap: {} });
+      this.loadDetail();
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '提交失败', icon: 'none' });
+    } finally {
+      this.setData({ isSubmittingCells: false });
+    }
   }
 });
 

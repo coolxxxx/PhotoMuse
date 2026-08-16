@@ -176,3 +176,94 @@
   text-align: center;
   font-size: 28rpx;
 }
+
+/* 收款码 */
+.qr-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 10rpx;
+}
+
+.qr-image {
+  width: 400rpx;
+  height: 400rpx;
+  border-radius: 20rpx;
+  background: #eef3f8;
+}
+
+.qr-note {
+  margin-top: 18rpx;
+}
+
+/* 网格预览选片 */
+.grid-preview-wrap {
+  margin-top: 10rpx;
+}
+
+.grid-preview-image {
+  width: 100%;
+  height: 640rpx;
+  border-radius: 20rpx;
+  background: #eef3f8;
+}
+
+.grid-preview-tip {
+  margin-top: 12rpx;
+  text-align: center;
+}
+
+.cell-hint {
+  margin-top: 20rpx;
+}
+
+.cell-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.cell-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 104rpx;
+  border: 2rpx solid transparent;
+  border-radius: 16rpx;
+  background: #eef3f8;
+  color: #37474f;
+  font-size: 30rpx;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.cell-item.selected {
+  border-color: #1976d2;
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+/* 已选分镜徽章 */
+.selected-cells {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.selected-cell-badge {
+  min-width: 56rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 26rpx;
+  font-weight: 700;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.selected-cells-tail {
+  color: #607d8b;
+  font-size: 26rpx;
+}

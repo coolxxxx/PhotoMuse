@@ -6,8 +6,11 @@
   </view>
 
   <view class="header">
-    <view class="header-title">订单管理</view>
-    <view class="header-desc">仅白名单运营 openid 可审核、拒单和交付。</view>
+    <view class="header-main">
+      <view class="header-title">订单管理</view>
+      <view class="header-desc">仅白名单运营 openid 可审核、拒单和交付。</view>
+    </view>
+    <button size="mini" class="action-btn payment-qr" loading="{{actionOrderId === 'payment-qr'}}" bindtap="setupPaymentQR">收款设置</button>
   </view>
 
   <scroll-view scroll-x class="status-tabs">
@@ -36,9 +39,12 @@
     </view>
 
     <view class="order-info">
+      <text wx:if="{{item.product_type === 'portrait' && item.theme_name}}">{{item.theme_name}}</text>
       <text>{{item.styleName}}</text>
       <text>{{item.photoCheckText}}</text>
       <text>{{item.reference_photo_count || 0}} 张参考图</text>
+      <text wx:if="{{item.payment_status === 'unpaid'}}" class="pay-tag unpaid">未支付</text>
+      <text wx:elif="{{item.payment_status === 'paid'}}" class="pay-tag paid-tag" title="{{item.paidNote || ''}}">已支付</text>
     </view>
 
     <view wx:if="{{item.reviewNote}}" class="review-note">{{item.reviewNote}}</view>
@@ -59,6 +65,8 @@
       <button size="mini" class="action-btn pass" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="passReview">通过</button>
       <button size="mini" class="action-btn retake" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="requestRetake">重拍</button>
       <button size="mini" class="action-btn reject" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="rejectOrder">拒单</button>
+      <button wx:if="{{item.payment_status === 'unpaid'}}" size="mini" class="action-btn paid" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="markOrderPaid">标记已付</button>
+      <button wx:if="{{item.product_type === 'portrait' && (item.order_status === 'queued' || item.order_status === 'grid_preview' || item.order_status === 'cell_selected')}}" size="mini" class="action-btn grid" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="chooseGridPreview">上传网格</button>
       <button size="mini" class="action-btn deliver" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="chooseDelivery">上传交付</button>
     </view>
   </view>

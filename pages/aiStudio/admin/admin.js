@@ -8,6 +8,8 @@ Page({
     statusOptions: [
       { value: 'photo_review', label: '待审核' },
       { value: 'queued', label: '已排单' },
+      { value: 'grid_preview', label: '待选片' },
+      { value: 'cell_selected', label: '制作中' },
       { value: 'generating', label: '出图中' },
       { value: 'qc', label: '质检中' },
       { value: 'delivered', label: '已交付' },
@@ -57,6 +59,84 @@ Page({
     if (app.globalData) app.globalData.aiStudioAdminPassword = '';
     wx.showToast({ title: '已退出管理', icon: 'success' });
     wx.redirectTo({ url: '/pages/aiStudio/adminLogin/adminLogin' });
+  },
+
+  setupPaymentQR() {
+    const saveFile = file => {
+      if (file) this.savePaymentQR(file);
+    };
+
+    if (wx.chooseMedia) {
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: ['album', 'camera'],
+        sizeType: ['compressed'],
+        success: res => saveFile((res.tempFiles || [])[0])
+      });
+    } else {
+      wx.chooseImage({
+        count: 1,
+        sourceType: ['album', 'camera'],
+        sizeType: ['compressed'],
+        success: res => {
+          const path = (res.tempFilePaths || [])[0];
+          if (!path) return;
+          saveFile({
+            tempFilePath: path,
+            size: (res.tempFiles && res.tempFiles[0] && res.tempFiles[0].size) || 0
+          });
+        }
+      });
+    }
+  },
+
+  async savePaymentQR(file) {
+    const tempFilePath = file.tempFilePath || file.path;
+
+    this.setData({ actionOrderId: 'payment-qr' });
+    wx.showLoading({ title: '上传收款码', mask: true });
+
+    try {
+      const uploadRes = await wx.cloud.uploadFile({
+        cloudPath: `ai-studio/payment/qr-${Date.now()}.png`,
+        filePath: tempFilePath
+      });
+      wx.hideLoading();
+
+      const note = await this.promptPaymentNote();
+      if (note === null) return;
+
+      wx.showLoading({ title: '保存收款码', mask: true });
+      await callFunction('adminSetAIStudioPaymentQR', {
+        adminPassword: getAdminPassword(),
+        fileID: uploadRes.fileID,
+        note
+      });
+
+      wx.hideLoading();
+      wx.showToast({ title: '收款码已更新', icon: 'success' });
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '收款码更新失败', icon: 'none' });
+    } finally {
+      this.setData({ actionOrderId: '' });
+    }
+  },
+
+  promptPaymentNote() {
+    return new Promise(resolve => {
+      wx.showModal({
+        title: '收款码备注',
+        editable: true,
+        placeholderText: '如：微信收款码，请备注订单号后四位',
+        success: res => {
+          if (res.confirm) resolve(res.content || '');
+          else resolve(null);
+        },
+        fail: () => resolve(null)
+      });
+    });
   },
 
   selectStatus(e) {
@@ -127,6 +207,36 @@ Page({
     }
   },
 
+  markOrderPaid(e) {
+    const orderId = e.currentTarget.dataset.id;
+    const order = this.data.orders.find(item => item.orderId === orderId);
+    const price = (order && order.price) || '';
+
+    wx.showModal({
+      title: '确认收款',
+      content: `请确认已收到该订单款项 ${price} 元`,
+      success: res => {
+        if (res.confirm) this.confirmOrderPaid(orderId);
+      }
+    });
+  },
+
+  async confirmOrderPaid(orderId) {
+    this.setData({ actionOrderId: orderId });
+    try {
+      await callFunction('adminMarkAIStudioOrderPaid', {
+        orderId,
+        adminPassword: getAdminPassword()
+      });
+      wx.showToast({ title: '已标记支付', icon: 'success' });
+      this.loadOrders();
+    } catch (error) {
+      wx.showToast({ title: error.message || '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ actionOrderId: '' });
+    }
+  },
+
   chooseDelivery(e) {
     const orderId = e.currentTarget.dataset.id;
     const onSuccess = files => this.uploadDeliveryFiles(orderId, files);
@@ -189,6 +299,69 @@ Page({
     } catch (error) {
       wx.hideLoading();
       wx.showToast({ title: error.message || '交付失败', icon: 'none' });
+    } finally {
+      this.setData({ actionOrderId: '' });
+    }
+  },
+
+  chooseGridPreview(e) {
+    const orderId = e.currentTarget.dataset.id;
+    const uploadFile = file => {
+      if (file) this.uploadGridPreview(orderId, file);
+    };
+
+    if (wx.chooseMedia) {
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: ['album', 'camera'],
+        sizeType: ['compressed'],
+        success: res => uploadFile((res.tempFiles || [])[0])
+      });
+    } else {
+      wx.chooseImage({
+        count: 1,
+        sourceType: ['album', 'camera'],
+        sizeType: ['compressed'],
+        success: res => {
+          const path = (res.tempFilePaths || [])[0];
+          if (!path) return;
+          uploadFile({
+            tempFilePath: path,
+            size: (res.tempFiles && res.tempFiles[0] && res.tempFiles[0].size) || 0
+          });
+        }
+      });
+    }
+  },
+
+  async uploadGridPreview(orderId, file) {
+    const tempFilePath = file.tempFilePath || file.path;
+
+    this.setData({ actionOrderId: orderId });
+    wx.showLoading({ title: '上传预览网格', mask: true });
+
+    try {
+      const uploadRes = await wx.cloud.uploadFile({
+        cloudPath: `ai-studio/${orderId}/grid/${Date.now()}-0.jpg`,
+        filePath: tempFilePath
+      });
+
+      await callFunction('adminUploadAIStudioGridPreview', {
+        orderId,
+        fileID: uploadRes.fileID,
+        fileName: 'grid-preview.jpg',
+        size: file.size || 0,
+        mimeType: 'image/jpeg',
+        adminPassword: getAdminPassword()
+      });
+
+      wx.hideLoading();
+      wx.showToast({ title: '预览网格已上传，等待用户选片', icon: 'none' });
+      this.loadOrders();
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '上传失败', icon: 'none' });
     } finally {
       this.setData({ actionOrderId: '' });
     }
