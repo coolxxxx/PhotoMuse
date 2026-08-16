@@ -11,3 +11,6 @@ Thumbs.db
 
 # 云函数本地依赖
 cloudfunctions/*/node_modules/
+
+# 设计稿压缩包（文件夹版已入库，zip 为本机重复副本）
+光影集 PhotoMuse 三版视觉 Mock.zip
