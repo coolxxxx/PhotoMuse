@@ -53,11 +53,24 @@ window.PM = (() => {
    */
   const callApi = async (action, payload) => {
     if (!isConfigured()) { throw new Error('站点未配置 API Key，请联系管理员'); }
-    const a = await ensureAuth();
-    const res = await a.callFunction({
-      name: FUNCTION_NAME,
-      data: { apiKey: String(cfg.OPEN_API_KEY).trim(), action: action, payload: payload || {} }
-    });
+    let res = null;
+    try {
+      const a = await ensureAuth();
+      res = await a.callFunction({
+        name: FUNCTION_NAME,
+        data: { apiKey: String(cfg.OPEN_API_KEY).trim(), action: action, payload: payload || {} }
+      });
+    } catch (e) {
+      /* SDK 拒绝时 message 常为空，真实信息在 errMsg；归一化便于页面展示与排查 */
+      let msg = (e && (e.message || e.errMsg)) || '';
+      if (!msg) {
+        try { msg = JSON.stringify(e, Object.getOwnPropertyNames(e || {})).slice(0, 260); } catch (_) { msg = String(e); }
+      }
+      const hint = /origin|domain|域名/i.test(msg) ? '（疑似未配置 Web 安全域名：CloudBase 控制台→环境→安全配置→添加 www.czpsm.art）'
+        : /auth|登录|anonymous/i.test(msg) ? '（疑似未启用匿名登录：CloudBase 控制台→环境→身份验证→启用匿名登录）'
+        : '';
+      throw new Error(String(msg || '调用云函数失败') + hint);
+    }
     const result = res && res.result;
     if (!result || typeof result !== 'object') { throw new Error('服务端无返回，请稍后重试'); }
     if (result.success === false) {

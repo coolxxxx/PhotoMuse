@@ -230,8 +230,11 @@ const cloud = {
     const result = await mod.main(data || {});
     return { result };
   },
-  async uploadFile({ cloudPath }) {
+  async uploadFile({ cloudPath, fileContent }) {
     const fileID = 'cloud://mock-env.636c/' + cloudPath;
+    if (fileContent && fileContent.length) {
+      state.files.set(fileID, Buffer.isBuffer(fileContent) ? fileContent : Buffer.from(fileContent));
+    }
     return { fileID };
   },
   async downloadFile({ fileID }) {

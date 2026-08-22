@@ -107,9 +107,11 @@ function cli(args, opts = {}) {
 
 function loginCheck() {
   console.log(c.bold('\n[1/4] 检查登录状态'));
-  const res = cli(['env', 'list', '-j'], { stdio: 'pipe' });
+  // 注意：CLI 3.x 不支持 -j 参数；用裸 env list，以退出码+输出判断
+  const res = cli(['env', 'list'], { stdio: 'pipe' });
   const out = `${res.stdout || ''}${res.stderr || ''}`;
-  if (res.status !== 0 || /login|登录|auth/i.test(out) && !/envId|env/i.test(res.stdout || '')) {
+  const loggedOut = res.status !== 0 || /please use cloudbase login|请使用|No valid identity|未登录/i.test(out);
+  if (loggedOut) {
     console.error(c.red('  ✗ 未登录或凭证失效。请先执行：'));
     console.error(`     ${CLI || 'npx -y @cloudbase/cli'} login`);
     console.error(c.dim('     浏览器扫码授权后重跑 npm run deploy'));
@@ -211,16 +213,49 @@ function postCheck(results) {
 }
 
 // ---------- 主流程 ----------
+const RC_PATH = path.join(ROOT, 'cloudbaserc.json');
+
+/**
+ * 把 .deploy-secrets.json 的密钥临时写入 cloudbaserc.json。
+ * 原因：tcb fn deploy 直接读取磁盘上的 cloudbaserc.json，脚本内存里的合并不生效。
+ * 约定：部署前写入合并版，finally 恢复占位原文——仓库文件始终零密钥。
+ * 返回原文内容用于恢复；无密钥需要合并时返回 null。
+ */
+function writeSecretsMergedConfig() {
+  // 判定依据是"原始配置里存在待填充的空占位"，而不是合并后的列表（合并后自然无空值）
+  const needsMerge = rc.functions.some(f =>
+    Object.entries(f.envVariables || {}).some(([k, v]) => typeof v === 'string' && !v.trim() && SECRETS[k])
+  );
+  if (!needsMerge) return null;
+  const original = fs.readFileSync(RC_PATH, 'utf8');
+  const merged = JSON.parse(JSON.stringify(rc));
+  merged.functions = effectiveFunctions;
+  fs.writeFileSync(RC_PATH, JSON.stringify(merged, null, 2) + '\n');
+  return original;
+}
+
 function main() {
   console.log(c.bold('光影集 PhotoMuse · 一键部署'));
   console.log(c.dim(`模式：${DRY_RUN ? 'DRY-RUN（只打印计划）' : '全量部署'}${ONLY ? `，仅 ${ONLY.size} 个函数` : ''}`));
   const targets = plan();
-  if (!DRY_RUN) loginCheck();
-  const results = deployFunctions(targets);
-  if (!SKIP_INVOKE && !ONLY) invokeInit(); else if (!SKIP_INVOKE && ONLY && ONLY.has(INIT_FN)) invokeInit();
-  if (!SKIP_CHECK) postCheck(results);
-  const failed = results.filter(r => !r.ok).length;
-  process.exit(DRY_RUN ? 0 : (failed ? 1 : 0));
+  let originalConfig = null;
+  try {
+    if (!DRY_RUN) {
+      loginCheck();
+      originalConfig = writeSecretsMergedConfig();
+      if (originalConfig !== null) console.log(c.dim('  （已临时注入 .deploy-secrets.json 密钥到 cloudbaserc.json，部署结束后自动还原）'));
+    }
+    const results = deployFunctions(targets);
+    if (!SKIP_INVOKE && !ONLY) invokeInit(); else if (!SKIP_INVOKE && ONLY && ONLY.has(INIT_FN)) invokeInit();
+    if (!SKIP_CHECK) postCheck(results);
+    const failed = results.filter(r => !r.ok).length;
+    process.exitCode = DRY_RUN ? 0 : (failed ? 1 : 0);
+  } finally {
+    if (originalConfig !== null) {
+      fs.writeFileSync(RC_PATH, originalConfig);
+      console.log(c.dim('  （cloudbaserc.json 已还原为占位版，仓库零密钥）'));
+    }
+  }
 }
 
 main();

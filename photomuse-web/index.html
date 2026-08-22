@@ -138,8 +138,8 @@
   <footer class="footer">光影集 PhotoMuse · 上传一张照片，生成证件照、形象照与 AI 写真</footer>
 
   <script src="js/vendor/cloudbase.full.js?v=3"></script>
-  <script src="js/config.js"></script>
-  <script src="js/api.js"></script>
+  <script src="js/config.js?v=2"></script>
+  <script src="js/api.js?v=3"></script>
   <script>
     (() => {
       'use strict';
@@ -252,6 +252,9 @@
           PM.hideLoading();
           els.productList.innerHTML = '';
           els.catalogError.classList.remove('hidden');
+          /* 把真实错误写进告警框（区别：函数层错误 / 登录层错误 / 域名拦截） */
+          els.catalogError.textContent = '套餐加载失败：' + (e && e.message ? e.message : '未知错误');
+          console.error('catalog 加载失败:', e);
           PM.toast(e.message || '套餐加载失败', 'error');
         }
       };
