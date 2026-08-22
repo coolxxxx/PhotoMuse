@@ -614,6 +614,56 @@
   line-height: 1.45;
 }
 
+/* 用途规格：右侧名称 + 毫米/像素小字（editorial 注脚式） */
+.pm-spec-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
+  text-align: right;
+}
+
+.pm-spec-sub {
+  color: var(--pm-ink-3);
+  font-size: 22rpx;
+  line-height: 1.4;
+}
+
+/* 底色：一行圆形色块直选（hex 由 wxml 内联 style 提供，此处仅形状与选中态） */
+.pm-bg-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 26rpx 4rpx;
+  border-bottom: 1rpx solid var(--pm-hairline);
+}
+
+.pm-swatch-list {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin-left: auto;
+}
+
+.pm-swatch {
+  width: 56rpx;
+  height: 56rpx;
+  box-sizing: border-box;
+  border: 1rpx solid var(--pm-hairline-strong);
+  border-radius: 50%;
+}
+
+.pm-swatch.selected {
+  border: 3rpx solid var(--pm-primary);
+  box-shadow: 0 0 0 6rpx var(--pm-primary-soft);
+}
+
+.pm-swatch-name {
+  flex-shrink: 0;
+  color: var(--pm-ink-2);
+  font-size: 26rpx;
+}
+
 /* ---------- №10 上传正脸照 ---------- */
 
 .pm-ai-btn {

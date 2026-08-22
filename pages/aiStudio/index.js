@@ -6,7 +6,9 @@ const {
   STATUS_LABELS,
   PHOTO_CHECK_LABELS,
   AUTHORIZATION_TEXT,
-  PRODUCT_EXAMPLES
+  PRODUCT_EXAMPLES,
+  ID_PHOTO_SPECS,
+  BACKGROUND_COLORS
 } = require('../../utils/ai-studio-config');
 
 Page({
@@ -33,9 +35,12 @@ Page({
     analysisResult: null,
     isAnalyzing: false,
     sceneDesc: '',
-    backgroundOptions: ['白底', '蓝底', '红底', '灰底'],
+    // 证件照规格/底色：展示行与存储值分离（提交仍存中文名，与后端查表一致）
+    backgroundOptions: BACKGROUND_COLORS.map(item => item.name),
+    backgroundColorSwatches: BACKGROUND_COLORS,
     clothingOptions: ['保持原服装', '白衬衫', '深色西装'],
-    specOptions: ['一寸', '二寸', '考试报名', '社保照', '简历头像'],
+    specOptions: ID_PHOTO_SPECS.map(spec => `${spec.name} ${spec.widthMM}×${spec.heightMM}mm · ${spec.usage}`),
+    specInfo: buildSpecInfo(ID_PHOTO_SPECS[0]),
     backgroundIndex: 0,
     clothingIndex: 0,
     specIndex: 0,
@@ -285,16 +290,24 @@ Page({
     this.setData({ sceneDesc: e.detail.value || '' });
   },
 
-  onBackgroundChange(e) {
-    this.setData({ backgroundIndex: Number(e.detail.value) || 0 });
+  onSpecChange(e) {
+    const specIndex = Number(e.detail.value) || 0;
+    this.setData({
+      specIndex,
+      specInfo: buildSpecInfo(ID_PHOTO_SPECS[specIndex])
+    });
+  },
+
+  // 底色色块直选：按色名同步选中下标（提交仍取 backgroundOptions[backgroundIndex] 中文名）
+  selectBackground(e) {
+    const name = e.currentTarget.dataset.name;
+    const index = BACKGROUND_COLORS.findIndex(item => item.name === name);
+    if (index < 0) return;
+    this.setData({ backgroundIndex: index });
   },
 
   onClothingChange(e) {
     this.setData({ clothingIndex: Number(e.detail.value) || 0 });
-  },
-
-  onSpecChange(e) {
-    this.setData({ specIndex: Number(e.detail.value) || 0 });
   },
 
   onNoteInput(e) {
@@ -413,12 +426,17 @@ Page({
     wx.showLoading({ title: '提交订单中', mask: true });
 
     try {
+      // 展示行与存储值分离：order.spec / order.usage 均存规格中文名（'一寸' 等），与后端查表一致
+      const specName = ID_PHOTO_SPECS[this.data.specIndex]
+        ? ID_PHOTO_SPECS[this.data.specIndex].name
+        : ID_PHOTO_SPECS[0].name;
+
       const orderPayload = {
         productId: this.data.selectedProductId,
-        usage: this.data.specOptions[this.data.specIndex],
+        usage: specName,
         backgroundColor: this.data.backgroundOptions[this.data.backgroundIndex],
         clothingOption: this.data.clothingOptions[this.data.clothingIndex],
-        spec: this.data.specOptions[this.data.specIndex],
+        spec: specName,
         customerNote: this.data.customerNote,
         contactPhone: this.data.contactPhone,
         queryPassword: this.data.queryPassword,
@@ -561,6 +579,17 @@ function getFileExtension(path) {
   const cleanPath = String(path || '').split('?')[0];
   const ext = cleanPath.includes('.') ? cleanPath.split('.').pop().toLowerCase() : 'jpg';
   return ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? (ext === 'jpeg' ? 'jpg' : ext) : 'jpg';
+}
+
+// 选中规格的尺寸说明（供制作要求区小字展示）
+function buildSpecInfo(spec) {
+  if (!spec) return null;
+  return {
+    name: spec.name,
+    sizeText: `${spec.widthMM}×${spec.heightMM}mm`,
+    pxText: `${spec.widthPx}×${spec.heightPx}px · 300DPI`,
+    usage: spec.usage
+  };
 }
 
 function buildThemeState(themeId) {

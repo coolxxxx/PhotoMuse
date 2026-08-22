@@ -44,6 +44,11 @@ Page({
       imageSize: '1024x1024',
       enabled: true
     },
+    idphotoConfig: {
+      apiUrl: '',
+      enabled: false,
+      faceAlignment: true
+    },
     showSamplesPanel: false,
     isLoadingSamples: false,
     sampleGroups: [],
@@ -105,7 +110,9 @@ Page({
   async loadModelSettings() {
     try {
       const res = await callFunction('getAIStudioRuntimeConfig', {});
-      const settings = (((res.config || {}).modelSettings) || []).find(item => item.scene === 'image_generation') || {};
+      const modelSettings = ((res.config || {}).modelSettings) || [];
+      const settings = modelSettings.find(item => item.scene === 'image_generation') || {};
+      const idphoto = modelSettings.find(item => item.scene === 'idphoto_engine') || {};
       const imageSize = settings.imageSize || '1024x1024';
 
       this.setData({
@@ -115,6 +122,11 @@ Page({
           model: settings.model || '',
           imageSize,
           enabled: settings.enabled !== false
+        },
+        idphotoConfig: {
+          apiUrl: idphoto.apiUrl || '',
+          enabled: idphoto.enabled === true,
+          faceAlignment: idphoto.faceAlignment !== false
         },
         imageSizeIndex: Math.max(0, this.data.imageSizeOptions.indexOf(imageSize))
       });
@@ -140,14 +152,34 @@ Page({
     this.setData({ 'modelConfig.enabled': !!e.detail.value });
   },
 
+  onIdphotoFieldInput(e) {
+    const field = e.currentTarget.dataset.field;
+    if (!field) return;
+    this.setData({ [`idphotoConfig.${field}`]: e.detail.value });
+  },
+
+  onIdphotoEnabledChange(e) {
+    this.setData({ 'idphotoConfig.enabled': !!e.detail.value });
+  },
+
+  onIdphotoFaceAlignChange(e) {
+    this.setData({ 'idphotoConfig.faceAlignment': !!e.detail.value });
+  },
+
   async saveModelSettings() {
     const config = this.data.modelConfig;
     const apiUrl = (config.apiUrl || '').trim();
     const model = (config.model || '').trim();
     const apiKey = (config.apiKey || '').trim();
+    const idphoto = this.data.idphotoConfig;
+    const idphotoApiUrl = (idphoto.apiUrl || '').trim();
 
     if (!apiUrl || !model) {
       wx.showToast({ title: '请填写接口地址和模型名称', icon: 'none' });
+      return;
+    }
+    if (idphoto.enabled && !idphotoApiUrl) {
+      wx.showToast({ title: '启用证件照引擎需填写引擎接口地址', icon: 'none' });
       return;
     }
 
@@ -162,11 +194,20 @@ Page({
     };
     if (apiKey) modelSetting.apiKey = apiKey;
 
+    const idphotoSetting = {
+      scene: 'idphoto_engine',
+      enabled: !!idphoto.enabled,
+      provider: 'hivision',
+      apiUrl: idphotoApiUrl,
+      faceAlignment: idphoto.faceAlignment !== false,
+      publicName: '证件照引擎'
+    };
+
     this.setData({ isSavingModel: true });
     try {
       await callFunction('adminUpsertAIStudioRuntimeConfig', {
         adminPassword: getAdminPassword(),
-        modelSettings: [modelSetting]
+        modelSettings: [modelSetting, idphotoSetting]
       });
       wx.showToast({ title: '模型设置已保存', icon: 'success' });
       this.setData({ showModelPanel: false, 'modelConfig.apiKey': '' });
@@ -527,6 +568,39 @@ Page({
   // ---------------------------------------------------------------------
   generateReferenceImage(e) {
     this.runImageGeneration(e.currentTarget.dataset.id, 'reference');
+  },
+
+  async generateIdphotoImage(e) {
+    const orderId = e.currentTarget.dataset.id;
+    if (this.data.actionOrderId) return;
+
+    this.setData({ actionOrderId: `gen:${orderId}` });
+    wx.showLoading({ title: '证件照生成中，约需 10-30 秒', mask: true });
+
+    try {
+      const res = await callFunction('generateAIStudioImage', {
+        adminPassword: getAdminPassword(),
+        orderId,
+        stage: 'idphoto'
+      });
+      wx.hideLoading();
+
+      const fileIds = [];
+      if (res.file && res.file.fileID) fileIds.push(res.file.fileID);
+      if (res.layout && res.layout.fileID) fileIds.push(res.layout.fileID);
+
+      if (fileIds.length) {
+        const urlMap = await getTempUrlMap(fileIds);
+        const urls = fileIds.map(fileID => urlMap[fileID]).filter(Boolean);
+        if (urls.length) wx.previewImage({ current: urls[0], urls });
+      }
+      this.loadOrders();
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '生成失败', icon: 'none' });
+    } finally {
+      this.setData({ actionOrderId: '' });
+    }
   },
 
   async generateGridImage(e) {

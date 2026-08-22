@@ -1,14 +1,19 @@
 // 部署说明：本函数会同步调用外部 OpenAI 兼容生图接口，生图耗时较长（常见 30-90 秒）。
 // 部署时必须将本云函数的超时时间设置为 120 秒（在微信开发者工具/云开发控制台中调整，
 // 或在本函数目录 config.json 中配置 { "timeout": 120 }），内存建议不低于 256MB。
+// idphoto 阶段会串行调用自部署 HivisionIDPhotos 引擎（抠图 / 加底色 / 排版照，每步上限 90 秒），
+// 建议将超时进一步上调（如 300 秒）以覆盖最坏情况。
 const cloud = require('wx-server-sdk');
 const https = require('https');
+const http = require('http');
+const crypto = require('crypto');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
 const db = cloud.database();
 
-const GENERATION_STAGES = ['reference', 'grid', 'cell', 'trial', 'sample'];
+// idphoto 为证件照成品专用阶段（standard 订单 + 自部署 HivisionIDPhotos 引擎），配置与生图接口相互独立
+const GENERATION_STAGES = ['reference', 'grid', 'cell', 'trial', 'sample', 'idphoto'];
 const GENERATION_TIMEOUT_MS = 120000;
 const DOWNLOAD_TIMEOUT_MS = 30000;
 
@@ -82,6 +87,11 @@ exports.main = async (event = {}) => {
 
     const stage = cleanText(event.stage, 20);
     if (!GENERATION_STAGES.includes(stage)) return fail('VALIDATION_ERROR', '生图阶段无效');
+
+    // 证件照成品：standard 订单专用，走自部署 HivisionIDPhotos 引擎，与生图配置可并存互不影响
+    if (stage === 'idphoto') {
+      return generateIdPhoto(orderId, OPENID);
+    }
 
     let cell = null;
     if (stage === 'cell') {
@@ -457,12 +467,313 @@ function downloadImage(url, maxRedirects = 3) {
 }
 
 // ---------------------------------------------------------------------------
+// 证件照引擎（HivisionIDPhotos 自部署服务，允许 http 内网/自有服务器地址）
+// ---------------------------------------------------------------------------
+
+const ID_PHOTO_TIMEOUT_MS = 90000;
+
+// 证件照规格（px @300DPI），与小程序端配置保持同值
+const ID_PHOTO_SPECS = {
+  '一寸': { width: 295, height: 413 },
+  '小一寸': { width: 260, height: 378 },
+  '二寸': { width: 413, height: 579 },
+  '小二寸': { width: 390, height: 567 },
+  '五寸': { width: 1050, height: 1500 },
+  '六寸': { width: 1200, height: 1800 }
+};
+
+// 证件照底色（HEX，不带 #），与小程序端配置保持同值
+const BACKGROUND_COLORS = {
+  '白底': 'FFFFFF',
+  '蓝底': '438EDB',
+  '红底': 'DE2910',
+  '灰底': '535A60',
+  '深蓝底': '1C4F9C'
+};
+
+async function generateIdPhoto(orderId, actorOpenid) {
+  // 先做订单校验（不依赖引擎配置）：portrait 订单即使未配引擎也应得到明确的类型错误
+  const order = await getOrder(orderId);
+  if (!order) return fail('NOT_FOUND', '订单不存在');
+  if (order.product_type !== 'standard') {
+    return fail('VALIDATION_ERROR', '该订单不是证件照订单（AI 写真订单请使用生图接口）');
+  }
+
+  // 证件照引擎配置独立于生图接口：ai_studio_model_settings scene='idphoto_engine'
+  const setting = await getIdPhotoEngineSetting();
+  if (!setting || !setting.apiUrl) {
+    return fail('CONFIG_MISSING', '证件照引擎未配置，请在管理后台-模型设置中配置证件照引擎地址（HivisionIDPhotos 服务地址，如 http://ip:8080）');
+  }
+
+  const photo = await getLatestCustomerPhoto(orderId);
+  if (!photo) return fail('VALIDATION_ERROR', '订单没有可用的客户照片');
+
+  let sourceBuffer;
+  try {
+    const download = await cloud.downloadFile({ fileID: photo.fileID });
+    sourceBuffer = download.fileContent;
+  } catch (error) {
+    console.error('generateAIStudioImage download customer photo failed:', error);
+    return fail('GENERATION_FAILED', '证件照生成失败（读取客户照片）');
+  }
+  if (!sourceBuffer || !sourceBuffer.length) {
+    return fail('GENERATION_FAILED', '证件照生成失败（客户照片内容为空）');
+  }
+
+  const specName = cleanText(order.spec, 40);
+  const specHit = ID_PHOTO_SPECS[specName];
+  const spec = specHit ? { name: specName, ...specHit } : { name: '一寸', ...ID_PHOTO_SPECS['一寸'] };
+
+  const backgroundName = cleanText(order.backgroundColor, 20);
+  const backgroundHex = BACKGROUND_COLORS[backgroundName] || BACKGROUND_COLORS['白底'];
+
+  // 第一步：/idphoto 人像抠图并按规格裁切，产出透明底高清 PNG
+  let matting;
+  try {
+    matting = await callHivisionEngine(setting.apiUrl, '/idphoto', {
+      fileBuffer: sourceBuffer,
+      fileContentType: detectImageMime(sourceBuffer),
+      fields: {
+        height: String(spec.height),
+        width: String(spec.width),
+        hd: 'true',
+        dpi: '300',
+        face_alignment: 'true',
+        human_matting_model: 'modnet_photographic_portrait_matting',
+        face_detect_model: 'mtcnn'
+      }
+    });
+  } catch (error) {
+    const detail = truncateText(error && error.message ? error.message : String(error), 200);
+    return fail('GENERATION_FAILED', `证件照生成失败（抠图阶段）：${detail}`);
+  }
+  if (!matting || matting.status !== true || !matting.image_base64_hd) {
+    return fail('GENERATION_FAILED', '证件照生成失败（抠图阶段）：引擎返回结果无效');
+  }
+
+  // 第二步：/add_background 为透明底 PNG 叠加指定底色，得到成品
+  let composited;
+  try {
+    composited = await callHivisionEngine(setting.apiUrl, '/add_background', {
+      fileBuffer: Buffer.from(matting.image_base64_hd, 'base64'),
+      fileContentType: 'image/png',
+      fields: {
+        color: backgroundHex,
+        kb: '200',
+        render: '0',
+        dpi: '300'
+      }
+    });
+  } catch (error) {
+    const detail = truncateText(error && error.message ? error.message : String(error), 200);
+    return fail('GENERATION_FAILED', `证件照生成失败（底色合成阶段）：${detail}`);
+  }
+  if (!composited || composited.status !== true || !composited.image_base64) {
+    return fail('GENERATION_FAILED', '证件照生成失败（底色合成阶段）：引擎返回结果无效');
+  }
+
+  const photoBuffer = Buffer.from(composited.image_base64, 'base64');
+
+  const uploadResult = await cloud.uploadFile({
+    cloudPath: `ai-studio/${orderId}/generated/idphoto-${Date.now()}.jpg`,
+    fileContent: photoBuffer
+  });
+  const fileID = uploadResult.fileID;
+
+  await db.collection('ai_studio_files').add({
+    data: {
+      orderId,
+      _openid: order._openid,
+      fileType: 'generated',
+      fileID,
+      fileName: 'idphoto.jpg',
+      size: photoBuffer.length,
+      mimeType: 'image/jpeg',
+      stage: 'idphoto',
+      status: 'uploaded',
+      createdAt: db.serverDate(),
+      updatedAt: db.serverDate()
+    }
+  });
+
+  // 第三步：/generate_layout_photos 排版照（附赠产物，失败不阻断，成品已生成成功）
+  const layoutFileID = await generateLayoutPhoto({
+    apiUrl: setting.apiUrl,
+    orderId,
+    openid: order._openid,
+    spec,
+    photoBuffer
+  });
+
+  await writeAudit(orderId, actorOpenid, 'generate_ai_image', {
+    stage: 'idphoto',
+    spec: spec.name,
+    backgroundColor: backgroundHex,
+    engine: 'hivision',
+    fileID
+  });
+
+  // 不改订单状态：管理员预览成品后走现有交付流程
+  return {
+    success: true,
+    file: {
+      fileID,
+      fileType: 'generated',
+      stage: 'idphoto'
+    },
+    layout: layoutFileID ? { fileID: layoutFileID } : null,
+    order: {
+      orderId,
+      order_status: order.order_status
+    }
+  };
+}
+
+async function generateLayoutPhoto({ apiUrl, orderId, openid, spec, photoBuffer }) {
+  try {
+    const layout = await callHivisionEngine(apiUrl, '/generate_layout_photos', {
+      fileBuffer: photoBuffer,
+      fileContentType: 'image/jpeg',
+      fields: {
+        height: String(spec.height),
+        width: String(spec.width),
+        kb: '200',
+        dpi: '300'
+      }
+    });
+    if (!layout || layout.status !== true || !layout.image_base64) return null;
+
+    const layoutBuffer = Buffer.from(layout.image_base64, 'base64');
+    const uploadResult = await cloud.uploadFile({
+      cloudPath: `ai-studio/${orderId}/generated/layout-${Date.now()}.jpg`,
+      fileContent: layoutBuffer
+    });
+    await db.collection('ai_studio_files').add({
+      data: {
+        orderId,
+        _openid: openid,
+        fileType: 'generated',
+        fileID: uploadResult.fileID,
+        fileName: 'layout.jpg',
+        size: layoutBuffer.length,
+        mimeType: 'image/jpeg',
+        stage: 'layout',
+        status: 'uploaded',
+        createdAt: db.serverDate(),
+        updatedAt: db.serverDate()
+      }
+    });
+    return uploadResult.fileID;
+  } catch (error) {
+    console.error('generateAIStudioImage layout photo failed (ignored):', error);
+    return null;
+  }
+}
+
+// 调用 HivisionIDPhotos 接口：按 URL 协议选择 http/https（自部署引擎允许 http），每步超时 90 秒
+function callHivisionEngine(apiUrl, enginePath, { fileBuffer, fileContentType, fields }) {
+  return new Promise((resolve, reject) => {
+    const base = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(base + enginePath);
+    } catch (error) {
+      reject(new Error('证件照引擎地址无效'));
+      return;
+    }
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      reject(new Error('证件照引擎地址必须使用 http 或 https'));
+      return;
+    }
+
+    const form = buildMultipartFormData({ fileBuffer, fileContentType, fields });
+    const transport = parsedUrl.protocol === 'https:' ? https : http;
+
+    const req = transport.request({
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
+      path: `${parsedUrl.pathname}${parsedUrl.search}`,
+      method: 'POST',
+      timeout: ID_PHOTO_TIMEOUT_MS,
+      headers: {
+        'Content-Type': form.contentType,
+        'Content-Length': form.body.length
+      }
+    }, res => {
+      let raw = '';
+      res.on('data', chunk => { raw += chunk; });
+      res.on('end', () => {
+        try {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            reject(new Error(`engine status ${res.statusCode}: ${raw.slice(0, 300)}`));
+            return;
+          }
+          resolve(JSON.parse(raw));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy(new Error('证件照引擎请求超时'));
+    });
+    req.write(form.body);
+    req.end();
+  });
+}
+
+// 纯 Node 手写 multipart/form-data：boundary 随机 hex，文件字段固定为 input_image
+function buildMultipartFormData({ fileBuffer, fileContentType, fields }) {
+  const boundary = `----PhotoMuseBoundary${crypto.randomBytes(16).toString('hex')}`;
+  const sections = [];
+  Object.keys(fields || {}).forEach(name => {
+    sections.push(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${fields[name]}\r\n`);
+  });
+  const isPng = fileContentType === 'image/png';
+  sections.push(
+    `--${boundary}\r\nContent-Disposition: form-data; name="input_image"; filename="${isPng ? 'input.png' : 'input.jpg'}"\r\nContent-Type: ${fileContentType}\r\n\r\n`
+  );
+  const header = Buffer.from(sections.join(''), 'utf8');
+  const footer = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');
+  return {
+    body: Buffer.concat([header, fileBuffer, footer]),
+    contentType: `multipart/form-data; boundary=${boundary}`
+  };
+}
+
+function detectImageMime(buffer) {
+  if (buffer && buffer.length > 3 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
+    return 'image/png';
+  }
+  return 'image/jpeg';
+}
+
+// ---------------------------------------------------------------------------
 // 数据访问与工具
 // ---------------------------------------------------------------------------
 
 async function getImageGenerationSetting() {
   const result = await db.collection('ai_studio_model_settings')
     .where({ scene: 'image_generation', enabled: true })
+    .limit(1)
+    .get();
+  return result.data && result.data[0];
+}
+
+async function getIdPhotoEngineSetting() {
+  const result = await db.collection('ai_studio_model_settings')
+    .where({ scene: 'idphoto_engine', enabled: true })
+    .limit(1)
+    .get();
+  return result.data && result.data[0];
+}
+
+async function getLatestCustomerPhoto(orderId) {
+  const result = await db.collection('ai_studio_files')
+    .where({ orderId, fileType: 'customer_photo', status: 'uploaded' })
+    .orderBy('createdAt', 'desc')
     .limit(1)
     .get();
   return result.data && result.data[0];

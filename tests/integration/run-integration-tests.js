@@ -478,6 +478,40 @@ async function main() {
     assert.strictEqual(r.code, 'CONFIG_MISSING');
   });
 
+  await test('K2b 证件照引擎未配置（idphoto 阶段）：CONFIG_MISSING 且提示 idphoto_engine', async () => {
+    const res = await invoke('createAIStudioOrder', {
+      productId: 'id_photo_9_9', styleId: 'ID-01',
+      contactPhone: '13800000001', queryPassword: '123456', spec: '一寸', backgroundColor: '蓝底',
+      authorization: { isSelfOrAuthorized: true, isAdult: true, agreesProduction: true }
+    }, USER);
+    const r = await invoke('generateAIStudioImage', { ...ADMIN, orderId: res.order.orderId, stage: 'idphoto' }, 'admin-openid-1');
+    assert.strictEqual(r.code, 'CONFIG_MISSING');
+    assert.ok(r.message.includes('idphoto_engine') || r.message.includes('证件照引擎'));
+  });
+
+  await test('K2c portrait 订单走 idphoto 阶段：拒绝并提示用生图接口', async () => {
+    const r = await invoke('generateAIStudioImage', { ...ADMIN, orderId: orderD, stage: 'idphoto' }, 'admin-openid-1');
+    assert.strictEqual(r.code, 'VALIDATION_ERROR');
+    assert.ok(r.message.includes('证件照'));
+  });
+
+  await test('K2d 配置引擎但不可达：GENERATION_FAILED（ECONNREFUSED 快失败）', async () => {
+    await invoke('adminUpsertAIStudioRuntimeConfig', {
+      ...ADMIN,
+      modelSettings: [{ scene: 'idphoto_engine', enabled: true, provider: 'hivision', apiUrl: 'http://127.0.0.1:1' }]
+    }, 'admin-openid-1');
+    const res = await invoke('createAIStudioOrder', {
+      productId: 'id_photo_9_9', styleId: 'ID-01',
+      contactPhone: '13800000001', queryPassword: '123456',
+      authorization: { isSelfOrAuthorized: true, isAdult: true, agreesProduction: true }
+    }, USER);
+    const oid = res.order.orderId;
+    await invoke('uploadAIStudioPhoto', { orderId: oid, fileID: `cloud://x/${oid}/c1.jpg`, fileName: 'c1.jpg', size: 100, mimeType: 'image/jpeg' }, USER);
+    const r = await invoke('generateAIStudioImage', { ...ADMIN, orderId: oid, stage: 'idphoto' }, 'admin-openid-1');
+    assert.strictEqual(r.success, false);
+    assert.strictEqual(r.code, 'GENERATION_FAILED');
+  });
+
   await test('K3 配置模型设置后 apiKey 不回传（getRuntimeConfig 脱敏）', async () => {
     await invoke('adminUpsertAIStudioRuntimeConfig', {
       ...ADMIN,

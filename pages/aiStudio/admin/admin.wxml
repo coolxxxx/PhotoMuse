@@ -20,28 +20,46 @@
   </view>
 
   <view wx:if="{{showModelPanel}}" class="model-panel">
-    <view class="panel-title">AI 生图模型设置</view>
-    <view class="form-row">
-      <view class="form-label">接口地址</view>
-      <input class="form-input" value="{{modelConfig.apiUrl}}" placeholder="https://open.bigmodel.cn/api/paas/v4/images/generations" placeholder-class="input-placeholder" data-field="apiUrl" bindinput="onModelFieldInput" />
+    <view class="panel-title">模型设置</view>
+    <view class="panel-section">
+      <view class="section-title">证件照引擎（HivisionIDPhotos）</view>
+      <view class="form-row switch-row">
+        <view class="form-label">启用引擎</view>
+        <switch checked="{{idphotoConfig.enabled}}" color="#1976D2" bindchange="onIdphotoEnabledChange" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">接口地址</view>
+        <input class="form-input" value="{{idphotoConfig.apiUrl}}" placeholder="http://服务器IP:8080，部署见 docs/部署指南.md" placeholder-class="input-placeholder" data-field="apiUrl" bindinput="onIdphotoFieldInput" />
+      </view>
+      <view class="form-row switch-row">
+        <view class="form-label">人脸对齐</view>
+        <switch checked="{{idphotoConfig.faceAlignment}}" color="#1976D2" bindchange="onIdphotoFaceAlignChange" />
+      </view>
     </view>
-    <view class="form-row">
-      <view class="form-label">API Key</view>
-      <input class="form-input" password value="{{modelConfig.apiKey}}" placeholder="留空则不修改已保存的 Key" placeholder-class="input-placeholder" data-field="apiKey" bindinput="onModelFieldInput" />
-    </view>
-    <view class="form-row">
-      <view class="form-label">模型名称</view>
-      <input class="form-input" value="{{modelConfig.model}}" placeholder="cogview-4" placeholder-class="input-placeholder" data-field="model" bindinput="onModelFieldInput" />
-    </view>
-    <view class="form-row">
-      <view class="form-label">图片尺寸</view>
-      <picker class="form-picker" mode="selector" range="{{imageSizeOptions}}" value="{{imageSizeIndex}}" bindchange="onImageSizeChange">
-        <view class="picker-value">{{modelConfig.imageSize}}</view>
-      </picker>
-    </view>
-    <view class="form-row switch-row">
-      <view class="form-label">启用生图接口</view>
-      <switch checked="{{modelConfig.enabled}}" color="#1976D2" bindchange="onModelEnabledChange" />
+    <view class="panel-section">
+      <view class="section-title">AI 生图接口（写真）</view>
+      <view class="form-row">
+        <view class="form-label">接口地址</view>
+        <input class="form-input" value="{{modelConfig.apiUrl}}" placeholder="https://open.bigmodel.cn/api/paas/v4/images/generations" placeholder-class="input-placeholder" data-field="apiUrl" bindinput="onModelFieldInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">API Key</view>
+        <input class="form-input" password value="{{modelConfig.apiKey}}" placeholder="留空则不修改已保存的 Key" placeholder-class="input-placeholder" data-field="apiKey" bindinput="onModelFieldInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">模型名称</view>
+        <input class="form-input" value="{{modelConfig.model}}" placeholder="cogview-4" placeholder-class="input-placeholder" data-field="model" bindinput="onModelFieldInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">图片尺寸</view>
+        <picker class="form-picker" mode="selector" range="{{imageSizeOptions}}" value="{{imageSizeIndex}}" bindchange="onImageSizeChange">
+          <view class="picker-value">{{modelConfig.imageSize}}</view>
+        </picker>
+      </view>
+      <view class="form-row switch-row">
+        <view class="form-label">启用生图接口</view>
+        <switch checked="{{modelConfig.enabled}}" color="#1976D2" bindchange="onModelEnabledChange" />
+      </view>
     </view>
     <view class="panel-footer">
       <button size="mini" class="action-btn save-model" loading="{{isSavingModel}}" bindtap="saveModelSettings">保存设置</button>
@@ -218,6 +236,7 @@
       <button wx:if="{{item.payment_status === 'unpaid'}}" size="mini" class="action-btn paid" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="markOrderPaid">标记已付</button>
       <button wx:if="{{item.product_type === 'portrait' && (item.order_status === 'queued' || item.order_status === 'grid_preview' || item.order_status === 'cell_selected')}}" size="mini" class="action-btn grid" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="chooseGridPreview">上传网格</button>
       <button wx:if="{{item.order_status === 'queued' || item.order_status === 'grid_preview' || item.order_status === 'cell_selected'}}" size="mini" class="action-btn gen-ref" data-id="{{item.orderId}}" loading="{{actionOrderId === 'gen:' + item.orderId}}" bindtap="generateReferenceImage">生成参考图</button>
+      <button wx:if="{{item.product_type !== 'portrait' && (item.order_status === 'queued' || item.order_status === 'grid_preview' || item.order_status === 'cell_selected' || item.order_status === 'generating' || item.order_status === 'qc')}}" size="mini" class="action-btn idphoto" data-id="{{item.orderId}}" loading="{{actionOrderId === 'gen:' + item.orderId}}" bindtap="generateIdphotoImage">AI 证件照</button>
       <button wx:if="{{item.product_type === 'portrait' && (item.order_status === 'queued' || item.order_status === 'grid_preview' || item.order_status === 'cell_selected')}}" size="mini" class="action-btn gen-grid" data-id="{{item.orderId}}" loading="{{actionOrderId === 'gen:' + item.orderId}}" bindtap="generateGridImage">生成网格</button>
       <button wx:if="{{item.product_type === 'portrait' && item.order_status === 'cell_selected' && item.hasSelectedCells}}" size="mini" class="action-btn gen-cell" data-id="{{item.orderId}}" loading="{{actionOrderId === 'gen:' + item.orderId}}" bindtap="generateCellImage">生成分镜图</button>
       <button size="mini" class="action-btn deliver" data-id="{{item.orderId}}" loading="{{actionOrderId === item.orderId}}" bindtap="chooseDelivery">上传交付</button>

@@ -240,15 +240,26 @@
     <picker mode="selector" range="{{specOptions}}" value="{{specIndex}}" bindchange="onSpecChange">
       <view class="pm-form-row">
         <text class="pm-form-label">用途规格</text>
-        <text class="pm-form-value">{{specOptions[specIndex]}} →</text>
+        <view class="pm-spec-value">
+          <text class="pm-form-value">{{specInfo.name}} →</text>
+          <text class="pm-spec-sub">{{specInfo.sizeText}} · {{specInfo.pxText}}</text>
+        </view>
       </view>
     </picker>
-    <picker mode="selector" range="{{backgroundOptions}}" value="{{backgroundIndex}}" bindchange="onBackgroundChange">
-      <view class="pm-form-row">
-        <text class="pm-form-label">底色</text>
-        <text class="pm-form-value">{{backgroundOptions[backgroundIndex]}} →</text>
+    <view wx:if="{{!isPortrait}}" class="pm-bg-row">
+      <text class="pm-form-label">底色</text>
+      <view class="pm-swatch-list">
+        <view
+          wx:for="{{backgroundColorSwatches}}"
+          wx:key="name"
+          class="pm-swatch {{backgroundIndex === index ? 'selected' : ''}}"
+          style="background: #{{item.hex}};"
+          data-name="{{item.name}}"
+          bindtap="selectBackground"
+        ></view>
       </view>
-    </picker>
+      <text class="pm-swatch-name">{{backgroundOptions[backgroundIndex]}}</text>
+    </view>
     <picker mode="selector" range="{{clothingOptions}}" value="{{clothingIndex}}" bindchange="onClothingChange">
       <view class="pm-form-row">
         <text class="pm-form-label">服装</text>

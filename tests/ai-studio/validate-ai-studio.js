@@ -136,6 +136,12 @@ function main() {
   assert(dispatchJob.includes('imageGenerationScene'), 'dispatch should route by image generation scene');
   assert(dispatchJob.includes('AI_STUDIO_ADMIN_PASSWORD'), 'admin dispatch path should require admin password');
 
+  const generateImage = read('cloudfunctions/generateAIStudioImage/index.js');
+  assert(generateImage.includes('idphoto_engine'), 'generateAIStudioImage 应支持证件照引擎独立配置（idphoto_engine）');
+  assert(generateImage.includes('add_background'), '证件照生成应调用 HivisionIDPhotos 加底色接口 add_background');
+  assert(generateImage.includes('generate_layout_photos'), '证件照生成应调用 HivisionIDPhotos 排版照接口 generate_layout_photos');
+  assert(generateImage.includes('438EDB'), '证件照底色应内置蓝底 438EDB');
+
   const indexPage = read('pages/aiStudio/index.wxml');
   assert(indexPage.includes('上传正脸照'), 'user page should include photo upload section');
   assert(indexPage.includes('‹ 返回'), 'user page should include back navigation');

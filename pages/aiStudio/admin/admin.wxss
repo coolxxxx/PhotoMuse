@@ -212,6 +212,29 @@
   width: auto;
 }
 
+/* 设置面板小节：发丝线分隔 + 小节标题（mono 眉题） */
+.panel-section {
+  padding-top: 4rpx;
+}
+
+.panel-section + .panel-section {
+  margin-top: 18rpx;
+  padding-top: 22rpx;
+  border-top: 1rpx solid var(--pm-hairline);
+}
+
+.panel-section .form-row:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  margin-bottom: 10rpx;
+  color: var(--pm-primary);
+  font-family: var(--pm-mono);
+  font-size: 22rpx;
+  letter-spacing: 3rpx;
+}
+
 .panel-footer {
   display: flex;
   justify-content: flex-end;
@@ -522,10 +545,11 @@
   border: 1rpx solid var(--pm-success);
 }
 
-/* AI 类：统一中性 */
+/* AI 类：统一中性（白底墨字发丝边直角） */
 .gen-ref,
 .gen-grid,
-.gen-cell {
+.gen-cell,
+.idphoto {
   background: var(--pm-card);
   color: var(--pm-ink-2);
   border: 1rpx solid var(--pm-hairline-strong);

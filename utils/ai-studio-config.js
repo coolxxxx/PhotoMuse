@@ -112,6 +112,73 @@ const PORTRAIT_THEMES = [
   }
 ];
 
+// 证件照规格库（吸收 HivisionIDPhotos 标准规格；px 为 300DPI 输出值）
+const ID_PHOTO_SPECS = [
+  {
+    specId: 'one_inch',
+    name: '一寸',
+    widthMM: 25,
+    heightMM: 35,
+    widthPx: 295,
+    heightPx: 413,
+    usage: '证件/考试/简历'
+  },
+  {
+    specId: 'small_one_inch',
+    name: '小一寸',
+    widthMM: 22,
+    heightMM: 32,
+    widthPx: 260,
+    heightPx: 378,
+    usage: '驾驶证/医保'
+  },
+  {
+    specId: 'two_inch',
+    name: '二寸',
+    widthMM: 35,
+    heightMM: 49,
+    widthPx: 413,
+    heightPx: 579,
+    usage: '签证/护照类'
+  },
+  {
+    specId: 'small_two_inch',
+    name: '小二寸',
+    widthMM: 33,
+    heightMM: 48,
+    widthPx: 390,
+    heightPx: 567,
+    usage: '护照/部分考试'
+  },
+  {
+    specId: 'five_inch',
+    name: '五寸',
+    widthMM: 89,
+    heightMM: 127,
+    widthPx: 1050,
+    heightPx: 1500,
+    usage: '生活照冲印'
+  },
+  {
+    specId: 'six_inch',
+    name: '六寸',
+    widthMM: 102,
+    heightMM: 152,
+    widthPx: 1200,
+    heightPx: 1800,
+    usage: '写真冲印'
+  }
+];
+
+// 证件照标准底色（HivisionIDPhotos 标准色）
+const BACKGROUND_COLORS = [
+  { name: '白底', hex: 'FFFFFF' },
+  { name: '蓝底', hex: '438EDB' },
+  { name: '红底', hex: 'DE2910' },
+  { name: '灰底', hex: '535A60' },
+  { name: '深蓝底', hex: '1C4F9C' }
+];
+
 const STATUS_LABELS = {
   waiting_photos: '待上传照片',
   photo_review: '照片审核中',
@@ -189,6 +256,8 @@ module.exports = {
   STYLES,
   PORTRAIT_THEMES,
   PORTRAIT_PRICING,
+  ID_PHOTO_SPECS,
+  BACKGROUND_COLORS,
   STATUS_LABELS,
   PHOTO_CHECK_LABELS,
   AUTHORIZATION_TEXT,
