@@ -24,8 +24,9 @@ function walk(dir, exts, out = []) {
     const p = path.join(dir, f);
     const s = fs.statSync(p);
     if (s.isDirectory()) {
-      // vendor 目录是第三方 SDK 压缩产物，其内部字符串不属于本项目的调用契约
-      if (!p.includes('node_modules') && !p.includes(`${path.sep}vendor${path.sep}`)) walk(p, exts, out);
+      // vendor 目录是第三方 SDK 压缩产物，其内部字符串不属于本项目的调用契约（按路径段判断，避免尾随分隔符问题）
+      const segs = p.split(path.sep);
+      if (!segs.includes('node_modules') && !segs.includes('vendor')) walk(p, exts, out);
     } else if (exts.some(e => f.endsWith(e))) {
       out.push(p);
     }
