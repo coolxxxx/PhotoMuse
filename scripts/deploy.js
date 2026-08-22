@@ -29,6 +29,30 @@ const rc = JSON.parse(fs.readFileSync(path.join(ROOT, 'cloudbaserc.json'), 'utf8
 const ENV_ID = rc.envId;
 const FUNCTIONS = rc.functions;
 
+/**
+ * 本地密钥覆盖：.deploy-secrets.json（已 gitignore，不入公开仓库）
+ * 形如 { "AI_STUDIO_OPEN_API_KEYS": "...", "AI_STUDIO_ADMIN_PASSWORD": "..." }
+ * 部署时会用其中的值替换 cloudbaserc.json 里同名环境变量的空占位。
+ */
+const SECRETS_PATH = path.join(ROOT, '.deploy-secrets.json');
+let SECRETS = {};
+if (fs.existsSync(SECRETS_PATH)) {
+  try {
+    SECRETS = JSON.parse(fs.readFileSync(SECRETS_PATH, 'utf8'));
+  } catch (e) {
+    console.error(`✗ .deploy-secrets.json 不是合法 JSON：${e.message}`);
+    process.exit(1);
+  }
+}
+const effectiveFunctions = FUNCTIONS.map(f => {
+  const envVariables = {};
+  for (const [k, v] of Object.entries(f.envVariables || {})) {
+    envVariables[k] = (typeof v === 'string' && !v.trim() && SECRETS[k]) ? SECRETS[k] : v;
+  }
+  return { ...f, envVariables };
+});
+const FUNCTIONS_LIST = effectiveFunctions;
+
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run') || process.env.npm_lifecycle_event === 'deploy:dry';
 const SKIP_INVOKE = args.includes('--skip-invoke');
@@ -96,9 +120,9 @@ function loginCheck() {
 
 // ---------- 步骤 ----------
 function plan() {
-  const targets = FUNCTIONS.filter(f => !ONLY || ONLY.has(f.name));
+  const targets = FUNCTIONS_LIST.filter(f => !ONLY || ONLY.has(f.name));
   if (ONLY) {
-    const missing = [...ONLY].filter(n => !FUNCTIONS.some(f => f.name === n));
+    const missing = [...ONLY].filter(n => !FUNCTIONS_LIST.some(f => f.name === n));
     if (missing.length) {
       console.error(c.red(`✗ --only 中的函数不在 cloudbaserc.json：${missing.join(', ')}`));
       process.exit(1);
@@ -108,7 +132,7 @@ function plan() {
 }
 
 function deployFunctions(targets) {
-  console.log(c.bold(`\n[2/4] 部署云函数（${targets.length}/${FUNCTIONS.length} 个，配置读取 cloudbaserc.json）`));
+  console.log(c.bold(`\n[2/4] 部署云函数（${targets.length}/${FUNCTIONS_LIST.length} 个，配置读取 cloudbaserc.json）`));
   console.log(c.dim(`      环境：${ENV_ID}`));
   const results = [];
   let done = 0;
@@ -169,12 +193,12 @@ function postCheck(results) {
   console.log(`  云函数：${c.green(ok + ' 成功')}${bad.length ? c.red('，' + bad.length + ' 失败：' + bad.map(b => b.name).join(', ')) : c.green('（全部）')}`);
 
   // 空口令提醒（读 cloudbaserc 的占位值）
-  const emptyPwd = FUNCTIONS.filter(f => 'AI_STUDIO_ADMIN_PASSWORD' in (f.envVariables || {}) && !String(f.envVariables.AI_STUDIO_ADMIN_PASSWORD).trim());
+  const emptyPwd = FUNCTIONS_LIST.filter(f => 'AI_STUDIO_ADMIN_PASSWORD' in (f.envVariables || {}) && !String(f.envVariables.AI_STUDIO_ADMIN_PASSWORD).trim());
   if (emptyPwd.length) {
     console.log(c.yellow(`  ⚠ 管理口令为空：${emptyPwd.length} 个管理函数的 AI_STUDIO_ADMIN_PASSWORD 是空串（=管理接口全封死）。`));
     console.log(c.yellow('    请在 cloudbaserc.json 填好口令后重跑部署，或到控制台逐函数修改环境变量。'));
   }
-  const emptyKey = FUNCTIONS.filter(f => 'AI_STUDIO_OPEN_API_KEYS' in (f.envVariables || {}) && !String(f.envVariables.AI_STUDIO_OPEN_API_KEYS).trim());
+  const emptyKey = FUNCTIONS_LIST.filter(f => 'AI_STUDIO_OPEN_API_KEYS' in (f.envVariables || {}) && !String(f.envVariables.AI_STUDIO_OPEN_API_KEYS).trim());
   if (emptyKey.length) {
     console.log(c.yellow('  ⚠ 开放 API Key 为空：photomuseOpenApi 将拒绝所有外部调用（仅小程序不受影响）。网站版需要配置后可用。'));
   }
