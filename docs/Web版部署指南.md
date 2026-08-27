@@ -79,12 +79,50 @@ certbot 会自动生成 443 server 块并把 80 跳转到 HTTPS，证书自动�
 
 CloudBase Web SDK 会校验请求来源域名，**未添加安全域名的站点所有 SDK 请求都会被拒绝（典型表现：请求返回 401 / `INVALID_ORIGIN` / CORS 跨域报错）**。
 
+> ### ⚠️ 重要实测结论（2026-08）：体验版套餐无法添加自定义安全域名
+>
+> 实测 CLI `tcb cors add` / 控制台对体验版环境返回 **`[CreateAuthDomain] 当前套餐无法执行此操作`**——安全域名白名单只能加系统默认域，自定义域需升级套餐。
+> 且新版 SDK 默认走 `*.api.tcloudbasegateway.com` 网关域，该域严格执行白名单（403）；
+> 旧域 `*.tcb-api.tencentcloudapi.com` 对任意来源放行，但部分 Chromium 浏览器对其 `/web` 路由存在 TLS 兼容问题。
+>
+> **当前采用的稳定方案（无需升级套餐）**：nginx 同源反向代理 + 传输补丁，见「第三节 B」。此方案与套餐无关，升级后也建议保留（少一层白名单维护）。
+
+### A. 标准方式（需套餐支持添加安全域名）
+
 1. 打开 [云开发控制台](https://tcb.cloud.tencent.com/)，选择环境 `cloud1-9gv5zn35c8ca8869-00c771e2`；
 2. 进入「环境 → **安全配置**（Web 安全域名）」；
 3. 添加你的站点域名，如 `photomuse.example.com`（不带 `https://` 前缀，按控制台提示格式填写）；
 4. 保存后即时生效，无需重新部署。
 
 本地调试可临时把 `localhost` / `127.0.0.1` 加入（用完建议移除）。
+
+### B. 同源代理方式（当前生产采用，无套餐要求）
+
+**原理**：浏览器只与 `www.czpsm.art` 同源通信（彻底无 CORS / 无白名单问题），由 nginx 把 `/pm-tcb/` 前转发到 CloudBase 旧域；前端 `js/tcb-transport.js` 在 SDK 加载前把发往旧域的 fetch/XHR 全部重写到代理路径，`js/api.js` 以 `endPointMode: 'CLOUD_API'` 初始化 SDK。
+
+**服务器 nginx 需要的 location（加在 `/PM/` 之前）：**
+
+```nginx
+    location /pm-tcb/ {
+        proxy_pass https://cloud1-9gv5zn35c8ca8869-00c771e2.ap-shanghai.tcb-api.tencentcloudapi.com/;
+        proxy_ssl_server_name on;
+        proxy_set_header Host cloud1-9gv5zn35c8ca8869-00c771e2.ap-shanghai.tcb-api.tencentcloudapi.com;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+    }
+```
+
+**改动文件清单（换域名/环境时同步改三处）：**
+
+| 文件 | 内容 |
+|---|---|
+| `js/tcb-transport.js` | `TCB_ORIGIN`（旧域全称，含尾斜杠）与 `PROXY_PATH` |
+| `nginx /pm-tcb/` | `proxy_pass` + `proxy_set_header Host`（两处同值） |
+| `js/api.js` | `ensureApp` 中 `endPointMode: 'CLOUD_API'`（固定值，无需改） |
+
+**自检**：`curl -X POST https://你的域名/pm-tcb/auth/v1/signin/anonymously -H 'Content-Type: application/json' -H 'X-Device-Id: t1' -d '{"client_id":"环境ID"}'` 返回 200 + token 即通。
+
+> 另一部署形态：`tcb hosting deploy` 把整站发到 `*.tcloudbaseapp.com` 静态托管默认域（在白名单内、零配置），但会有「风险提醒」中间页且官方禁止生产使用，仅作演示镜像。
 
 ## 四、云存储规则：允许匿名读写 `ai-studio/` 前缀
 

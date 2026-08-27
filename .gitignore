@@ -17,3 +17,4 @@ cloudfunctions/*/node_modules/
 
 # 部署密钥（本地保存，不入公开仓库）
 .deploy-secrets.json
+output/

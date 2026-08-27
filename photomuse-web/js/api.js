@@ -12,6 +12,7 @@ window.PM = (() => {
   const FUNCTION_NAME = 'photomuseOpenApi';
 
   let app = null;
+  let authRef = null;
   let authReady = null;
 
   /* ---------- 配置检查 ---------- */
@@ -24,8 +25,29 @@ window.PM = (() => {
   const ensureApp = () => {
     if (!window.cloudbase) { throw new Error('CloudBase SDK 未加载，请检查网络后刷新重试'); }
     if (!cfg.ENV_ID) { throw new Error('站点未配置环境 ID（js/config.js 的 ENV_ID）'); }
-    if (!app) { app = window.cloudbase.init({ env: cfg.ENV_ID }); }
+    if (!app) {
+      /* CLOUD_API 模式：走旧域 tcb-api（放行自定义域名），配合 tcb-transport.js 重写到同源代理 */
+      app = window.cloudbase.init({ env: cfg.ENV_ID, endPointMode: 'CLOUD_API' });
+    }
     return app;
+  };
+
+  /* v3 SDK 的 signInAnonymously 失败时不抛异常而是 resolve {data:null, error}，
+   * 必须显式检查返回值，否则会带着空票据去调云函数（credentials not found） */
+  const signInAnonymousChecked = async (auth) => {
+    let res = null;
+    try { res = await auth.signInAnonymously(); } catch (e) {
+      throw new Error('匿名登录失败：' + (e && (e.message || e.errMsg)) || '未知错误');
+    }
+    if (res && res.error) {
+      const err = res.error;
+      const msg = (err && (err.message || err.msg || err.helpMessage)) || String(err);
+      const flag = [err && err.code, err && err.category, msg].join(' ');
+      const hint = /PROVIDER_NOT_ENABLED|not.?enabled|未开启|未启用/i.test(flag)
+        ? '（请到 CloudBase 控制台→环境 ' + (cfg.ENV_ID || '') + '→身份验证→登录方式→开启「匿名登录」）' : '';
+      throw new Error('匿名登录失败：' + msg + hint);
+    }
+    return res;
   };
 
   const ensureAuth = () => {
@@ -33,13 +55,11 @@ window.PM = (() => {
       authReady = (async () => {
         const a = ensureApp();
         const auth = a.auth({ persistence: 'local' });
-        try {
-          if (!auth.hasLoginState()) { await auth.signInAnonymously(); }
-        } catch (e) {
-          /* 已有登录态或重复登录时忽略，其余情况再试一次 */
-          try { await auth.signInAnonymously(); } catch (e2) {
-            throw new Error('匿名登录失败：' + (e2.message || e.message));
-          }
+        authRef = auth;
+        if (!auth.hasLoginState()) { await signInAnonymousChecked(auth); }
+        /* 双保险：登录动作完成后本地仍无登录态，同样视为失败 */
+        if (!auth.hasLoginState()) {
+          throw new Error('匿名登录未生效（本地未获得登录态），请确认控制台已开启「匿名登录」后刷新重试');
         }
         return a;
       })().catch((e) => { authReady = null; throw e; });
@@ -47,29 +67,59 @@ window.PM = (() => {
     return authReady;
   };
 
+  /* ---------- 清空本地登录态（票据失效自愈用） ---------- */
+  const resetAuth = async () => {
+    try { if (authRef && authRef.signOut) { await authRef.signOut(); } } catch (e) { /* 忽略登出异常 */ }
+    authRef = null;
+    authReady = null;
+  };
+
   /* ---------- 统一调用 photomuseOpenApi ----------
    * 成功返回 result 对象（success !== false）
    * 失败抛 Error：err.code / err.message 可直接展示
    */
+  const normalizeApiError = (e) => {
+    /* SDK 拒绝时 message 常为空，真实信息在 errMsg；归一化便于页面展示与排查 */
+    let msg = (e && (e.message || e.errMsg)) || '';
+    if (!msg) {
+      try { msg = JSON.stringify(e, Object.getOwnPropertyNames(e || {})).slice(0, 260); } catch (_) { msg = String(e); }
+    }
+    const hint = /origin|domain|域名/i.test(msg) ? '（疑似未配置 Web 安全域名：CloudBase 控制台→环境→安全配置→添加 www.czpsm.art）'
+      : /auth|登录|anonymous/i.test(msg) ? '（疑似未启用匿名登录：CloudBase 控制台→环境→身份验证→启用匿名登录）'
+      : '';
+    const err = new Error(String(msg || '调用云函数失败') + hint);
+    err.raw = e;
+    return err;
+  };
+
+  const isCredentialsError = (e) => {
+    let raw = (e && (e.message || e.errMsg)) || '';
+    if (!raw) {
+      try { raw = JSON.stringify(e, Object.getOwnPropertyNames(e || {})); } catch (_) { raw = ''; }
+    }
+    return /unauthenticated|credentials not found/i.test(raw);
+  };
+
   const callApi = async (action, payload) => {
     if (!isConfigured()) { throw new Error('站点未配置 API Key，请联系管理员'); }
-    let res = null;
-    try {
+    const invoke = async () => {
       const a = await ensureAuth();
-      res = await a.callFunction({
+      return a.callFunction({
         name: FUNCTION_NAME,
         data: { apiKey: String(cfg.OPEN_API_KEY).trim(), action: action, payload: payload || {} }
       });
+    };
+    let res = null;
+    try {
+      res = await invoke();
     } catch (e) {
-      /* SDK 拒绝时 message 常为空，真实信息在 errMsg；归一化便于页面展示与排查 */
-      let msg = (e && (e.message || e.errMsg)) || '';
-      if (!msg) {
-        try { msg = JSON.stringify(e, Object.getOwnPropertyNames(e || {})).slice(0, 260); } catch (_) { msg = String(e); }
+      if (isCredentialsError(e)) {
+        /* 本地缓存的匿名票据失效：清空登录态强制重新匿名登录，再试一次 */
+        await resetAuth();
+        try { res = await invoke(); } catch (e2) { throw normalizeApiError(e2); }
+      } else {
+        throw normalizeApiError(e);
       }
-      const hint = /origin|domain|域名/i.test(msg) ? '（疑似未配置 Web 安全域名：CloudBase 控制台→环境→安全配置→添加 www.czpsm.art）'
-        : /auth|登录|anonymous/i.test(msg) ? '（疑似未启用匿名登录：CloudBase 控制台→环境→身份验证→启用匿名登录）'
-        : '';
-      throw new Error(String(msg || '调用云函数失败') + hint);
     }
     const result = res && res.result;
     if (!result || typeof result !== 'object') { throw new Error('服务端无返回，请稍后重试'); }
@@ -83,10 +133,21 @@ window.PM = (() => {
 
   /* ---------- 云存储 ---------- */
   const uploadFile = async (cloudPath, filePath) => {
-    const a = await ensureAuth();
-    const res = await a.uploadFile({ cloudPath: cloudPath, filePath: filePath });
-    if (!res || !res.fileID) { throw new Error('云存储上传失败，请重试'); }
-    return res.fileID;
+    const doUpload = async () => {
+      const a = await ensureAuth();
+      const res = await a.uploadFile({ cloudPath: cloudPath, filePath: filePath });
+      if (!res || !res.fileID) { throw new Error('云存储上传失败，请重试'); }
+      return res.fileID;
+    };
+    try {
+      return await doUpload();
+    } catch (e) {
+      if (isCredentialsError(e)) {
+        await resetAuth();
+        return await doUpload();
+      }
+      throw e;
+    }
   };
 
   /* 批量换取临时访问链接，返回 { fileID: url } 映射 */
