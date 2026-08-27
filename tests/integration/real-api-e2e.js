@@ -94,7 +94,7 @@ async function main() {
 
   // 5. 视觉分析（真实 chat + image_url，用刚生成的参考图直链）
   //    mock 的 getTempFileURL 返回假地址，这里替换为真实节点返回的图片直链做真实验证
-  const realUrl = 'https://direct.3213218.xyz/v1/images/JH6bM7qnfCC0qhce4gg6guEYFqAPujXmjpW93GwzOHgmpr00/content';
+  const realUrl = 'https://www.czpsm.art/PM/e2e-face.jpg';
   const origGetTemp = cloud.getTempFileURL.bind(cloud);
   cloud.getTempFileURL = async ({ fileList }) => ({
     fileList: fileList.map(fileID => ({ fileID, tempFileURL: realUrl }))
@@ -116,8 +116,17 @@ async function main() {
   );
   assert.strictEqual(sel.order.order_status, 'cell_selected');
 
+  // 7. 阶段三：第 3 格高清大图（真实生图，验证光照拓扑条款与影楼质感段的实际出片）
+  const cell = await step('阶段三 生成第 3 格高清大图（真实生图 API）', () =>
+    invoke('generateAIStudioImage', { ...ADMIN, orderId, stage: 'cell', cell: 3 }, 'admin-openid-1')
+  );
+  assert.strictEqual(cell.success, true, JSON.stringify(cell));
+  const cellBuf = st.files.get(cell.file.fileID);
+  assert.ok(cellBuf && cellBuf.length > 50000, '高清大图应 >50KB');
+  console.log(`      高清图 ${(cellBuf.length / 1024).toFixed(0)}KB，fileID=${cell.file.fileID}`);
+
   console.log('\n========== 真实 API 端到端预演全部通过 ==========');
-  console.log('结论：生图/视觉/全链路逻辑均可直接上线，待 tcb login + npm run deploy 后即可真实运行。');
+  console.log('结论：reference/grid/视觉分析/选片/cell 高清全链路真实可用（含影楼质感模板与瞬态重试）。');
 }
 
 main().catch(err => {

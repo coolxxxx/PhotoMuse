@@ -57,22 +57,34 @@ const PORTRAIT_THEMES = [
 // ---------------------------------------------------------------------------
 // 内置阶段中文提示词模板
 // 内容转译自 docs/系统指令：多角度专业摄影作品集生成器（终极版）.md 的三阶段指令
+// 影楼质感条款吸收自 photodesign-skill（器材参数语言）与 rembrandt-portrait-lighting
+// （光比/明暗建模）方法论，措辞经真实生图回归验证（scripts/gen-family-series.js）
 // ---------------------------------------------------------------------------
 
+// 影楼质感共通段：全部阶段模板共用（家庭系列样张实测有效的措辞）
+// 要点：① 布光只写"画面里的光效结果"，绝不提灯具/影棚等场景词，否则生成图会把柔光箱拍进画面
+//       ② 商业精修质感保留真实皮肤纹理，禁止塑料磨皮
+//       ③ 中画幅人像镜头语言营造浅景深专业感
+const STUDIO_QUALITY_CLAUSE = '影楼成片质感要求：这是一张专业影楼级精修人像成片，画面中只有被拍摄的人物本身与其所处环境，绝不出现灯具、灯架、柔光箱、反光板、摄影师等任何摄影器材或工作人员。人物布光专业立体：主光方向明确统一，面部一侧受光充分、另一侧自然过渡到柔和阴影（伦勃朗式明暗层次），发丝有柔和的轮廓光，眼神光明亮有神，人物与背景/环境有自然的光影分离。使用中画幅相机与人像镜头的成像语言：85mm 浅景深，背景自然柔化、层次干净。商业精修级后期的质感：肤色均匀透亮但保留真实的皮肤纹理与细节，服装材质纹理清晰，整体色调统一高级，达到杂志封面级的商业人像水准。';
+
+// 表情因果链（吸收南鸢 Skill）：神态必须由画面事件触发，禁止空洞摆拍
+const EXPRESSION_CAUSAL_CLAUSE = '人物神态要求：每个画面中人物的表情由该画面的具体情境自然触发（如微风拂动发丝、手中道具的互动、回眸瞬间、与环境的真实交流），眼神有内容、嘴角有情绪来由，禁止无来由的空洞摆拍微笑或呆滞直视镜头。';
+
 // 阶段一：建立【参考图 0】（核心一致性锚点）
-const REFERENCE_PROMPT_TEMPLATE = '你是顶级的 AI 电影摄影师和图像生成专家，正在按照严格的三个阶段为客户生成具有绝对一致性的专业摄影作品集。现在执行阶段一：建立核心一致性锚点。请根据用户的描述，生成一张超高清的基准图像，我们称之为【参考图 0】。这张基准图必须明确界定人物的长相与五官特征、发型、身材比例、服装与配饰、主要道具以及核心环境基调，并统一确定整体光影与色彩风格。【参考图 0】是后续所有分镜网格与高清大图生成的绝对基因库：人物的身份特征、服装样式与环境氛围都以此图为唯一标准，后续生成只能复用该锚点，不得另行创造新的人物设定。画面必须达到专业摄影级质感：构图干净、对焦精准、肤质真实细腻、服装材质细节清晰、人物神态自然，严禁出现肢体变形、多人同框或画面元素混乱。';
+const REFERENCE_PROMPT_TEMPLATE = '你是顶级的 AI 电影摄影师和图像生成专家，正在按照严格的三个阶段为客户生成具有绝对一致性的专业摄影作品集。现在执行阶段一：建立核心一致性锚点。请根据用户的描述，生成一张超高清的基准图像，我们称之为【参考图 0】。这张基准图必须明确界定人物的长相与五官特征、发型、身材比例、服装与配饰、主要道具以及核心环境基调，并统一确定整体光影与色彩风格：主光方向、明暗基调、背景光层次一经确定即为全组标准，后续所有分镜沿用。【参考图 0】是后续所有分镜网格与高清大图生成的绝对基因库：人物的身份特征、服装样式与环境氛围都以此图为唯一标准，后续生成只能复用该锚点，不得另行创造新的人物设定。' + STUDIO_QUALITY_CLAUSE + EXPRESSION_CAUSAL_CLAUSE + '严禁出现肢体变形、多人同框或画面元素混乱。';
 
 // 阶段二：生成 3 行 5 列共 15 分镜的摄影预览网格
-const GRID_PROMPT_TEMPLATE = '你是顶级的 AI 电影摄影师和图像生成专家，正在执行三阶段流程的阶段二：生成摄影预览网格。请严格基于【参考图 0】的人物、服装与环境基调，生成一张 3 行 5 列共 15 个分镜的完整拼图网格，15 个视角依次为：1 Extreme Close-Up：浅景深眼部或面部极端特写；2 Mid-Shot：非正面中景，交代部分背景；3 Low Angle：低角度仰拍，带环境动态感；4 Over-the-shoulder：越过前景肩膀，焦点在主体；5 Top-Down：正上方俯拍，展现空间关系；6 Left Profile 90°：左侧轮廓，强调光影对比或剪影；7 Right Profile 90°：右侧精致面部特写；8 Bird\'s Eye：远景鸟瞰，人物化为宏大环境中的元素；9 Dutch Tilt：荷兰角倾斜构图，传达张力与动感；10 Low-key：低调暗调，逆光强调氛围与轮廓细节；11 Macro：服饰纹理、首饰、手部等非面部特写；12 Left OTS：左侧视角电影感过肩镜头；13 High-key：强闪光直射，时尚杂志封面感；14 Environmental Wide：电影叙事感情景广角，传达情绪；15 Extreme Low Angle：透过树枝、玻璃等前景拍摄，增加纵深。一致性要求：各分格构图协调、神态自然过渡，与【参考图 0】完全一致；网格内容不得重复，严禁出现克隆人。';
+const GRID_PROMPT_TEMPLATE = '你是顶级的 AI 电影摄影师和图像生成专家，正在执行三阶段流程的阶段二：生成摄影预览网格。请严格基于【参考图 0】的人物、服装与环境基调，生成一张 3 行 5 列共 15 个分镜的完整拼图网格，15 个视角依次为：1 Extreme Close-Up：浅景深眼部或面部极端特写；2 Mid-Shot：非正面中景，交代部分背景；3 Low Angle：低角度仰拍，带环境动态感；4 Over-the-shoulder：越过前景肩膀，焦点在主体；5 Top-Down：正上方俯拍，展现空间关系；6 Left Profile 90°：左侧轮廓，强调光影对比或剪影；7 Right Profile 90°：右侧精致面部特写；8 Bird\'s Eye：远景鸟瞰，人物化为宏大环境中的元素；9 Dutch Tilt：荷兰角倾斜构图，传达张力与动感；10 Low-key：低调暗调，逆光强调氛围与轮廓细节；11 Macro：服饰纹理、首饰、手部等非面部特写；12 Left OTS：左侧视角电影感过肩镜头；13 High-key：强闪光直射，时尚杂志封面感；14 Environmental Wide：电影叙事感情景广角，传达情绪；15 Extreme Low Angle：透过树枝、玻璃等前景拍摄，增加纵深。一致性要求：各分格构图协调、神态自然过渡，与【参考图 0】完全一致；全组 15 个分镜共享【参考图 0】确定的同一光源方向、影调与色彩体系，机位与景别变化时光效关系保持不变，形成成套的系列感；网格内容不得重复，严禁出现克隆人。' + EXPRESSION_CAUSAL_CLAUSE;
 
 // 阶段三：高清大图模式（复刻预览网格第 {cell} 格）
-const CELL_PROMPT_TEMPLATE = '你是顶级的 AI 电影摄影师和图像生成专家，正在执行三阶段流程的阶段三：高清大图模式。请针对阶段二预览网格中的第 {cell} 格，生成一张单张、完整的电影级渲染高清大图。内容要求：精确复制预览网格第 {cell} 格的内容、机位构图与布光，不得改变该分镜已确定的拍摄角度、景别、人物姿态、服装与环境元素。画面升级：增加大量微小细节与真实物理纹理，包括真实的皮肤质感与光影层次、衣物纤维与材质细节，分辨率提升至 4K 以上，并加入细腻的电影胶片颗粒感（Film Grain），使成片比预览网格更加精致逼真。绝对一致性：人物的长相、五官、发型、身材与服装必须与【参考图 0】保持 100% 一致，绝不可出现换人或换衣服的情况。';
+// 光照拓扑条款（吸收南鸢 Skill）：机位变化不能带着光源旋转，防止高清化后光影漂移
+const CELL_PROMPT_TEMPLATE = '你是顶级的 AI 电影摄影师和图像生成专家，正在执行三阶段流程的阶段三：高清大图模式。请针对阶段二预览网格中的第 {cell} 格，生成一张单张、完整的电影级渲染高清大图。内容要求：精确复制预览网格第 {cell} 格的内容、机位构图与布光，不得改变该分镜已确定的拍摄角度、景别、人物姿态、服装与环境元素。光照一致性：保持与预览格完全相同的光源方向、明暗关系与背景光层次——光源固定在世界坐标中，高清化只提升细节分辨率，不得擅自改变光效方向、阴影位置或色调，眼神光方向、面部亮暗侧、发丝轮廓光方位必须与预览格一一对应。画面升级：增加大量微小细节与真实物理纹理，包括真实的皮肤质感与光影层次、衣物纤维与材质细节，分辨率提升至 4K 以上，成片保持干净的商业数码质感（不添加胶片颗粒或噪点），使成片比预览网格更加精致逼真。绝对一致性：人物的长相、五官、发型、身材与服装必须与【参考图 0】保持 100% 一致，绝不可出现换人或换衣服的情况。' + STUDIO_QUALITY_CLAUSE;
 
 // 试拍预览（trial）：主题风格单张试拍，供用户在下单/拍摄前预览主题效果
-const TRIAL_PROMPT_TEMPLATE = '你是顶级的 AI 电影摄影师，正在为客户的写真订单生成主题试拍预览。请围绕指定写真主题生成一张单张的高质量风格试拍照片，直观呈现该主题最具代表性的服装造型、场景与光影氛围。画面需达到专业摄影级质感：构图干净、对焦精准、肤质真实细腻、人物神态自然，严禁出现肢体变形、多人同框或画面元素混乱。';
+const TRIAL_PROMPT_TEMPLATE = '你是顶级的 AI 电影摄影师，正在为客户的写真订单生成主题试拍预览。请围绕指定写真主题生成一张单张的高质量风格试拍照片，直观呈现该主题最具代表性的服装造型、场景与光影氛围。' + STUDIO_QUALITY_CLAUSE + EXPRESSION_CAUSAL_CLAUSE + '严禁出现肢体变形、多人同框或画面元素混乱。';
 
 // 样张（sample）：纯主题风格官方展示样片，不掺杂任何订单个人信息
-const SAMPLE_PROMPT_TEMPLATE = '你是顶级的 AI 人像摄影师，请为指定写真主题生成一张官方展示样张：画面为单张高品质主题样片，突出该主题最具代表性的服装造型、场景与光影风格，构图完整、细节精致、氛围到位，达到商业样片级质感，严禁出现肢体变形或画面元素混乱。';
+const SAMPLE_PROMPT_TEMPLATE = '你是顶级的 AI 人像摄影师，请为指定写真主题生成一张官方展示样张：画面为单张高品质主题样片，突出该主题最具代表性的服装造型、场景与光影风格，构图完整、细节精致、氛围到位。' + STUDIO_QUALITY_CLAUSE + EXPRESSION_CAUSAL_CLAUSE + '严禁出现肢体变形或画面元素混乱。';
 
 exports.main = async (event = {}) => {
   const { OPENID } = cloud.getWXContext();
@@ -122,7 +134,7 @@ exports.main = async (event = {}) => {
 
     let imageBuffer;
     try {
-      imageBuffer = await callImageGeneration({
+      imageBuffer = await callImageGenerationWithRetry({
         apiUrl: setting.apiUrl,
         requestPath: setting.requestPath,
         apiKey: setting.apiKey,
@@ -354,8 +366,36 @@ function buildEndpoint(apiUrl, requestPath) {
   return base + path;
 }
 
-function callImageGeneration({ apiUrl, requestPath, apiKey, model, imageSize, prompt }) {
-  return new Promise((resolve, reject) => {
+// 瞬态错误退避重试：生图站高峰期队列满（503/429）很常见，直接失败会伤订单。
+// 只对"快速返回"的服务端瞬态错误重试；连接拒绝/参数错误/慢超时不重试（重试无意义或时间不够）。
+const RETRYABLE_ERROR_PATTERN = /provider status (429|500|502|503|504)|queue is full|ECONNRESET|socket hang up/i;
+const RETRY_DELAYS_MS = [3000, 6000, 10000];
+const RETRY_TIME_BUDGET_MS = 40000; // 已耗时超过此值则放弃重试，避免撞云函数总超时
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function callImageGenerationWithRetry(options) {
+  const startedAt = Date.now();
+  let lastError = null;
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      return await callImageGeneration(options);
+    } catch (error) {
+      lastError = error;
+      const message = error && error.message ? String(error.message) : String(error);
+      const retryable = RETRYABLE_ERROR_PATTERN.test(message);
+      const canRetry = retryable
+        && attempt < RETRY_DELAYS_MS.length
+        && (Date.now() - startedAt) < RETRY_TIME_BUDGET_MS;
+      if (!canRetry) { throw error; }
+      console.error(`generateAIStudioImage transient failure (attempt ${attempt + 1}), retrying in ${RETRY_DELAYS_MS[attempt]}ms:`, message);
+      await sleep(RETRY_DELAYS_MS[attempt]);
+    }
+  }
+  throw lastError;
+}
+
+function callImageGeneration({ apiUrl, requestPath, apiKey, model, imageSize, prompt }) {  return new Promise((resolve, reject) => {
     const endpoint = buildEndpoint(apiUrl, requestPath);
     let parsedUrl;
     try {

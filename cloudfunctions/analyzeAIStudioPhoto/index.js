@@ -62,7 +62,8 @@ exports.main = async (event = {}) => {
     try {
       const urlResult = await cloud.getTempFileURL({ fileList: [fileID] });
       const item = urlResult && urlResult.fileList && urlResult.fileList[0];
-      const url = item && item.tempFileUrl ? String(item.tempFileUrl) : '';
+      /* 兼容字段名：真实 wx-server-sdk 返回 tempFileURL，mock/旧文档为 tempFileUrl */
+      const url = item && (item.tempFileUrl || item.tempFileURL) ? String(item.tempFileUrl || item.tempFileURL) : '';
       if (!url.startsWith('https://')) throw new Error('tempFileUrl missing or not https');
       tempFileUrl = url;
     } catch (error) {

@@ -41,5 +41,6 @@
 
 ## 四、后续动作
 
-1. 【待办】把 §2.1–2.3 三条改写进《系统指令：多角度专业摄影作品集生成器》对应阶段（动这份文件需同步回归真实生图 E2E，避免破坏现有出图质量基线）。
+1. ✅【2026-08-27 已完成】§2.1–2.3 三条已融入云函数模板（cloudfunctions/generateAIStudioImage/index.js：STUDIO_QUALITY_CLAUSE / EXPRESSION_CAUSAL_CLAUSE / CELL 光照拓扑条款）与源文档《系统指令》v2 影楼质感版，并经 tests/integration/real-api-e2e.js 真实生图全链路回归（reference/grid/视觉分析/选片/cell 高清全部通过）。
 2. 【待办】evals 思路：把 production_reshoot_cases.json 的"输入→期望行为"用例结构借来，为我们的 prompt 模板建快照回归。
+3. ✅【2026-08-27 附带收获】真实 E2E 抓到并修复 analyzeAIStudioPhoto 的 getTempFileURL 字段名 bug（真实 SDK 返回 tempFileURL 大写，原代码只读小写 tempFileUrl，线上视觉分析会恒失败）；同时给 generateAIStudioImage 加了瞬态错误退避重试（503 队列满等，最多 3 次退避）。
