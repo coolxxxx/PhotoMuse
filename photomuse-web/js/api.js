@@ -1,5 +1,5 @@
 /* ============================================================
- * 光影集 PhotoMuse Web · API 层
+ * 浅焦映像 Web · API 层
  * 依赖：js/config.js（window.PM_CONFIG）、CloudBase Web SDK（全局 cloudbase）
  * 提供：SDK 初始化 / 匿名登录 / photomuseOpenApi 调用封装 /
  *       云存储上传 / 临时链接 / 统一 toast / loading 遮罩

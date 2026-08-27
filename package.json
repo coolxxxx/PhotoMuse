@@ -1,7 +1,7 @@
 {
   "name": "photomuse",
   "version": "1.0.0",
-  "description": "光影集 PhotoMuse —— 不用出门的 AI 影楼，微信小程序 + 云开发 + Web 独立站",
+  "description": "浅焦映像 —— 不用出门的 AI 影楼，微信小程序 + 云开发 + Web 独立站",
   "private": true,
   "scripts": {
     "test": "node tests/ai-studio/validate-ai-studio.js && node tests/static/check-contracts.js && node tests/static/check-visual-integrity.js && node tests/integration/run-integration-tests.js",

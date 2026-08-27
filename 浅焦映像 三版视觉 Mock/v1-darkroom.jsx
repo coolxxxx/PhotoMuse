@@ -227,7 +227,7 @@ function DarkroomIndex(props) {
             fontSize: 32, fontWeight: 700, color: s.text,
             lineHeight: 1.2, letterSpacing: -0.5, marginBottom: 12,
           }}>
-            光影集
+            浅焦映像
           </h1>
           <p style={{ fontSize: 13, color: s.textSec, lineHeight: 1.7, maxWidth: 280 }}>
             用 AI 在数字暗房中冲印你的专业证件照。<br />

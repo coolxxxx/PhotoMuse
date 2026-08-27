@@ -1,4 +1,4 @@
-// app.js - 光影集 PhotoMuse
+// app.js - 浅焦映像
 App({
   globalData: {
     aiStudioAdminPassword: '',

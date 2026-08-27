@@ -1,5 +1,5 @@
 /* ============================================================
- * 光影集 PhotoMuse Web · 订单视图渲染（order.html / query.html 复用）
+ * 浅焦映像 Web · 订单视图渲染（order.html / query.html 复用）
  * 依赖：js/api.js（window.PM）
  * 用法：await PMOrderView.render(container, { order, files, creds, onUpdated })
  *   - order / files：getOrder 或 queryOrder 返回的数据

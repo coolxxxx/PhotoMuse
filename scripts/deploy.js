@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 光影集 PhotoMuse 一键部署编排
+ * 浅焦映像 一键部署编排
  *
  * 用法：
  *   npm run deploy            # 全量：部署 31 个云函数 + 自动建 11 个集合 + 部署后自检
@@ -235,7 +235,7 @@ function writeSecretsMergedConfig() {
 }
 
 function main() {
-  console.log(c.bold('光影集 PhotoMuse · 一键部署'));
+  console.log(c.bold('浅焦映像 · 一键部署'));
   console.log(c.dim(`模式：${DRY_RUN ? 'DRY-RUN（只打印计划）' : '全量部署'}${ONLY ? `，仅 ${ONLY.size} 个函数` : ''}`));
   const targets = plan();
   let originalConfig = null;

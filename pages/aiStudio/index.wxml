@@ -1,13 +1,13 @@
 <view class="studio-page">
   <view class="page-nav">
     <view class="nav-back" bindtap="goBack">‹ 返回</view>
-    <view class="nav-title">光影集 PhotoMuse</view>
+    <view class="nav-title">浅焦映像</view>
   </view>
 
   <!-- Hero：杂志刊头 -->
   <view class="hero">
     <view class="hero-eyebrow">PHOTOMUSE STUDIO — No.01</view>
-    <view class="hero-title">光影·集</view>
+    <view class="hero-title">浅焦·映像</view>
     <view class="hero-rule"></view>
     <view class="hero-sub">不用出门的影楼</view>
   </view>

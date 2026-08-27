@@ -118,7 +118,7 @@ function DarkroomIndexScreen() {
             letterSpacing: -0.5,
             marginBottom: 10,
           }}>
-            光影集
+            浅焦映像
           </h1>
           <p style={{
             fontSize: 13,

@@ -1,5 +1,5 @@
 /* ============================================================
- * 光影集 PhotoMuse · 宣传样张生成器
+ * 浅焦映像 · 宣传样张生成器
  * 用开放生图 API 为 5 个写真主题各生成 3 张宣传样张
  * 产出：output/samples/<themeId>-<n>.jpg + manifest.json
  * 用法：node scripts/gen-samples.js [--theme guofeng] [--count 3]

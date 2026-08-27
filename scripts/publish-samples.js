@@ -1,5 +1,5 @@
 /* ============================================================
- * 光影集 PhotoMuse · 样张发布器
+ * 浅焦映像 · 样张发布器
  * 将 output/samples/ 下生成的样张发布到云端：
  *   1. tcb storage upload 上传 ai-studio/samples/<file>
  *   2. tcb db nosql execute 写入 ai_studio_samples 集合

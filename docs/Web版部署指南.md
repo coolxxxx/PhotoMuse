@@ -1,6 +1,6 @@
-# 光影集 PhotoMuse · Web 版部署指南
+# 浅焦映像 · Web 版部署指南
 
-`photomuse-web/` 是光影集的**网站独立版**：原生 HTML + CSS + JS 纯静态站，nginx 直接托管，**无构建步骤**。数据与业务全部复用小程序同一套云开发环境，通过 CloudBase Web SDK 匿名登录后调用 `photomuseOpenApi` 云函数（API Key 鉴权），照片经云存储直传。
+`photomuse-web/` 是浅焦映像的**网站独立版**：原生 HTML + CSS + JS 纯静态站，nginx 直接托管，**无构建步骤**。数据与业务全部复用小程序同一套云开发环境，通过 CloudBase Web SDK 匿名登录后调用 `photomuseOpenApi` 云函数（API Key 鉴权），照片经云存储直传。
 
 ```
 浏览器 ──HTTPS──► nginx（纯静态托管 photomuse-web/）

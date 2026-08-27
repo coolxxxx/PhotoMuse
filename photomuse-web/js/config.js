@@ -1,5 +1,5 @@
 /* ============================================================
- * 光影集 PhotoMuse Web · 站点配置（部署时修改本文件即可，无需构建）
+ * 浅焦映像 Web · 站点配置（部署时修改本文件即可，无需构建）
  *  - ENV_ID：腾讯云开发环境 ID
  *  - OPEN_API_KEY：photomuseOpenApi 云函数环境变量
  *    AI_STUDIO_OPEN_API_KEYS 白名单中的 Key

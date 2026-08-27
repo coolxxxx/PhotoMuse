@@ -1,5 +1,5 @@
 /* ============================================================
- * 光影集 PhotoMuse Web · CloudBase 传输层兼容补丁
+ * 浅焦映像 Web · CloudBase 传输层兼容补丁
  * 背景：新版 SDK 的 GATEWAY 网关域执行 Web 安全域名白名单，
  *       而添加自定义安全域名需要升级套餐（CreateAuthDomain 受限）；
  *       旧域 *.tcb-api.tencentcloudapi.com 放行但部分浏览器
