@@ -872,3 +872,152 @@ button { font-family: inherit; }
   border-top: 1px solid var(--hairline);
   padding-top: 4px;
 }
+
+/* ============================================================
+ * v3 暗房影楼主题（SHALLOW FOCUS DARKROOM）
+ * 设计要求：见 docs/前端设计要求-暗房影楼版.md
+ * 理念：摄影作品在暗场中才成为主角——页面即暗房，成片即发光体
+ * 覆盖方式：令牌层覆盖 + 区块增强，不破坏上方 Editorial 基础层
+ * ============================================================ */
+
+:root {
+  /* ---- 暗房主题令牌 ---- */
+  --dr-bg: #15161A;             /* 暗房底：深暖炭黑 */
+  --dr-bg-2: #1C1E24;           /* 暗房底（抬升层） */
+  --dr-gold: #C8A86B;           /* 香槟金主 accent */
+  --dr-gold-bright: #E3C892;    /* 亮金（标题/hover） */
+  --dr-gold-dim: rgba(200, 168, 107, 0.35);
+  --dr-paper: #F5F2EC;          /* 暖白文字（暗底上） */
+  --dr-paper-2: #B9B4A9;        /* 暖灰次级文字 */
+  --dr-line: rgba(255, 255, 255, 0.09);      /* 暗场发丝线 */
+  --dr-line-gold: rgba(200, 168, 107, 0.4);  /* 金发丝线 */
+  --dr-card-shadow: 0 18px 44px rgba(0, 0, 0, 0.5); /* 暗场卡片投影：相纸浮起 */
+}
+
+/* ---- 全局：页面即暗房 ---- */
+body {
+  background:
+    radial-gradient(120% 90% at 50% 0%, #1E2026 0%, var(--dr-bg) 55%, #101114 100%) fixed;
+  color: var(--dr-paper);
+}
+body::before {
+  /* 极淡暗角，营造灯下拍摄氛围 */
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(140% 100% at 50% 40%, transparent 60%, rgba(0, 0, 0, 0.42) 100%);
+}
+.page, main, .site-main { position: relative; z-index: 1; }
+
+/* ---- 顶栏 / hero：暗场舞台 ---- */
+.nav, .site-header, header {
+  background: rgba(21, 22, 26, 0.92) !important;
+  border-bottom: 1px solid var(--dr-line-gold);
+  backdrop-filter: blur(6px);
+}
+.nav a, .site-header a { color: var(--dr-paper-2) !important; }
+.nav a.active, .site-header a.active { color: var(--dr-gold-bright) !important; }
+
+.hero, .hero-section {
+  background:
+    radial-gradient(90% 130% at 78% 18%, rgba(200, 168, 107, 0.10) 0%, transparent 52%),
+    linear-gradient(180deg, #191B20 0%, #131418 100%);
+  border-bottom: 1px solid var(--dr-line);
+  position: relative;
+  overflow: hidden;
+}
+.hero-eyebrow {
+  color: var(--dr-gold) !important;
+  letter-spacing: 0.34em !important;
+}
+.hero-title, .hero h1 {
+  color: var(--dr-paper) !important;
+  font-family: var(--serif);
+  text-shadow: 0 2px 30px rgba(200, 168, 107, 0.18);
+}
+.hero-title::after, .hero h1::after {
+  /* 金色短横线：快门线意象 */
+  content: '';
+  display: block; width: 56px; height: 2px; margin: 14px auto 0;
+  background: linear-gradient(90deg, transparent, var(--dr-gold), transparent);
+}
+.hero-sub, .hero p {
+  color: var(--dr-paper-2) !important;
+}
+
+/* hero 样张拍立得叠放：暗桌上散落的成片 */
+.hero-photos { position: relative; height: 300px; margin: 26px auto 8px; max-width: 420px; }
+.hero-photos img {
+  position: absolute; top: 0; left: 50%;
+  width: 168px; padding: 7px 7px 26px; background: #F7F4EE;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+}
+.hero-photos img:nth-child(1) { transform: translateX(-88%) rotate(-7deg); z-index: 1; }
+.hero-photos img:nth-child(2) { transform: translateX(-50%) translateY(-8px) rotate(2deg); z-index: 3; }
+.hero-photos img:nth-child(3) { transform: translateX(-12%) rotate(8deg); z-index: 2; }
+.hero-photos img:hover { z-index: 5; transform: translateX(-50%) translateY(-16px) scale(1.04) rotate(0deg); transition: transform .35s ease; }
+.hero-photos::after {
+  content: '成片样张 · SHALLOW FOCUS';
+  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; letter-spacing: 0.3em; color: var(--dr-gold-dim); white-space: nowrap;
+}
+
+/* ---- 内容卡片：暗场上的相纸 ---- */
+.card, .section-card, .panel {
+  background: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: var(--dr-card-shadow);
+  border-radius: var(--radius-card);
+}
+.card .section-title, .section-card h2 { color: var(--ink); }
+
+/* ---- 区块编号 №：金色印章感 ---- */
+.section-no, .no-badge, .step-no {
+  color: var(--dr-gold) !important;
+  font-family: var(--serif);
+}
+
+/* ---- 主按钮：金底黑字（暗场里的快门键） ---- */
+.btn-primary, button.primary, .submit-btn, input[type="submit"] {
+  background: linear-gradient(135deg, var(--dr-gold-bright), var(--dr-gold)) !important;
+  color: #17130A !important;
+  border: none !important;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  box-shadow: 0 6px 22px rgba(200, 168, 107, 0.28);
+}
+.btn-primary:hover, button.primary:hover { filter: brightness(1.06); }
+
+/* ---- 表单控件：暗场输入 ---- */
+input[type="text"], input[type="tel"], input[type="password"], input[type="number"], textarea, select {
+  background: #FFFFFF;
+  color: var(--ink);
+  border: 1px solid var(--hairline-strong);
+}
+
+/* ---- 样张条 / 拍立得卡（下单页主题样张） ---- */
+.sample-card, .polaroid {
+  background: #F7F4EE !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ---- 页脚：暗场收边 ---- */
+.footer, .site-footer {
+  background: #101114 !important;
+  border-top: 1px solid var(--dr-line-gold);
+  color: var(--dr-paper-2) !important;
+}
+.footer a, .site-footer a { color: var(--dr-gold-dim); }
+
+/* ---- 选中/强调态统一切金 ---- */
+.tag-blue, .badge-primary, .active-gold {
+  background: rgba(200, 168, 107, 0.14) !important;
+  color: var(--dr-gold-bright) !important;
+  border-color: var(--dr-gold-dim) !important;
+}
+
+/* ---- 小屏适配 ---- */
+@media (max-width: 420px) {
+  .hero-photos { height: 240px; }
+  .hero-photos img { width: 138px; }
+}
