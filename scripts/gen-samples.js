@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 const GEN_API = process.env.PM_GEN_API || 'https://api.3213218.xyz/v1/images/generations';
-const API_KEY = process.env.PM_GEN_KEY || 'fkall';
+const API_KEY = process.env.PM_GEN_KEY || '';
 const IMG_MODEL = process.env.PM_GEN_MODEL || 'fkall-图像';
 const SIZES = ['1024x1792', '1024x1024']; // 首选竖版，失败回退方版
 

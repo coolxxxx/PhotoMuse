@@ -7,15 +7,18 @@ const assert = require('assert');
 const cloud = require('../mocks/setup');
 
 process.env.AI_STUDIO_ADMIN_OPENIDS = 'admin-openid-1';
-process.env.AI_STUDIO_ADMIN_PASSWORD = 'Pm-60a8e493dfbe';
-
-const ADMIN = { adminPassword: 'Pm-60a8e493dfbe' };
+process.env.AI_STUDIO_ADMIN_PASSWORD = process.env.PM_ADMIN_PASSWORD || '';
+const ADMIN = { adminPassword: process.env.PM_ADMIN_PASSWORD || '' };
+if (!process.env.PM_GEN_KEY || !process.env.PM_ADMIN_PASSWORD) {
+  console.error('缺少环境变量 PM_GEN_KEY（生图key）与 PM_ADMIN_PASSWORD（管理口令）——密钥不入库，见 .deploy-secrets.json');
+  process.exit(1);
+}
 const USER = 'user-openid-1';
 
 // 真实节点配置（2026-08-22 实测通过）
 const GEN_API = 'https://api.3213218.xyz/v1/images/generations';
 const CHAT_API = 'https://api.3213218.xyz/v1/chat/completions';
-const API_KEY = 'fkall';
+const API_KEY = process.env.PM_GEN_KEY;
 const IMG_MODEL = 'fkall-图像';
 const TXT_MODEL = 'fkall-文本';
 
