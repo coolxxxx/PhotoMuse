@@ -15,8 +15,10 @@ const { execFileSync } = require('child_process');
 
 const ENV_ID = 'cloud1-9gv5zn35c8ca8869-00c771e2';
 const BUCKET = '636c-cloud1-9gv5zn35c8ca8869-00c771e2-1378249990';
-const SAMPLES_DIR = path.join(__dirname, '..', 'output', 'samples');
 const DRY_RUN = process.argv.includes('--dry-run');
+const dirIdx = process.argv.indexOf('--dir');
+const dirArg = dirIdx >= 0 ? process.argv[dirIdx + 1] : '';
+const SAMPLES_DIR = path.resolve(__dirname, '..', dirArg || path.join('output', 'samples'));
 
 const tcb = (args) => {
   const out = execFileSync('tcb', [...args, '-e', ENV_ID, '--json'], {
@@ -29,6 +31,7 @@ const tcb = (args) => {
 };
 
 const stripAnsi = (s) => s.replace(/\x1b\[[0-9;]*m/g, '').replace(/^[\s\S]*?- Loading data\.\.\.\s*/, '');
+const relPath = (file) => path.relative(path.join(__dirname, '..'), path.join(SAMPLES_DIR, file)).replace(/\\/g, '/');
 
 function main() {
   const manifest = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, 'manifest.json'), 'utf8'));
@@ -48,7 +51,7 @@ function main() {
   // 1. 逐个上传文件（CLI 多文件逗号语法不稳，单文件已验证可靠）
   let uploaded = 0;
   for (const m of ready) {
-    stripAnsi(tcb(['storage', 'upload', path.join('output', 'samples', m.file), m.cloudPath]));
+    stripAnsi(tcb(['storage', 'upload', relPath(m.file), m.cloudPath]));
     uploaded += 1;
     console.log(`  已上传 ${uploaded}/${ready.length}：${m.cloudPath}`);
   }
@@ -70,13 +73,15 @@ function main() {
     { TableName: 'ai_studio_samples', CommandType: 'DELETE', Command: JSON.stringify({ delete: 'ai_studio_samples', deletes: [{ q: JSON.parse(delFilter), limit: 0 }] }) },
     { TableName: 'ai_studio_samples', CommandType: 'INSERT', Command: JSON.stringify({ insert: 'ai_studio_samples', documents: docs }) }
   ];
-  const cmdFile = path.join(SAMPLES_DIR, 'db-commands.json');
-  fs.writeFileSync(cmdFile, JSON.stringify(cmds) + '\n');
-  console.log(`DB 命令已写入：${cmdFile}`);
-  console.log(`执行：tcb db nosql execute -e ${ENV_ID} --command "$(cat ${cmdFile.replace(/\\/g, '/')})"`);
-
-  console.log('\n发布完成。验证：');
-  console.log(`  tcb fn invoke listAIStudioSamples -e ${ENV_ID}`);
+  /* MgoCommands 批量两条会被网关参数校验拒绝，拆成单条文件分次执行 */
+  const delFile = path.join(SAMPLES_DIR, 'db-delete.json');
+  const insFile = path.join(SAMPLES_DIR, 'db-insert.json');
+  fs.writeFileSync(delFile, JSON.stringify([cmds[0]]) + '\n');
+  fs.writeFileSync(insFile, JSON.stringify([cmds[1]]) + '\n');
+  console.log(`\n下一步（手动执行，Windows 下 Node 直传 JSON 会被转义破坏）：`);
+  console.log(`  tcb db nosql execute -e ${ENV_ID} --command "$(cat ${delFile.replace(/\\/g, '/')})"`);
+  console.log(`  tcb db nosql execute -e ${ENV_ID} --command "$(cat ${insFile.replace(/\\/g, '/')})"`);
+  console.log(`\n验证：tcb fn invoke listAIStudioSamples -e ${ENV_ID}`);
 }
 
 try { main(); } catch (e) { console.error('发布失败:', e.message); process.exit(1); }
