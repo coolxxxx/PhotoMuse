@@ -6,16 +6,18 @@
   <title>在线下单 · 浅焦映像</title>
   <meta name="description" content="浅焦映像 在线下单：上传一张照片，生成证件照、职业形象照与多主题 AI 写真。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
   <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
 
   <header class="hero">
-    <p class="hero-eyebrow">SHALLOW FOCUS STUDIO — No.01</p>
-    <h1 class="hero-title">浅焦·映像</h1>
-    <div class="hero-rule" aria-hidden="true"></div>
-    <p class="hero-sub">不用出门的影楼 · 上传一张照片，收获整套专业形象</p>
+    <div class="hero-copy">
+      <p class="hero-eyebrow">SHALLOW FOCUS STUDIO — No.01</p>
+      <h1 class="hero-title">浅焦·映像</h1>
+      <div class="hero-rule" aria-hidden="true"></div>
+      <p class="hero-sub">不用出门的影楼 · 上传一张照片，收获整套专业形象</p>
+    </div>
     <div class="hero-photos" aria-hidden="true">
       <img src="/PM/img/mother-2.jpg" alt="国风旗袍样张" loading="eager">
       <img src="/PM/img/family-1.jpg" alt="亲子全家福样张" loading="eager">
@@ -30,6 +32,7 @@
   <main class="page">
     <noscript><div class="warn-box">本站需要启用 JavaScript 才能下单。</div></noscript>
 
+    <div class="grid-col grid-col-a">
     <section class="card">
       <div class="pm-sec-head">
         <span class="pm-sec-mark" aria-hidden="true">№</span>
@@ -87,7 +90,9 @@
       </div>
       <div id="style-list" class="option-list"></div>
     </section>
+    </div>
 
+    <div class="grid-col grid-col-b">
     <section class="card">
       <div class="pm-sec-head">
         <span class="pm-sec-mark" aria-hidden="true">№</span>
@@ -138,6 +143,7 @@
     <button class="btn" id="submit-btn" data-requires-key>提交订单</button>
     <div id="submit-error" class="actions hidden"></div>
     <p class="muted small center">提交即表示同意以上授权 · 成片一般 1-3 个工作日内交付</p>
+    </div>
   </main>
 
   <footer class="footer">浅焦映像 · 上传一张照片，生成证件照、形象照与 AI 写真</footer>

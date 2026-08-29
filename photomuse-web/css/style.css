@@ -1021,3 +1021,124 @@ input[type="text"], input[type="tel"], input[type="password"], input[type="numbe
   .hero-photos { height: 240px; }
   .hero-photos img { width: 138px; }
 }
+
+/* ============================================================
+ * v3.1 多端自适应层（平板 ≥768px / 桌面 ≥1024px）
+ * 依据 docs/前端设计要求-暗房影楼版.md 第三章：
+ * 品牌感受跨端恒定（同一暗场/金/衬线），布局密度随屏幕伸缩
+ * ============================================================ */
+
+/* ---- 平板：放宽内容区，单列保持 ---- */
+@media (min-width: 768px) {
+  .page {
+    max-width: 760px;
+    padding: 32px 28px 64px;
+  }
+  .hero { padding-top: 52px; padding-bottom: 44px; }
+  .hero-title, .hero h1 { font-size: clamp(40px, 6vw, 58px); }
+  .nav { padding: 18px 32px; }
+}
+
+/* ---- 桌面：脱离窄柱，双栏栅格 + hero 两栏 ---- */
+@media (min-width: 1024px) {
+  .page {
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+    padding: 44px 40px 90px;
+  }
+  .page > .grid-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+  .grid-col-a { position: sticky; top: 76px; }   /* 选购列随滚动固定，右侧流程滚动 */
+  .page > .card, .page > .btn, .page > .muted { margin-left: 0; margin-right: 0; }
+
+  /* hero 两栏：左文案，右样张叠放 */
+  .hero {
+    display: flex; align-items: center; justify-content: center;
+    gap: 56px; text-align: left;
+    padding: 84px 56px 64px; max-width: 1180px; margin: 0 auto;
+  }
+  .hero .hero-copy, .hero > p, .hero > h1 { text-align: left; }
+  .hero-title::after, .hero h1::after { margin-left: 0; }
+  .hero-photos { margin: 0; width: 400px; flex: 0 0 auto; }
+
+  /* 导航加宽居中 */
+  .nav { max-width: 1180px; margin: 0 auto; }
+
+  /* 桌面套餐/主题/风格列表横向舒展 */
+  .product-list, .theme-list, .option-list { display: grid; gap: 12px; }
+  .theme-list { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---- 超宽屏（≥1440px）：三档字号微调，保持品牌一致 ---- */
+@media (min-width: 1440px) {
+  .page { max-width: 1260px; }
+  .hero { max-width: 1260px; }
+  .nav { max-width: 1260px; }
+  .hero-title, .hero h1 { font-size: 64px; }
+}
+
+/* ---- hero 移动端仍为竖排：hero-copy 全宽 ---- */
+.hero-copy { width: 100%; text-align: center; }
+.hero-copy .hero-title::after, .hero-copy .hero-rule { margin-left: auto; margin-right: auto; }
+@media (min-width: 1024px) {
+  .hero .hero-copy { width: auto; max-width: 520px; text-align: left; }
+  .hero .hero-copy .hero-title::after, .hero .hero-copy .hero-rule { margin-left: 0; }
+  .hero .hero-sub { max-width: 420px; }
+}
+
+/* ============================================================
+ * v3.2 残留蓝色清理：v2 选中/强调态全面切金（蓝金不混用红线）
+ * ============================================================ */
+
+/* 导航当前页：金字+金下划线 */
+.nav a.active { color: var(--dr-gold-bright) !important; border-bottom-color: var(--dr-gold) !important; }
+
+/* 套餐卡选中：金点+金勾边，弃蓝 */
+.product-card.selected, .product-card:has(input:checked) {
+  border-color: var(--dr-gold-dim) !important;
+  box-shadow: 0 0 0 1px var(--dr-gold-dim), 0 10px 30px rgba(0, 0, 0, 0.45) !important;
+  background: #FFFDF8 !important;
+}
+.product-card.selected .product-name, .product-card:has(input:checked) .product-name { color: #8A6D2F !important; }
+.product-card .product-price { color: var(--ink); }
+
+/* 主题按钮选中：金系 */
+.theme-btn.selected, .theme-btn.on {
+  border-color: var(--dr-gold) !important;
+  background: rgba(200, 168, 107, 0.10) !important;
+}
+/* 通用 .selected 兜底（样式列表/选项） */
+.option-item.selected, .style-card.selected {
+  border-color: var(--dr-gold-dim) !important;
+  background: #FFFDF8 !important;
+}
+
+/* 主按钮 .btn（提交订单等）覆盖 v2 蓝底 */
+.btn { background: linear-gradient(135deg, var(--dr-gold-bright), var(--dr-gold)) !important; color: #17130A !important; letter-spacing: 0.14em; box-shadow: 0 6px 22px rgba(200, 168, 107, 0.28); }
+.btn:hover:not(:disabled) { background: linear-gradient(135deg, #EFD9A8, var(--dr-gold-bright)) !important; }
+.btn:disabled { background: #4A473F !important; color: #8B877D !important; }
+.btn-outline { background: transparent !important; color: var(--dr-gold-bright) !important; border: 1px solid var(--dr-gold-dim) !important; }
+.btn-outline:hover:not(:disabled) { background: rgba(200, 168, 107, 0.10) !important; }
+
+/* AI 推荐按钮：金描边幽灵款 */
+.btn-ai { background: transparent !important; color: var(--dr-gold-bright) !important; border: 1px solid var(--dr-gold-dim) !important; }
+.btn-ai:hover:not(:disabled) { background: rgba(200, 168, 107, 0.10) !important; }
+
+/* 徽章：蓝徽章→金 */
+.badge-blue { background: rgba(200, 168, 107, 0.14) !important; color: var(--dr-gold-bright) !important; border: 1px solid var(--dr-gold-dim) !important; }
+
+/* 价格数字：白卡上用深金更"价签" */
+.price-amount, .price-total .price-amount { color: #8A6D2F !important; }
+
+/* 链接金色 */
+a { color: #8A6D2F; }
+
+/* warn-box 错误提示保持暗场可读 */
+.warn-box { background: var(--dr-bg-2); color: var(--dr-paper); border: 1px solid rgba(178, 58, 58, 0.5); }
+
+/* № 编号金色化（白卡上烫金编号） */
+.pm-sec-mark { color: var(--dr-gold) !important; }
+.pm-sec-no { color: #8A6D2F !important; }
+.pm-sec-line { background: linear-gradient(90deg, var(--dr-gold-dim), transparent) !important; }
