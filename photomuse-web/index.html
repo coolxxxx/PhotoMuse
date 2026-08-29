@@ -6,7 +6,7 @@
   <title>在线下单 · 浅焦映像</title>
   <meta name="description" content="浅焦映像 在线下单：上传一张照片，生成证件照、职业形象照与多主题 AI 写真。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
   <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
@@ -18,7 +18,7 @@
       <div class="hero-rule" aria-hidden="true"></div>
       <p class="hero-sub">不用出门的影楼 · 上传一张照片，收获整套专业形象</p>
     </div>
-    <div class="hero-photos" aria-hidden="true">
+    <div class="hero-photos kenburns" aria-hidden="true">
       <img src="/PM/img/mother-2.jpg" alt="国风旗袍样张" loading="eager">
       <img src="/PM/img/family-1.jpg" alt="亲子全家福样张" loading="eager">
       <img src="/PM/img/father-1.jpg" alt="绅士商务样张" loading="eager">
@@ -33,7 +33,7 @@
     <noscript><div class="warn-box">本站需要启用 JavaScript 才能下单。</div></noscript>
 
     <div class="grid-col grid-col-a">
-    <section class="card">
+    <section class="card reveal-card">
       <div class="pm-sec-head">
         <span class="pm-sec-mark" aria-hidden="true">№</span>
         <span class="pm-sec-no">01</span>
@@ -47,7 +47,7 @@
       </div>
     </section>
 
-    <section class="card hidden" id="portrait-section">
+    <section class="card hidden reveal-card" id="portrait-section">
       <div class="pm-sec-head">
         <span class="pm-sec-mark" aria-hidden="true">№</span>
         <span class="pm-sec-no">02</span>
@@ -81,7 +81,7 @@
       </label>
     </section>
 
-    <section class="card hidden" id="standard-section">
+    <section class="card hidden reveal-card" id="standard-section">
       <div class="pm-sec-head">
         <span class="pm-sec-mark" aria-hidden="true">№</span>
         <span class="pm-sec-no">02</span>
@@ -93,7 +93,7 @@
     </div>
 
     <div class="grid-col grid-col-b">
-    <section class="card">
+    <section class="card reveal-card">
       <div class="pm-sec-head">
         <span class="pm-sec-mark" aria-hidden="true">№</span>
         <span class="pm-sec-no">03</span>
@@ -111,7 +111,7 @@
       <p class="muted small">查询密码仅保存哈希，请牢记；凭「订单号 + 手机号 + 查询密码」可在任意设备查询订单与选片。</p>
     </section>
 
-    <section class="card">
+    <section class="card reveal-card">
       <div class="pm-sec-head">
         <span class="pm-sec-mark" aria-hidden="true">№</span>
         <span class="pm-sec-no">04</span>
@@ -126,7 +126,7 @@
       <p class="muted small">最多 3 张，每张不超过 10MB，支持 jpg / png / webp。请上传清晰正脸照：光线充足、脸部无遮挡、不要多人合照。</p>
     </section>
 
-    <section class="card">
+    <section class="card reveal-card">
       <div class="pm-sec-head">
         <span class="pm-sec-mark" aria-hidden="true">№</span>
         <span class="pm-sec-no">05</span>
@@ -151,6 +151,7 @@
   <script src="js/tcb-transport.js?v=1"></script>
   <script src="js/vendor/cloudbase.full.js?v=3"></script>
   <script src="js/config.js?v=3"></script>
+  <script src="js/motion.js?v=1"></script>
   <script src="js/api.js?v=6"></script>
   <script>
     (() => {

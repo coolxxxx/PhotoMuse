@@ -1142,3 +1142,35 @@ a { color: #8A6D2F; }
 .pm-sec-mark { color: var(--dr-gold) !important; }
 .pm-sec-no { color: #8A6D2F !important; }
 .pm-sec-line { background: linear-gradient(90deg, var(--dr-gold-dim), transparent) !important; }
+
+/* ============================================================
+ * v3.3 动效层样式（配合 js/motion.js）
+ * ============================================================ */
+
+/* ---- Hero 样张视差（桌面，CSS 变量驱动；hover 变换在 v3 层不冲突） ---- */
+.hero-photos { --parallax-x: 0; --parallax-y: 0; will-change: transform; }
+@media (hover: hover) and (min-width: 1024px) {
+  .hero-photos img:nth-child(1) { transform: translateX(calc(-88% + var(--parallax-x) * -14px)) translateY(calc(var(--parallax-y) * -8px)) rotate(-7deg); }
+  .hero-photos img:nth-child(2) { transform: translateX(calc(-50% + var(--parallax-x) * 8px)) translateY(calc(-8px + var(--parallax-y) * -12px)) rotate(2deg); }
+  .hero-photos img:nth-child(3) { transform: translateX(calc(-12% + var(--parallax-x) * -6px)) translateY(calc(var(--parallax-y) * -6px)) rotate(8deg); }
+  .hero-photos { transition: none; }
+}
+
+/* ---- 滚动进场 ---- */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s cubic-bezier(.22,.61,.36,1); }
+.reveal-card { opacity: 0; transform: translateY(18px) scale(.985); transition: opacity .6s ease, transform .6s cubic-bezier(.22,.61,.36,1); }
+.reveal.is-visible, .reveal-card.is-visible { opacity: 1; transform: none; }
+/* 无 JS / 减少动态偏好兜底由 motion.js 处理 */
+
+/* ---- Ken Burns 缓慢呼吸（照片"活着"的感觉） ---- */
+.kenburns img, img.kenburns { transform: scale(1); }
+.kenburns.kb-run img, img.kenburns.kb-run { animation: kb-breath 16s ease-in-out infinite alternate; }
+@keyframes kb-breath {
+  from { transform: scale(1) translate(0, 0); }
+  to   { transform: scale(1.06) translate(-1.2%, 1%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal-card { opacity: 1; transform: none; transition: none; }
+  .kenburns img, img.kenburns { animation: none !important; }
+}
