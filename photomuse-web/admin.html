@@ -82,14 +82,26 @@
 
   /* ---- 登录 ---- */
   function doLogin() {
-    api('/admin/login', { password: $('pwd').value }).then(function (r) {
+    var pwd = $('pwd').value.trim();
+    if (!pwd) {
+      msg($('login-msg'), '请输入管理口令', 'err');
+      return;
+    }
+    var btn = $('login-btn');
+    btn.textContent = '登录中…';
+    api('/admin/login', { password: pwd }).then(function (r) {
+      btn.textContent = '登 录';
       if (r.success) {
         TOKEN = r.token;
         sessionStorage.setItem('pm_admin_token', TOKEN);
         showPanel();
       } else {
-        msg($('login-msg'), r.message || '登录失败', 'err');
+        /* 登录错误持久显示，直到下次尝试 */
+        msg($('login-msg'), (r.message || '登录失败') + '（请核对口令后重试）', 'err');
       }
+    }).catch(function () {
+      btn.textContent = '登 录';
+      msg($('login-msg'), '网络异常，请重试', 'err');
     });
   }
   $('login-btn').addEventListener('click', doLogin);
