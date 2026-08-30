@@ -1,0 +1,14 @@
+{
+  "name": "photomuse-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "浅焦映像独立后端 · 订单/数据/AI 全自管，摆脱云函数限制",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}

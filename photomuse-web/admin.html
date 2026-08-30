@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>管理后台 · 浅焦映像</title>
+  <link rel="stylesheet" href="css/style.css?v=6">
+  <style>
+    .admin-wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 60px; }
+    .admin-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 18px; }
+    .admin-title { font-family: var(--serif); color: var(--dr-gold-bright); font-size: 20px; letter-spacing: 3px; }
+    .admin-logout { background: none; border: 1px solid var(--dr-gold-dim); color: var(--dr-gold-bright); padding: 6px 14px; border-radius: 4px; cursor: pointer; }
+    .login-box { max-width: 360px; margin: 80px auto; text-align: center; }
+    .login-box input { width: 100%; padding: 12px; margin: 14px 0; }
+    .order-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .order-filters button { background: var(--dr-bg-2); color: var(--dr-paper-2); border: 1px solid var(--dr-line); padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .order-filters button.on { color: var(--dr-gold-bright); border-color: var(--dr-gold-dim); }
+    .order-item { background: #fff; border-radius: 6px; padding: 14px 16px; margin-bottom: 12px; color: var(--ink); box-shadow: 0 10px 26px rgba(0,0,0,.45); }
+    .order-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .order-id { font-weight: 700; font-size: 14px; }
+    .order-meta { font-size: 12px; color: #565B63; margin: 6px 0; line-height: 1.7; }
+    .st { display: inline-block; padding: 2px 10px; border-radius: 3px; font-size: 11px; letter-spacing: 1px; background: #F4F4F1; }
+    .st.queued, .st.cell_selected { background: #FFF6E8; color: #8A6D2F; }
+    .st.grid_preview { background: #E8F1FB; color: #0D47A1; }
+    .st.delivered, .st.completed { background: #EAF2EC; color: #2E6B3F; }
+    .st.cancelled, .st.rejected { background: #F6EAEA; color: #B23A3A; }
+    .thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+    .thumbs img, .thumbs video { width: 86px; height: 118px; object-fit: cover; border-radius: 4px; border: 1px solid #E7E5E0; }
+    .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .acts button, .acts a { font-size: 12px; padding: 7px 14px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; border: 1px solid #D8D6D0; background: #fff; color: #1B1F24; }
+    .acts .b-gold { background: linear-gradient(135deg, #E3C892, #C8A86B); border: none; color: #17130A; font-weight: 600; }
+    .acts .b-green { background: #EAF2EC; border-color: #BCD8C4; color: #2E6B3F; }
+    .acts .b-red { background: #F6EAEA; border-color: #E3C3C3; color: #B23A3A; }
+    .msg { padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 13px; }
+    .msg.err { background: #F6EAEA; color: #B23A3A; }
+    .msg.info { background: var(--dr-bg-2); color: var(--dr-paper); }
+    .empty { text-align: center; color: var(--dr-paper-2); padding: 50px 0; }
+    .busy { opacity: .55; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div class="admin-wrap">
+    <div class="admin-head">
+      <span class="admin-title">浅焦映像 · 管理后台</span>
+      <button class="admin-logout" id="logout" style="display:none">退出</button>
+    </div>
+
+    <div class="login-box" id="login-box">
+      <div style="color:var(--dr-paper-2);font-size:13px">请输入管理口令</div>
+      <input type="password" id="pwd" placeholder="管理口令">
+      <button class="acts" style="width:100%" id="login-btn">登 录</button>
+      <div id="login-msg"></div>
+    </div>
+
+    <div id="panel" style="display:none">
+      <div class="order-filters" id="filters"></div>
+      <div id="list"><div class="empty">加载中…</div></div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+  var TOKEN = sessionStorage.getItem('pm_admin_token') || '';
+  var FILTERS = [['', '全部'], ['waiting_photos', '待上传'], ['photo_review', '待审核'], ['queued', '制作中'], ['grid_preview', '待选片'], ['cell_selected', '已选片'], ['delivered', '已交付'], ['completed', '已完结'], ['cancelled', '已取消']];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function api(path, body) {
+    return fetch('/PM/api' + path, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, TOKEN ? { 'X-Admin-Token': TOKEN } : {}),
+      body: JSON.stringify(body || {})
+    }).then(function (r) { return r.json(); });
+  }
+
+  function msg(el, text, cls) {
+    el.innerHTML = '<div class="msg ' + (cls || 'info') + '">' + text + '</div>';
+    setTimeout(function () { if (el.firstChild && el.firstChild.textContent === text) el.innerHTML = ''; }, 4000);
+  }
+
+  /* ---- 登录 ---- */
+  function doLogin() {
+    api('/admin/login', { password: $('pwd').value }).then(function (r) {
+      if (r.success) {
+        TOKEN = r.token;
+        sessionStorage.setItem('pm_admin_token', TOKEN);
+        showPanel();
+      } else {
+        msg($('login-msg'), r.message || '登录失败', 'err');
+      }
+    });
+  }
+  $('login-btn').addEventListener('click', doLogin);
+  $('pwd').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+  $('logout').addEventListener('click', function () {
+    sessionStorage.removeItem('pm_admin_token');
+    location.reload();
+  });
+
+  function showPanel() {
+    $('login-box').style.display = 'none';
+    $('panel').style.display = '';
+    $('logout').style.display = '';
+    renderFilters();
+    loadOrders('');
+  }
+
+  /* ---- 筛选 ---- */
+  function renderFilters() {
+    var box = $('filters');
+    box.innerHTML = '';
+    FILTERS.forEach(function (f) {
+      var b = document.createElement('button');
+      b.textContent = f[1];
+      if (f[0] === window.__curFilter) b.classList.add('on');
+      b.addEventListener('click', function () {
+        window.__curFilter = f[0];
+        renderFilters();
+        loadOrders(f[0]);
+      });
+      box.appendChild(b);
+    });
+  }
+
+  /* ---- 订单列表 ---- */
+  function loadOrders(status) {
+    var list = $('list');
+    list.innerHTML = '<div class="empty">加载中…</div>';
+    fetch('/PM/api/admin/orders' + (status ? '?status=' + status : ''), { headers: { 'X-Admin-Token': TOKEN } })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.success) { list.innerHTML = '<div class="msg err">' + (r.message || '加载失败') + '</div>'; return; }
+        if (!r.orders.length) { list.innerHTML = '<div class="empty">暂无订单</div>'; return; }
+        list.innerHTML = '';
+        r.orders.forEach(function (o) { list.appendChild(orderCard(o)); });
+      });
+  }
+
+  function orderCard(o) {
+    var div = document.createElement('div');
+    div.className = 'order-item';
+    var thumbHtml = '';
+    (o.customerPhotos || []).forEach(function (u) { thumbHtml += '<img src="' + u + '" loading="lazy">'; });
+    (o.gridPreviews || []).forEach(function (u) { thumbHtml += '<img src="' + u + '" loading="lazy">'; });
+    (o.deliveryFiles || []).forEach(function (u) { thumbHtml += '<img src="' + u + '" loading="lazy">'; });
+
+    var acts = '<div class="acts">';
+    var st = o.order_status;
+    if (st === 'waiting_photos') acts += '<span style="font-size:12px;color:#9AA0A8;align-self:center">等待客户上传照片</span>';
+    if (st === 'photo_review') {
+      acts += '<button class="b-green" data-act="pass">审核通过</button>';
+      acts += '<button data-act="retake">要求重拍</button>';
+      acts += '<button class="b-red" data-act="reject">拒绝订单</button>';
+    }
+    if (st === 'queued') acts += '<button class="b-gold" data-act="grid">AI 生成预览网格</button>';
+    if (st === 'grid_preview') acts += '<span style="font-size:12px;color:#9AA0A8;align-self:center">等待客户选片</span>';
+    if (st === 'cell_selected') acts += '<button class="b-gold" data-act="cell">AI 生成高清成片</button>';
+    if (st === 'delivered' || st === 'merch_pending') {
+      if (!o.paid) acts += '<button class="b-green" data-act="paid">标记已收款</button>';
+      acts += '<button data-act="deliver">完结订单</button>';
+    }
+    acts += '<a href="order.html?orderId=' + o.orderId + '" target="_blank">客户视图</a>';
+    acts += '</div>';
+
+    div.innerHTML =
+      '<div class="order-top"><span class="order-id">' + o.orderId + '</span>' +
+      '<span class="st ' + st + '">' + (o.statusLabel || st) + (o.paid ? ' · 已付款' : '') + '</span></div>' +
+      '<div class="order-meta">' + (o.productName || '') + ' · ¥' + Number(o.amount).toFixed(2) +
+      ' · ' + (o.contactPhone || '') + ' · ' + (o.source || 'web') + ' · ' + (o.createdAt || '') +
+      ((o.themes || []).length ? '<br>主题：' + o.themes.map(function (t) { return t.themeName; }).join('、') : '') +
+      '</div>' +
+      '<div class="thumbs">' + thumbHtml + '</div>' + acts;
+
+    div.querySelectorAll('.acts button[data-act]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.classList.contains('busy')) return;
+        div.classList.add('busy');
+        var act = btn.dataset.act;
+        var p;
+        if (act === 'pass' || act === 'retake' || act === 'reject') {
+          p = api('/admin/order/' + o.orderId + '/review', { decision: act, note: act === 'retake' ? '照片需要重拍' : '' });
+        } else if (act === 'grid' || act === 'cell') {
+          btn.textContent = act === 'grid' ? 'AI 生成中…（约 1 分钟）' : 'AI 生成中…（约 2 分钟）';
+          p = api('/admin/order/' + o.orderId + '/generate', { stage: act === 'grid' ? 'grid' : 'cell' });
+        } else if (act === 'paid') {
+          p = api('/admin/order/' + o.orderId + '/mark-paid', {});
+        } else if (act === 'deliver') {
+          p = api('/admin/order/' + o.orderId + '/deliver', {});
+        }
+        p.then(function (r) {
+          div.classList.remove('busy');
+          if (!r.success) { msg($('list'), r.message || '操作失败', 'err'); loadOrders(window.__curFilter); return; }
+          loadOrders(window.__curFilter);
+        }).catch(function () { div.classList.remove('busy'); });
+      });
+    });
+    return div;
+  }
+
+  if (TOKEN) {
+    /* 校验 token 有效性 */
+    fetch('/PM/api/admin/orders', { headers: { 'X-Admin-Token': TOKEN } })
+      .then(function (r) { return r.json(); })
+      .then(function (r) { if (r.success) { showPanel(); } else { sessionStorage.removeItem('pm_admin_token'); TOKEN = ''; } });
+  }
+})();
+</script>
+</body>
+</html>

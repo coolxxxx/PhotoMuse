@@ -1,180 +1,71 @@
 /* ============================================================
- * 浅焦映像 Web · API 层
- * 依赖：js/config.js（window.PM_CONFIG）、CloudBase Web SDK（全局 cloudbase）
- * 提供：SDK 初始化 / 匿名登录 / photomuseOpenApi 调用封装 /
- *       云存储上传 / 临时链接 / 统一 toast / loading 遮罩
+ * 浅焦映像 Web · API 层 v2（独立后端 HTTP 通道）
+ * 后端：photomuse-server（/PM/api/*），数据/AI 全在自有服务器
+ * 接口形状与 v1 完全一致：PM.callApi / PM.uploadFile / PM.getTempFileURL
+ * 页面逻辑零改动；内部记录会话凭证（orderId/webToken）
  * ============================================================ */
 'use strict';
 
 window.PM = (() => {
-  const cfg = window.PM_CONFIG || {};
-  const KEY_PLACEHOLDER = '请部署时替换为你的开放接口Key';
-  const FUNCTION_NAME = 'photomuseOpenApi';
+  const API_BASE = '/PM/api';
+  const UPLOAD_BASE = '/PM/api/upload';
 
-  let app = null;
-  let authRef = null;
-  let authReady = null;
+  /* 会话凭证：createOrder 成功后记录，供 uploadFile 鉴权 */
+  const session = { orderId: null, webToken: null };
 
-  /* ---------- 配置检查 ---------- */
-  const isConfigured = () => {
-    const key = String(cfg.OPEN_API_KEY || '').trim();
-    return Boolean(cfg.ENV_ID && key && key !== KEY_PLACEHOLDER);
-  };
+  /* ---------- 兼容保留：旧页面检测函数（切后端后恒可用） ---------- */
+  const isConfigured = () => true;
 
-  /* ---------- SDK 初始化与匿名登录（幂等） ---------- */
-  const ensureApp = () => {
-    if (!window.cloudbase) { throw new Error('CloudBase SDK 未加载，请检查网络后刷新重试'); }
-    if (!cfg.ENV_ID) { throw new Error('站点未配置环境 ID（js/config.js 的 ENV_ID）'); }
-    if (!app) {
-      /* CLOUD_API 模式：走旧域 tcb-api（放行自定义域名），配合 tcb-transport.js 重写到同源代理 */
-      app = window.cloudbase.init({ env: cfg.ENV_ID, endPointMode: 'CLOUD_API' });
-    }
-    return app;
-  };
-
-  /* v3 SDK 的 signInAnonymously 失败时不抛异常而是 resolve {data:null, error}，
-   * 必须显式检查返回值，否则会带着空票据去调云函数（credentials not found） */
-  const signInAnonymousChecked = async (auth) => {
-    let res = null;
-    try { res = await auth.signInAnonymously(); } catch (e) {
-      throw new Error('匿名登录失败：' + (e && (e.message || e.errMsg)) || '未知错误');
-    }
-    if (res && res.error) {
-      const err = res.error;
-      const msg = (err && (err.message || err.msg || err.helpMessage)) || String(err);
-      const flag = [err && err.code, err && err.category, msg].join(' ');
-      const hint = /PROVIDER_NOT_ENABLED|not.?enabled|未开启|未启用/i.test(flag)
-        ? '（请到 CloudBase 控制台→环境 ' + (cfg.ENV_ID || '') + '→身份验证→登录方式→开启「匿名登录」）' : '';
-      throw new Error('匿名登录失败：' + msg + hint);
-    }
-    return res;
-  };
-
-  const ensureAuth = () => {
-    if (!authReady) {
-      authReady = (async () => {
-        const a = ensureApp();
-        const auth = a.auth({ persistence: 'local' });
-        authRef = auth;
-        if (!auth.hasLoginState()) { await signInAnonymousChecked(auth); }
-        /* 双保险：登录动作完成后本地仍无登录态，同样视为失败 */
-        if (!auth.hasLoginState()) {
-          throw new Error('匿名登录未生效（本地未获得登录态），请确认控制台已开启「匿名登录」后刷新重试');
-        }
-        return a;
-      })().catch((e) => { authReady = null; throw e; });
-    }
-    return authReady;
-  };
-
-  /* ---------- 清空本地登录态（票据失效自愈用） ---------- */
-  const resetAuth = async () => {
-    try { if (authRef && authRef.signOut) { await authRef.signOut(); } } catch (e) { /* 忽略登出异常 */ }
-    authRef = null;
-    authReady = null;
-  };
-
-  /* ---------- 统一调用 photomuseOpenApi ----------
-   * 成功返回 result 对象（success !== false）
-   * 失败抛 Error：err.code / err.message 可直接展示
-   */
-  const normalizeApiError = (e) => {
-    /* SDK 拒绝时 message 常为空，真实信息在 errMsg；归一化便于页面展示与排查 */
-    let msg = (e && (e.message || e.errMsg)) || '';
-    if (!msg) {
-      try { msg = JSON.stringify(e, Object.getOwnPropertyNames(e || {})).slice(0, 260); } catch (_) { msg = String(e); }
-    }
-    const hint = /origin|domain|域名/i.test(msg) ? '（疑似未配置 Web 安全域名：CloudBase 控制台→环境→安全配置→添加 www.czpsm.art）'
-      : /auth|登录|anonymous/i.test(msg) ? '（疑似未启用匿名登录：CloudBase 控制台→环境→身份验证→启用匿名登录）'
-      : '';
-    const err = new Error(String(msg || '调用云函数失败') + hint);
-    err.raw = e;
-    return err;
-  };
-
-  const isCredentialsError = (e) => {
-    let raw = (e && (e.message || e.errMsg)) || '';
-    if (!raw) {
-      try { raw = JSON.stringify(e, Object.getOwnPropertyNames(e || {})); } catch (_) { raw = ''; }
-    }
-    return /unauthenticated|credentials not found/i.test(raw);
-  };
-
+  /* ---------- action 分发调用 ---------- */
   const callApi = async (action, payload) => {
-    if (!isConfigured()) { throw new Error('站点未配置 API Key，请联系管理员'); }
-    const invoke = async () => {
-      const a = await ensureAuth();
-      return a.callFunction({
-        name: FUNCTION_NAME,
-        data: { apiKey: String(cfg.OPEN_API_KEY).trim(), action: action, payload: payload || {} }
-      });
-    };
-    let res = null;
-    try {
-      res = await invoke();
-    } catch (e) {
-      if (isCredentialsError(e)) {
-        /* 本地缓存的匿名票据失效：清空登录态强制重新匿名登录，再试一次 */
-        await resetAuth();
-        try { res = await invoke(); } catch (e2) { throw normalizeApiError(e2); }
-      } else {
-        throw normalizeApiError(e);
-      }
-    }
-    const result = res && res.result;
-    if (!result || typeof result !== 'object') { throw new Error('服务端无返回，请稍后重试'); }
+    const res = await fetch(API_BASE + '/open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action, payload: payload || {} })
+    });
+    if (!res.ok) throw new Error('网络请求失败（' + res.status + '），请稍后重试');
+    const result = await res.json();
+    if (!result || typeof result !== 'object') throw new Error('服务端无返回，请稍后重试');
     if (result.success === false) {
       const err = new Error(result.message || '请求失败，请稍后重试');
       err.code = result.code || 'INTERNAL_ERROR';
       throw err;
     }
+    /* 自动记录订单会话凭证 */
+    if (action === 'createOrder' && result.orderId && result.webToken) {
+      session.orderId = result.orderId;
+      session.webToken = result.webToken;
+    }
     return result;
   };
 
-  /* ---------- 云存储 ---------- */
-  const uploadFile = async (cloudPath, filePath) => {
-    const doUpload = async () => {
-      const a = await ensureAuth();
-      const res = await a.uploadFile({ cloudPath: cloudPath, filePath: filePath });
-      if (!res || !res.fileID) { throw new Error('云存储上传失败，请重试'); }
-      return res.fileID;
-    };
-    try {
-      return await doUpload();
-    } catch (e) {
-      if (isCredentialsError(e)) {
-        await resetAuth();
-        return await doUpload();
-      }
-      throw e;
+  /* ---------- 上传（multipart → 本地 uploads，fileID 即公网 URL） ---------- */
+  const uploadFile = async (cloudPath, file) => {
+    const fd = new FormData();
+    if (session.orderId) {
+      fd.append('orderId', session.orderId);
+      fd.append('webToken', session.webToken);
     }
+    fd.append('cloudPath', String(cloudPath || '').replace(/^ai-studio\//, '').replace(/[\\/:*?"<>|]/g, '_'));
+    fd.append('file', file, file && file.name ? file.name : 'photo.jpg');
+    const res = await fetch(UPLOAD_BASE, { method: 'POST', body: fd });
+    if (!res.ok) throw new Error('上传失败（' + res.status + '），请重试');
+    const result = await res.json();
+    if (!result || result.success === false || !result.fileID) {
+      throw new Error((result && result.message) || '上传失败，请重试');
+    }
+    return result.fileID;
   };
 
-  /* 批量换取临时访问链接，返回 { fileID: url } 映射 */
+  /* ---------- 本地文件即公网 URL：恒等映射 ---------- */
   const getTempFileURL = async (fileIDs) => {
     const list = (Array.isArray(fileIDs) ? fileIDs : [fileIDs]).filter(Boolean);
-    if (!list.length) { return {}; }
-    const a = await ensureAuth();
-    let res = null;
-    try {
-      res = await a.getTempFileURL(list);
-    } catch (e) {
-      /* 兼容不同 SDK 版本的两种入参形态 */
-      res = await a.getTempFileURL({ fileList: list });
-    }
-    let rows = [];
-    if (Array.isArray(res)) { rows = res; }
-    else if (res && Array.isArray(res.fileList)) { rows = res.fileList; }
     const map = {};
-    rows.forEach((item) => {
-      if (item && item.fileID) {
-        map[item.fileID] = item.tempFileURL || item.fileUrl || item.url || '';
-      }
-    });
+    list.forEach((id) => { map[id] = id; });
     return map;
   };
 
-  /* ---------- toast ---------- */
+  /* ---------- toast / loading（不变） ---------- */
   let toastTimer = null;
   const toast = (message, type) => {
     let el = document.getElementById('pm-toast');
@@ -189,7 +80,6 @@ window.PM = (() => {
     toastTimer = setTimeout(() => { el.className = 'pm-toast'; }, 2800);
   };
 
-  /* ---------- loading 遮罩 ---------- */
   const showLoading = (text) => {
     let el = document.getElementById('pm-loading');
     if (!el) {
@@ -213,19 +103,7 @@ window.PM = (() => {
     if (el) { el.classList.remove('show'); }
   };
 
-  /* ---------- 未配置 API Key 横幅 ----------
-   * 页面需包含：<div id="config-banner" class="banner banner-warning hidden">…</div>
-   * 带有 data-requires-key 属性的按钮会被禁用
-   */
-  const setupConfigBanner = () => {
-    const el = document.getElementById('config-banner');
-    if (!el) { return; }
-    if (!isConfigured()) {
-      el.classList.remove('hidden');
-      const nodes = document.querySelectorAll('[data-requires-key]');
-      for (let i = 0; i < nodes.length; i++) { nodes[i].disabled = true; }
-    }
-  };
+  const setupConfigBanner = () => { /* 独立后端无需 key 配置检查 */ };
 
   return {
     isConfigured: isConfigured,
