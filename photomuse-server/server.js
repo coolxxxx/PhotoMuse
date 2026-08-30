@@ -156,7 +156,10 @@ actions.businessConfig = () => {
 
 actions.paymentQR = () => {
   const row = db.prepare("SELECT value FROM config_kv WHERE key = 'payment_qr'").get();
-  return ok({ qr: row ? JSON.parse(row.value) : null });
+  if (!row) return ok({ config: null });
+  const qr = JSON.parse(row.value);
+  /* 前端 order-view.js 期望 config.fileID + config.note */
+  return ok({ config: qr && qr.fileID ? qr : null });
 };
 
 actions.runtimeConfig = () => {
@@ -357,6 +360,34 @@ function adminAuth(req, res, next) {
   next();
 }
 app.use('/api/admin', adminAuth);
+
+/* 管理端文件上传（收款码图等）：存 uploads/payment/，返回公网 URL */
+const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+app.post('/api/admin/upload', adminUpload.single('file'), (req, res) => {
+  if (!req.file) return res.json(fail('VALIDATION_ERROR', '缺少文件'));
+  const ext = (path.extname(req.file.originalname || '') || '.png').slice(0, 6).toLowerCase();
+  const rel = path.join('payment', 'qr-' + Date.now() + ext);
+  const abs = path.join(UPLOAD_ROOT, rel);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, req.file.buffer);
+  res.json(ok({ fileID: PUBLIC_ORIGIN + '/PM/uploads/' + rel.replace(/\\/g, '/') }));
+});
+
+/* 收款码配置：{ fileID, note } */
+app.post('/api/admin/payment-qr', (req, res) => {
+  const fileID = clean(req.body.fileID, 300);
+  if (!fileID) return res.json(fail('VALIDATION_ERROR', '缺少收款码图片'));
+  const value = { fileID: fileID, note: clean(req.body.note, 100) };
+  db.prepare('INSERT INTO config_kv (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at')
+    .run('payment_qr', JSON.stringify(value), nowStr());
+  audit(null, 'admin', 'set_payment_qr', {});
+  res.json(ok({ config: value }));
+});
+
+app.get('/api/admin/payment-qr', (req, res) => {
+  const row = db.prepare("SELECT value FROM config_kv WHERE key = 'payment_qr'").get();
+  res.json(ok({ config: row ? JSON.parse(row.value) : null }));
+});
 
 app.get('/api/admin/orders', (req, res) => {
   const status = clean(req.query.status, 30);

@@ -54,6 +54,20 @@
     </div>
 
     <div id="panel" style="display:none">
+      <div class="order-item" id="qr-card" style="margin-bottom:20px">
+        <div class="order-top"><span class="order-id">收款码设置</span><span id="qr-state" style="font-size:11px;color:#9AA0A8">未配置</span></div>
+        <div class="order-meta">客户在订单页扫码付款 · 保存后立即生效</div>
+        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-top:8px">
+          <img id="qr-preview" src="" alt="" style="width:130px;height:130px;object-fit:contain;border:1px solid #E7E5E0;border-radius:4px;background:#FAFAF9">
+          <div style="flex:1;min-width:220px">
+            <input type="file" id="qr-file" accept="image/png,image/jpeg,image/webp" style="font-size:12px;margin-bottom:8px">
+            <input type="text" id="qr-note" placeholder="付款说明（如：扫码后请备注订单号）" style="width:100%;padding:8px;font-size:12px;margin-bottom:8px">
+            <button class="b-gold acts" id="qr-save" style="width:auto">保存收款码</button>
+            <span id="qr-msg" style="font-size:12px;margin-left:8px"></span>
+          </div>
+        </div>
+      </div>
+
       <div class="order-filters" id="filters"></div>
       <div id="list"><div class="empty">加载中…</div></div>
     </div>
@@ -117,7 +131,52 @@
     $('logout').style.display = '';
     renderFilters();
     loadOrders('');
+    loadQr();
   }
+
+  /* ---- 收款码管理 ---- */
+  function loadQr() {
+    fetch('/PM/api/admin/payment-qr', { headers: { 'X-Admin-Token': TOKEN } })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        var c = r.config;
+        if (c && c.fileID) {
+          $('qr-preview').src = c.fileID;
+          $('qr-note').value = c.note || '';
+          $('qr-state').textContent = '已配置';
+        }
+      });
+  }
+  $('qr-save').addEventListener('click', function () {
+    var fileInput = $('qr-file');
+    var btn = $('qr-save');
+    var stateEl = $('qr-msg');
+    function save(fileID) {
+      btn.textContent = '保存中…';
+      api('/admin/payment-qr', { fileID: fileID, note: $('qr-note').value })
+        .then(function (r) {
+          btn.textContent = '保存收款码';
+          stateEl.textContent = r.success ? '✓ 已保存，客户订单页立即生效' : ('✗ ' + (r.message || '保存失败'));
+          if (r.success) { $('qr-preview').src = fileID; $('qr-state').textContent = '已配置'; fileInput.value = ''; }
+        });
+    }
+    if (fileInput.files && fileInput.files[0]) {
+      var fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      btn.textContent = '上传中…';
+      fetch('/PM/api/admin/upload', { method: 'POST', headers: { 'X-Admin-Token': TOKEN }, body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          btn.textContent = '保存收款码';
+          if (r.success && r.fileID) { save(r.fileID); }
+          else { stateEl.textContent = '✗ ' + (r.message || '上传失败'); }
+        });
+    } else if ($('qr-preview').src) {
+      save($('qr-preview').src); /* 只改备注 */
+    } else {
+      stateEl.textContent = '✗ 请先选择收款码图片';
+    }
+  });
 
   /* ---- 筛选 ---- */
   function renderFilters() {
