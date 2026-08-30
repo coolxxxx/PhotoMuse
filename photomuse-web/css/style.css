@@ -1174,3 +1174,37 @@ a { color: #8A6D2F; }
   .reveal, .reveal-card { opacity: 1; transform: none; transition: none; }
   .kenburns img, img.kenburns { animation: none !important; }
 }
+
+/* ============================================================
+ * v3.4 动态影廊（AI 图生视频样张）
+ * 视频 = AI 让照片动起来的成片；滚动进视口自动播放，离开暂停
+ * ============================================================ */
+.motion-gallery { margin: 34px 0 6px; }
+.motion-gallery-head { display: flex; align-items: baseline; gap: 10px; padding: 0 2px 14px; }
+.motion-gallery-title { font-family: var(--serif); font-size: 19px; color: var(--dr-gold-bright); letter-spacing: 2px; }
+.motion-gallery-sub { font-size: 11px; color: var(--dr-paper-2); letter-spacing: 1px; }
+.motion-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.motion-item {
+  position: relative; overflow: hidden; border-radius: var(--radius-card);
+  background: #F7F4EE; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+.motion-item video, .motion-item img {
+  width: 100%; display: block; aspect-ratio: 490 / 856; object-fit: cover;
+}
+.motion-item img { position: absolute; inset: 0; transition: opacity .45s ease; }
+.motion-item video.ready ~ img, .motion-item.playing img { opacity: 0; }
+.motion-badge {
+  position: absolute; top: 8px; right: 8px; z-index: 3;
+  font-size: 10px; letter-spacing: 2px; color: var(--dr-gold-bright);
+  background: rgba(21, 22, 26, 0.72); border: 1px solid var(--dr-gold-dim);
+  padding: 3px 8px; border-radius: 3px; pointer-events: none;
+}
+.motion-caption {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+  padding: 22px 10px 8px; font-size: 11px; color: #F5F2EC; text-align: center;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .motion-grid { grid-template-columns: repeat(4, 1fr); }
+}
