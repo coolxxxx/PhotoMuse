@@ -11,10 +11,19 @@ const path = require('path');
 
 const GEN_API = process.env.PM_GEN_API || 'https://api.3213218.xyz/v1/images/generations';
 const CHAT_API = process.env.PM_CHAT_API || 'https://api.3213218.xyz/v1/chat/completions';
-const API_KEY = process.env.PM_AI_KEY || 'fkall';
+/* 密钥一律环境变量注入（部署时配置），不入库；未配置时 AI 功能明确报 CONFIG_MISSING */
+const API_KEY = process.env.PM_AI_KEY || '';
 const IMG_MODEL = process.env.PM_IMG_MODEL || 'fkall-图像';
 const TXT_MODEL = process.env.PM_TXT_MODEL || 'fkall-文本';
 const UPLOAD_ROOT = process.env.PM_UPLOAD_ROOT || path.join(__dirname, '..', 'uploads');
+
+function requireAIConfig() {
+  if (!API_KEY) {
+    const e = new Error('AI 生图未配置（PM_AI_KEY）');
+    e.code = 'CONFIG_MISSING';
+    throw e;
+  }
+}
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -55,6 +64,7 @@ function buildPrompt(stage, { cell, themeId, sceneDesc, themeCount }) {
 
 /* 提交生图并返回 { buffer, ext } */
 async function generateImage(prompt, size) {
+  requireAIConfig();
   let lastErr = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -85,6 +95,7 @@ async function generateImage(prompt, size) {
 
 /* 视觉分析：看照片 → 5 主题评分 */
 async function analyzePhoto(imageUrl) {
+  requireAIConfig();
   const res = await fetch(CHAT_API, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + API_KEY, 'Content-Type': 'application/json' },

@@ -465,6 +465,7 @@ app.post('/api/admin/order/:id/generate', async (req, res) => {
     res.json(fail('VALIDATION_ERROR', 'stage 须为 grid/cell'));
   } catch (e) {
     console.error('generate failed:', e);
+    if (e.code === 'CONFIG_MISSING') return res.json(fail('CONFIG_MISSING', e.message));
     res.json(fail('GENERATION_FAILED', 'AI 生成失败：' + String(e.message).slice(0, 120)));
   }
 });
