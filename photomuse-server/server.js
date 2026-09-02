@@ -17,7 +17,7 @@ const path = require('path');
 const fs = require('fs');
 
 const { db, now, seedConfig } = require('./lib/db');
-const { ORDER_PRODUCTS, PORTRAIT_THEMES, STYLES, DEFAULT_PRICING, STATUS_LABELS } = require('./lib/catalog');
+const { ORDER_PRODUCTS, PORTRAIT_THEMES, STYLES, DEFAULT_PRICING, STATUS_LABELS, DEFAULT_MERCH } = require('./lib/catalog');
 const ai = require('./lib/ai');
 
 const PORT = process.env.PORT || 8900;
@@ -304,19 +304,415 @@ actions.analyzePhoto = async (payload) => {
   }
 };
 
+
 app.post('/api/open', async (req, res) => {
   const action = clean(req.body && req.body.action, 30);
   const payload = req.body && typeof req.body.payload === 'object' ? req.body.payload : {};
   const handler = actions[action];
   if (!handler) return res.json(fail('VALIDATION_ERROR', '不支持的 action'));
   try {
-    const result = await handler(payload);
+    const result = await handler(payload, req);
     res.json(result);
   } catch (e) {
     console.error('action failed:', action, e);
     res.json(fail('INTERNAL_ERROR', '服务开小差了，请稍后重试'));
   }
 });
+
+/* ============================================================
+ * 小程序兼容层：云函数名 → 独立后端语义（响应形状对齐云函数版）
+ * 登录：POST /api/wx/login {deviceId} → {token, openid}
+ *       （预留 code2session：配置 WX_APPSECRET 后 {code} 换真实 openid）
+ * 鉴权：X-User-Token（HMAC token，openid 绑定订单归属）
+ * ============================================================ */
+const WX_SECRET = ADMIN_PASSWORD + '::wx-user';
+const signUser = (data) => crypto.createHmac('sha256', WX_SECRET).update(data).digest('hex').slice(0, 32);
+const makeUserToken = (openid) => {
+  const exp = Date.now() + 90 * 24 * 3600 * 1000;
+  const body = openid + '.' + exp;
+  return body + '.' + signUser(body);
+};
+const verifyUserToken = (token) => {
+  if (!token) return null;
+  const parts = String(token).split('.');
+  if (parts.length !== 3) return null;
+  const openid = parts[0];
+  if (Number(parts[1]) < Date.now()) return null;
+  return signUser(parts[0] + '.' + parts[1]) === parts[2] ? openid : null;
+};
+
+app.post('/api/wx/login', async (req, res) => {
+  const deviceId = clean(req.body && req.body.deviceId, 64);
+  const code = clean(req.body && req.body.code, 200);
+  let openid = '';
+  if (code && process.env.WX_APPSECRET) {
+    try {
+      const r = await fetch(`https://api.weixin.qq.com/sns/jscode2session?appid=${process.env.WX_APPID || ''}&secret=${process.env.WX_APPSECRET}&js_code=${code}&grant_type=authorization_code`);
+      const j = await r.json();
+      if (j.openid) openid = 'wx-' + j.openid;
+    } catch (e) { /* fallback below */ }
+  }
+  if (!openid) {
+    if (!deviceId) return res.json(fail('VALIDATION_ERROR', '缺少登录凭证'));
+    openid = 'dev-' + sha256(deviceId).slice(0, 20);
+  }
+  res.json(ok({ token: makeUserToken(openid), openid }));
+});
+
+const wxActions = {};
+/* ---- 小程序管理端适配（口令直验，无 token） ---- */
+const verifyAdminPassword = (p) => Boolean(p) && p === ADMIN_PASSWORD;
+function wxAdmin(payload) {
+  return Boolean(payload && payload.adminPassword && verifyAdminPassword(payload.adminPassword));
+}
+
+wxActions.adminLogin = (payload) => {
+  if (!verifyAdminPassword(payload && payload.password)) return fail('FORBIDDEN', '口令错误');
+  return ok({ token: makeAdminToken() });
+};
+wxActions.adminListAIStudioOrders = (payload) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const status = clean(payload.status, 30);
+  const rows = status
+    ? db.prepare('SELECT * FROM orders WHERE order_status = ? ORDER BY created_at DESC LIMIT 100').all(status)
+    : db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 100').all();
+  const orders = rows.map(o => {
+    const v = wxOrderDetail(o, orderFiles(o.order_id));
+    v.contactPhone = o.contact_phone;
+    v.paid = Boolean(o.paid);
+    v.amount = o.amount;
+    v.productName = o.product_name;
+    v.productType = o.product_type;
+    v.photoReview = o.photo_review;
+    return v;
+  });
+  return ok({ orders });
+};
+wxActions.adminReviewAIStudioOrder = (payload) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const o = getOrder(clean(payload.orderId, 40));
+  if (!o) return fail('NOT_FOUND', '订单不存在');
+  const decision = clean(payload.decision, 20);
+  if (decision === 'pass') {
+    db.prepare('UPDATE orders SET photo_review = ?, order_status = ?, updated_at = ? WHERE order_id = ?').run('passed', 'queued', nowStr(), o.order_id);
+  } else if (decision === 'retake') {
+    db.prepare('UPDATE orders SET photo_review = ?, photo_note = ?, order_status = ?, updated_at = ? WHERE order_id = ?')
+      .run('need_retake', clean(payload.note, 200) || '照片需要重拍', 'waiting_photos', nowStr(), o.order_id);
+  } else {
+    db.prepare('UPDATE orders SET photo_review = ?, order_status = ?, updated_at = ? WHERE order_id = ?').run('rejected', 'cancelled', nowStr(), o.order_id);
+  }
+  audit(o.order_id, 'admin', 'wx_review_' + decision, {});
+  return ok();
+};
+wxActions.adminMarkAIStudioOrderPaid = (payload) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const o = getOrder(clean(payload.orderId, 40));
+  if (!o) return fail('NOT_FOUND', '订单不存在');
+  db.prepare('UPDATE orders SET paid = 1, paid_at = ?, updated_at = ? WHERE order_id = ?').run(nowStr(), nowStr(), o.order_id);
+  audit(o.order_id, 'admin', 'wx_mark_paid', {});
+  return ok();
+};
+wxActions.adminDeliverAIStudioOrder = (payload) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const o = getOrder(clean(payload.orderId, 40));
+  if (!o) return fail('NOT_FOUND', '订单不存在');
+  db.prepare('UPDATE orders SET order_status = ?, closed_at = ?, updated_at = ? WHERE order_id = ?').run('completed', nowStr(), nowStr(), o.order_id);
+  audit(o.order_id, 'admin', 'wx_deliver', {});
+  return ok({ order: { orderId: o.order_id, order_status: 'completed' } });
+};
+wxActions.adminSetAIStudioPaymentQR = (payload) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const fileID = clean(payload.qrFileID || payload.fileID, 300);
+  if (!fileID) return fail('VALIDATION_ERROR', '缺少收款码图片');
+  db.prepare('INSERT INTO config_kv (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at')
+    .run('payment_qr', JSON.stringify({ fileID: fileID, note: clean(payload.note, 100) }), nowStr());
+  audit(null, 'admin', 'wx_set_payment_qr', {});
+  return ok();
+};
+wxActions.adminUpsertAIStudioSamples = (payload) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const samples = Array.isArray(payload.samples) ? payload.samples : [];
+  let n = 0;
+  for (const s of samples) {
+    const themeId = clean(s.themeId, 32);
+    const url = clean(s.fileUrl || s.fileID, 300);
+    if (!themeId || !url) continue;
+    const id = clean(s.sampleId, 64) || rid('smp');
+    db.prepare(`INSERT INTO samples (sample_id, theme_id, file_url, caption, sort_order, enabled, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(sample_id) DO UPDATE SET theme_id=excluded.theme_id, file_url=excluded.file_url, caption=excluded.caption, sort_order=excluded.sort_order, enabled=excluded.enabled`)
+      .run(id, themeId, url, clean(s.caption, 100), Number(s.sortOrder) || 0, s.enabled === false ? 0 : 1, nowStr());
+    n++;
+  }
+  audit(null, 'admin', 'wx_upsert_samples', { count: n });
+  return ok({ updated: n });
+};
+wxActions.adminUpsertAIStudioBusinessConfig = (payload) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const cfg = payload.config || payload;
+  const p = {
+    basePrice: Number(cfg.baseThemePrice) || getPricing().basePrice,
+    perTheme: Number(cfg.extraThemePrice) || getPricing().perTheme,
+    maxThemes: Number(cfg.maxThemes) || getPricing().maxThemes,
+    freeThemes: 1
+  };
+  db.prepare('INSERT INTO config_kv (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at')
+    .run('pricing', JSON.stringify(p), nowStr());
+  audit(null, 'admin', 'wx_set_pricing', {});
+  return ok();
+};
+wxActions.adminUpdateMerchProduction = (payload) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const o = getOrder(clean(payload.orderId, 40));
+  if (!o) return fail('NOT_FOUND', '订单不存在');
+  const status = clean(payload.status, 30);
+  if (!['merch_pending', 'in_production', 'completed'].includes(status)) return fail('VALIDATION_ERROR', '状态无效');
+  db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?').run(status, nowStr(), o.order_id);
+  audit(o.order_id, 'admin', 'wx_merch_production', { status });
+  return ok({ order: { orderId: o.order_id, order_status: status } });
+};
+wxActions.generateAIStudioImage = async (payload, openid) => {
+  if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
+  const o = getOrder(clean(payload.orderId, 40));
+  if (!o) return fail('NOT_FOUND', '订单不存在');
+  const stage = clean(payload.stage, 10);
+  const customerPhotos = orderFiles(o.order_id, 'customer');
+  if (!customerPhotos.length) return fail('VALIDATION_ERROR', '订单无客户照片');
+  try {
+    if (stage === 'grid') {
+      const themeId = (JSON.parse(o.themes)[0] || {}).themeId;
+      const refPrompt = ai.buildPrompt('reference', { themeCount: JSON.parse(o.themes).length, sceneDesc: o.scene_desc || '' });
+      const prompt = ai.buildPrompt('grid', { themeId, sceneDesc: o.scene_desc || '' });
+      const ref = await ai.generateImage(refPrompt);
+      ai.saveUpload(path.join('orders', o.order_id, 'reference.png'), ref.buffer);
+      const grid = await ai.generateImage(prompt);
+      const gridUrl = ai.saveUpload(path.join('orders', o.order_id, 'grid.png'), grid.buffer);
+      db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, created_at) VALUES (?, ?, ?, ?, ?)')
+        .run(rid('file'), o.order_id, 'grid_preview', gridUrl, nowStr());
+      db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?').run('grid_preview', nowStr(), o.order_id);
+      audit(o.order_id, 'admin', 'wx_generate_grid', {});
+      return ok({ file: { fileID: gridUrl }, order: { orderId: o.order_id, order_status: 'grid_preview' } });
+    }
+    if (stage === 'cell') {
+      if (o.order_status !== 'cell_selected') return fail('VALIDATION_ERROR', '客户尚未选片');
+      const cells = JSON.parse(o.selected_cells || '[]');
+      const themeId = (JSON.parse(o.themes)[0] || {}).themeId;
+      for (const cell of cells) {
+        const img = await ai.generateImage(ai.buildPrompt('cell', { cell, themeId }));
+        const url = ai.saveUpload(path.join('orders', o.order_id, 'cell-' + cell + '.png'), img.buffer);
+        db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, created_at) VALUES (?, ?, ?, ?, ?)')
+          .run(rid('file'), o.order_id, 'delivery', url, nowStr());
+      }
+      db.prepare('UPDATE orders SET order_status = ?, delivered_at = ?, updated_at = ? WHERE order_id = ?')
+        .run('delivered', nowStr(), nowStr(), o.order_id);
+      audit(o.order_id, 'admin', 'wx_generate_cells', { count: cells.length });
+      return ok({ order: { orderId: o.order_id, order_status: 'delivered' } });
+    }
+    return fail('VALIDATION_ERROR', 'stage 须为 grid/cell');
+  } catch (e) {
+    if (e.code === 'CONFIG_MISSING') return fail('CONFIG_MISSING', e.message);
+    return fail('GENERATION_FAILED', 'AI 生成失败：' + String(e.message).slice(0, 120));
+  }
+};
+const wxNotImplemented = (feature, alt) => () => fail('NOT_IMPLEMENTED', feature + ' 已迁移至网站管理后台：' + alt);
+wxActions.exportAIStudioPrintFile = wxNotImplemented('300DPI 制作稿导出', 'www.czpsm.art/PM/admin.html');
+wxActions.adminUploadAIStudioGridPreview = wxNotImplemented('手动上传网格', 'www.czpsm.art/PM/admin.html');
+wxActions.adminUpsertAIStudioRuntimeConfig = wxNotImplemented('模型面板配置', '服务器环境变量（PM_AI_KEY 等）');
+wxActions.getAIStudioRuntimeConfig = () => ok({ config: {} });
+
+function wxUser(req) {
+  return verifyUserToken(req.headers['x-user-token']);
+}
+
+function requireOrderWx(orderId, openid) {
+  const o = getOrder(clean(orderId, 40));
+  if (!o) return { error: fail('NOT_FOUND', '订单不存在') };
+  if (!openid || o.openid !== openid) return { error: fail('FORBIDDEN', '无权访问该订单') };
+  return { order: o };
+}
+
+/* 云数据库文档形状的订单视图（detail 页消费） */
+function wxOrderDetail(o, files) {
+  const byType = (t) => files.filter(f => f.file_type === t);
+  const themes = JSON.parse(o.themes || '[]');
+  const merchItems = JSON.parse(o.merch_selected || '[]');
+  const delivery = byType('delivery').map(f => f.url);
+  const photoCheckText = { unchecked: '未审核', passed: '照片合格', need_retake: '需要重拍', rejected: '不适合制作' }[o.photo_review] || '未审核';
+  return {
+    orderId: o.order_id,
+    order_status: o.order_status,
+    payment_status: o.paid ? 'paid' : 'unpaid',
+    photo_check: o.photo_review,
+    photoCheckText: photoCheckText,
+    reviewNote: o.photo_note || '',
+    productName: o.product_name,
+    product_type: o.product_type,
+    spec: o.background_color || '',
+    styleName: o.style_name || '',
+    usage: '',
+    reference_photo_count: byType('customer').length,
+    themes: themes,
+    theme_id: themes.length ? themes[0].themeId : '',
+    theme_name: themes.length ? themes[0].themeName : '',
+    selected_cells: JSON.parse(o.selected_cells || '[]'),
+    delivery: delivery,
+    delivery_file_count: delivery.length,
+    merch_items: merchItems,
+    merch_total: merchItems.reduce((s, it) => s + Number(it && it.price ? it.price : 0) * Number(it && it.count ? it.count : 1), 0),
+    tracking: '',
+    amount: o.amount,
+    created_at: o.created_at
+  };
+}
+
+
+wxActions.createAIStudioOrder = (payload, openid) => {
+  const result = actions.createOrder(Object.assign({}, payload, { source: 'miniprogram' }));
+  if (!result.success) return result;
+  if (openid) db.prepare('UPDATE orders SET openid = ? WHERE order_id = ?').run(openid, result.orderId);
+  return ok({ order: { orderId: result.orderId, order_status: 'waiting_photos', photo_check: 'unchecked' } });
+};
+
+wxActions.uploadAIStudioPhoto = (payload, openid) => {
+  const chk = requireOrderWx(payload.orderId, openid);
+  if (chk.error) return chk.error;
+  const o = chk.order;
+  if (!['waiting_photos', 'photo_review'].includes(o.order_status)) return fail('VALIDATION_ERROR', '当前状态不可上传');
+  const fileID = clean(payload.fileID, 300);
+  if (!fileID) return fail('VALIDATION_ERROR', '缺少文件');
+  const count = orderFiles(o.order_id, 'customer').length;
+  if (count >= 3) return fail('VALIDATION_ERROR', '最多上传 3 张');
+  db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, file_name, uploaded_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(rid('file'), o.order_id, 'customer', fileID, clean(payload.fileName, 120), openid, nowStr());
+  if (o.order_status === 'waiting_photos') {
+    db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?').run('photo_review', nowStr(), o.order_id);
+  }
+  audit(o.order_id, openid, 'register_photo', { fileID });
+  return ok({ fileId: rid('file'), referencePhotoCount: count + 1 });
+};
+
+wxActions.submitAIStudioOrder = (payload, openid) => {
+  const chk = requireOrderWx(payload.orderId, openid);
+  if (chk.error) return chk.error;
+  const o = chk.order;
+  const count = orderFiles(o.order_id, 'customer').length;
+  if (count < 1) return fail('VALIDATION_ERROR', '请至少上传 1 张照片');
+  db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?').run('photo_review', nowStr(), o.order_id);
+  audit(o.order_id, openid, 'submit_order', { photos: count });
+  return ok({ order: { orderId: o.order_id, order_status: 'photo_review', photo_check: 'unchecked', reference_photo_count: count } });
+};
+
+wxActions.getAIStudioOrderDetail = (payload, openid) => {
+  const chk = requireOrderWx(payload.orderId, openid);
+  if (chk.error) return chk.error;
+  return ok({ order: wxOrderDetail(chk.order, orderFiles(chk.order.order_id)) });
+};
+
+wxActions.listMyAIStudioOrders = (payload, openid) => {
+  const rows = db.prepare('SELECT * FROM orders WHERE openid = ? ORDER BY created_at DESC LIMIT 50').all(openid);
+  return ok({ orders: rows.map(o => wxOrderDetail(o, orderFiles(o.order_id))) });
+};
+
+wxActions.queryAIStudioOrder = async (payload) => {
+  const result = actions.queryOrder(payload);
+  if (!result.success) return result;
+  const o = getOrder(payload.orderId);
+  const files = orderFiles(o.order_id).map(f => ({
+    fileId: f.file_id, fileType: f.file_type, fileID: f.url, fileName: f.file_name || '', size: 0, status: '', createdAt: f.created_at
+  }));
+  return ok({ order: Object.assign({}, result.order, { webToken: undefined }), files });
+};
+
+wxActions.selectAIStudioPortraitCells = (payload, openid) => {
+  const chk = requireOrderWx(payload.orderId, openid);
+  if (chk.error) return chk.error;
+  const o = chk.order;
+  if (o.order_status !== 'grid_preview') return fail('VALIDATION_ERROR', '当前状态不可选片');
+  const cells = Array.isArray(payload.cells) ? payload.cells.map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= 15) : [];
+  const target = (o.product_type === 'portrait') ? 5 : (ORDER_PRODUCTS.find(p => p.productId === o.product_id) || {}).deliveryCount || 1;
+  if (cells.length !== target) return fail('VALIDATION_ERROR', `请选择 ${target} 格`);
+  db.prepare('UPDATE orders SET selected_cells = ?, order_status = ?, updated_at = ? WHERE order_id = ?')
+    .run(JSON.stringify(cells), 'cell_selected', nowStr(), o.order_id);
+  audit(o.order_id, openid, 'select_cells', { cells });
+  return ok({ order: { orderId: o.order_id, order_status: 'cell_selected', selected_cells: cells } });
+};
+
+wxActions.selectAIStudioMerch = (payload, openid) => {
+  const chk = requireOrderWx(payload.orderId, openid);
+  if (chk.error) return chk.error;
+  const o = chk.order;
+  if (!Array.isArray(payload.items)) return fail('VALIDATION_ERROR', '周边选择无效');
+  const items = payload.items.slice(0, 20);
+  const total = items.reduce((s, it) => s + Number(it && it.price ? it.price : 0) * Number(it && it.count ? it.count : 1), 0);
+  db.prepare('UPDATE orders SET merch_selected = ?, order_status = ?, updated_at = ? WHERE order_id = ?')
+    .run(JSON.stringify(items), 'merch_pending', nowStr(), o.order_id);
+  audit(o.order_id, openid, 'select_merch', { count: items.length, total });
+  return ok({ order: { orderId: o.order_id, order_status: 'merch_pending', merch_total: Math.round(total * 100) / 100 } });
+};
+
+wxActions.listAIStudioSamples = () => actions.samples();
+wxActions.listAIStudioMerchandise = () => {
+  const rows = db.prepare('SELECT * FROM merchandise WHERE enabled = 1 ORDER BY sort_order LIMIT 60').all();
+  const data = rows.map(r => ({
+    merchId: r.merch_id, name: r.name, category: r.category, desc: r.description,
+    price: r.price, imageUrl: r.image_url, imageRatio: '4:5',
+    printSpec: JSON.parse(r.print_spec || '{}'), sortOrder: r.sort_order
+  }));
+  return ok({ data: data.length ? data : DEFAULT_MERCH });
+};
+wxActions.getAIStudioBusinessConfig = () => {
+  const p = getPricing();
+  return ok({ config: { baseThemePrice: p.basePrice, extraThemePrice: p.perTheme, maxThemes: p.maxThemes, photosPerTheme: 5 } });
+};
+wxActions.getAIStudioPaymentQR = () => actions.paymentQR();
+wxActions.getAIStudioRuntimeConfig = () => ok({ config: {} });
+wxActions.analyzeAIStudioPhoto = (payload) => actions.analyzePhoto(payload);
+wxActions.callAIStudioCustomerService = (payload, openid) => {
+  const message = clean(payload.message || payload.question, 500);
+  if (!message) return fail('VALIDATION_ERROR', '请输入咨询内容');
+  return ok({ response: '您好，我是浅焦映像的客服助手。您的问题已收到：「' + message.slice(0, 60) + '」。拍摄相关的问题：上传清晰正脸照后由 AI 生成写真，成片 1-3 个工作日交付。如有订单问题请在订单页查询或联系商家微信。', provider: 'local_fallback' });
+};
+
+app.post('/api/open/wx/:action', async (req, res) => {
+  const action = clean(req.params.action, 40);
+  const handler = wxActions[action];
+  if (!handler) return res.json(fail('VALIDATION_ERROR', '不支持的 action'));
+  const openid = wxUser(req);
+  const adminActions = ['adminLogin', 'adminListAIStudioOrders', 'adminReviewAIStudioOrder', 'adminMarkAIStudioOrderPaid', 'adminDeliverAIStudioOrder', 'adminSetAIStudioPaymentQR', 'adminUpsertAIStudioSamples', 'adminUpsertAIStudioBusinessConfig', 'adminUpdateMerchProduction', 'generateAIStudioImage', 'exportAIStudioPrintFile', 'adminUploadAIStudioGridPreview', 'adminUpsertAIStudioRuntimeConfig', 'getAIStudioRuntimeConfig'];
+  const needsAuth = !adminActions.includes(action) && !['listAIStudioSamples', 'listAIStudioMerchandise', 'getAIStudioBusinessConfig', 'getAIStudioPaymentQR', 'queryAIStudioOrder', 'analyzeAIStudioPhoto'].includes(action);
+  if (needsAuth && !openid) return res.json(fail('UNAUTHENTICATED', '请先登录'));
+  try {
+    res.json(await handler(req.body || {}, openid));
+  } catch (e) {
+    console.error('wx action failed:', action, e);
+    res.json(fail('INTERNAL_ERROR', '服务开小差了，请稍后重试'));
+  }
+});
+
+/* 小程序上传：multipart，X-User-Token 鉴权（openid 归属校验在登记时做） */
+app.post('/api/upload/wx', upload.single('file'), async (req, res) => {
+  try {
+    const openid = wxUser(req.headers['x-user-token']);
+    if (!openid) return res.json(fail('UNAUTHENTICATED', '请先登录'));
+    const { orderId, cloudPath } = req.body;
+    if (orderId) {
+      const chk = requireOrderWx(orderId, openid);
+      if (chk.error) return res.json(chk.error);
+    }
+    if (!req.file) return res.json(fail('VALIDATION_ERROR', '缺少文件'));
+    const safePath = (clean(cloudPath, 120) || 'photo-' + Date.now()).replace(/[^\w.-]/g, '_');
+    const rel = path.join('orders', orderId || 'wx-analysis', safePath);
+    const ext = (path.extname(req.file.originalname || '') || '.jpg').slice(0, 6).toLowerCase();
+    const abs = path.join(UPLOAD_ROOT, rel + ext);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, req.file.buffer);
+    res.json({ success: true, fileID: PUBLIC_ORIGIN + '/PM/uploads/' + (rel + ext).replace(/\\/g, '/') });
+  } catch (e) {
+    console.error('wx upload failed:', e);
+    res.json(fail('INTERNAL_ERROR', '上传失败，请重试'));
+  }
+});
+
 
 /* ---------------- 文件上传 ---------------- */
 app.post('/api/upload', upload.single('file'), (req, res) => {

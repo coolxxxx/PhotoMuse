@@ -175,7 +175,7 @@ Page({
     try {
       const ext = getFileExtension(firstPhoto.tempFilePath);
       // 分析用图不登记订单，走独立 analysis 路径
-      const uploadRes = await wx.cloud.uploadFile({
+      const uploadRes = await photomuseApi.uploadFile({
         cloudPath: `ai-studio/analysis/${Date.now()}-0.${ext}`,
         filePath: firstPhoto.tempFilePath
       });
@@ -249,7 +249,7 @@ Page({
 
       if (samples.length > 0) {
         const urlMap = {};
-        const urlResult = await wx.cloud.getTempFileURL({
+        const urlResult = await photomuseApi.getTempFileURL({
           fileList: samples.map(item => item.fileID)
         });
         (urlResult.fileList || []).forEach(file => {
@@ -460,7 +460,7 @@ Page({
       for (let i = 0; i < this.data.photos.length; i += 1) {
         const photo = this.data.photos[i];
         const ext = getFileExtension(photo.tempFilePath);
-        const uploadRes = await wx.cloud.uploadFile({
+        const uploadRes = await photomuseApi.uploadFile({
           cloudPath: `ai-studio/${orderId}/customer/${Date.now()}-${i}.${ext}`,
           filePath: photo.tempFilePath
         });
@@ -556,6 +556,7 @@ Page({
       await callFunction('queryAIStudioOrder', { orderId, contactPhone, queryPassword });
 
       const app = getApp();
+const photomuseApi = require("../../utils/photomuse-api.js");
       app.globalData.aiStudioOrderQuery = { orderId, contactPhone, queryPassword };
 
       wx.hideLoading();
@@ -689,7 +690,7 @@ function formatPrice(value) {
 
 function callFunction(name, data) {
   return new Promise((resolve, reject) => {
-    wx.cloud.callFunction({
+    photomuseApi.callFunction({
       name,
       data,
       success: res => {

@@ -156,6 +156,7 @@ Page({
 
   queryDetailByCredential() {
     const app = getApp();
+const photomuseApi = require("../../utils/photomuse-api.js");
     const query = app.globalData && app.globalData.aiStudioOrderQuery;
     if (!query || query.orderId !== this.data.orderId) {
       return Promise.reject(new Error('请返回证件照制作页重新查询订单'));
@@ -222,7 +223,7 @@ Page({
       for (let i = 0; i < this.data.retakePhotos.length; i += 1) {
         const photo = this.data.retakePhotos[i];
         const ext = getFileExtension(photo.tempFilePath);
-        const uploadRes = await wx.cloud.uploadFile({
+        const uploadRes = await photomuseApi.uploadFile({
           cloudPath: `ai-studio/${this.data.orderId}/customer-retake/${Date.now()}-${i}.${ext}`,
           filePath: photo.tempFilePath
         });
@@ -532,7 +533,7 @@ function formatAmount(value) {
 function getTempUrls(fileList) {
   if (!fileList.length) return Promise.resolve([]);
   return new Promise(resolve => {
-    wx.cloud.getTempFileURL({
+    photomuseApi.getTempFileURL({
       fileList,
       success: res => {
         resolve((res.fileList || []).map(item => item.tempFileURL).filter(Boolean));
@@ -545,7 +546,7 @@ function getTempUrls(fileList) {
 function getTempUrlMap(fileList) {
   if (!fileList.length) return Promise.resolve({});
   return new Promise(resolve => {
-    wx.cloud.getTempFileURL({
+    photomuseApi.getTempFileURL({
       fileList,
       success: res => {
         const map = {};
@@ -567,7 +568,7 @@ function getFileExtension(path) {
 
 function callFunction(name, data) {
   return new Promise((resolve, reject) => {
-    wx.cloud.callFunction({
+    photomuseApi.callFunction({
       name,
       data,
       success: res => {

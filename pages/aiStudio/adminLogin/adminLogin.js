@@ -39,6 +39,7 @@ Page({
       });
 
       const app = getApp();
+const photomuseApi = require("../../utils/photomuse-api.js");
       app.globalData.aiStudioAdminPassword = this.data.adminPassword;
 
       wx.showToast({ title: '登录成功', icon: 'success' });
@@ -55,7 +56,7 @@ Page({
 
 function callFunction(name, data) {
   return new Promise((resolve, reject) => {
-    wx.cloud.callFunction({
+    photomuseApi.callFunction({
       name,
       data,
       success: res => {

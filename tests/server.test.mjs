@@ -22,6 +22,8 @@ let dataDir = null;
 let uploadDir = null;
 
 let ADMIN_TOKEN = '';
+let WX_TOKEN = '';
+let WX_ORDER = '';
 let ORDER = null; // { orderId, webToken }
 
 const post = async (p, body, headers = {}) => {
@@ -49,6 +51,7 @@ before(async () => {
       PORT: String(PORT),
       PM_ADMIN_PASSWORD: ADMIN_PWD,
       PM_UPLOAD_ROOT: uploadDir,
+      PM_DATA_DIR: path.join(dataDir, 'data'),
       PM_AI_KEY: '',
       PM_PUBLIC_ORIGIN: 'https://test.example.com'
     }),
@@ -64,7 +67,15 @@ before(async () => {
   }
   throw new Error('测试服务未就绪');
 });
-after(() => { if (child) child.kill(); try { rmSync(dataDir, { recursive: true, force: true }); } catch (e) {} });
+after(() => {
+  if (child) {
+    try { child.kill('SIGKILL'); } catch (e) {}
+    if (process.platform === 'win32' && child.pid) {
+      try { spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' }); } catch (e) {}
+    }
+  }
+  try { rmSync(dataDir, { recursive: true, force: true }); } catch (e) {}
+});
 
 
 
@@ -239,10 +250,76 @@ test('admin samples：写入 2 条后可查', async () => {
   const q = await open('samples', {});
   assert.equal(q.data.length, 2);
 });
+/* ============ 9. 小程序兼容层 ============ */
+test('wx login：deviceId 换 token', async () => {
+  const r = await post('/api/wx/login', { deviceId: 'test-device-abc' });
+  assert.equal(r.success, true);
+  assert.ok(r.token.length > 20);
+  assert.ok(r.openid.startsWith('dev-'));
+  WX_TOKEN = r.token;
+});
+test('wx createAIStudioOrder：openid 归属', async () => {
+  const r = await post('/api/open/wx/createAIStudioOrder', { productId: 'portrait_suite_69', themes: ['travel'], contactPhone: '13900005555', queryPassword: 'wx-pwd-123', authorization: { isSelfOrAuthorized: 1, isAdult: 1, agreesProduction: 1 } }, { 'X-User-Token': WX_TOKEN });
+  assert.equal(r.success, true);
+  assert.equal(r.order.order_status, 'waiting_photos');
+  WX_ORDER = r.order.orderId;
+});
+test('wx getAIStudioOrderDetail：无 token 被拒 / 有 token 出全字段', async () => {
+  const no = await post('/api/open/wx/getAIStudioOrderDetail', { orderId: WX_ORDER });
+  assert.equal(no.code, 'UNAUTHENTICATED');
+  const r = await post('/api/open/wx/getAIStudioOrderDetail', { orderId: WX_ORDER }, { 'X-User-Token': WX_TOKEN });
+  assert.equal(r.success, true);
+  for (const k of ['order_status', 'payment_status', 'photo_check', 'themes', 'reference_photo_count', 'delivery_file_count']) {
+    assert.ok(k in r.order, '缺字段 ' + k);
+  }
+});
+test('wx 越权访问他人订单被拒', async () => {
+  const other = await post('/api/wx/login', { deviceId: 'another-device' });
+  const r = await post('/api/open/wx/getAIStudioOrderDetail', { orderId: WX_ORDER }, { 'X-User-Token': other.token });
+  assert.equal(r.code, 'FORBIDDEN');
+});
+test('wx listMyAIStudioOrders：只看自己的', async () => {
+  const r = await post('/api/open/wx/listMyAIStudioOrders', {}, { 'X-User-Token': WX_TOKEN });
+  assert.equal(r.success, true);
+  assert.ok(r.orders.length >= 1);
+  assert.ok(r.orders.every(o => o.orderId === WX_ORDER));
+});
+test('wx listAIStudioSamples / merchandise / businessConfig 免登录', async () => {
+  const s = await post('/api/open/wx/listAIStudioSamples', {});
+  assert.equal(s.success, true);
+  const m = await post('/api/open/wx/listAIStudioMerchandise', {});
+  assert.equal(m.data.length, 7);
+  const c = await post('/api/open/wx/getAIStudioBusinessConfig', {});
+  assert.equal(c.config.maxThemes, 3);
+});
+test('wx submitAIStudioOrder：未传照片被拒', async () => {
+  const r = await post('/api/open/wx/submitAIStudioOrder', { orderId: WX_ORDER }, { 'X-User-Token': WX_TOKEN });
+  assert.equal(r.code, 'VALIDATION_ERROR');
+});
+
 /* ============ 9. 审计 ============ */
+/* ============ 8b. 收款码 ============ */
+test('paymentQR：配置前 config 为 null', async () => {
+  const r = await open('paymentQR', {});
+  assert.equal(r.success, true);
+  assert.equal(r.config, null);
+});
+test('admin upload：无文件被拒', async () => {
+  const r = await post('/api/admin/upload', {}, { 'X-Admin-Token': ADMIN_TOKEN });
+  assert.equal(r.success, false);
+});
+test('admin payment-qr：保存后客户端可见 fileID/note', async () => {
+  const save = await post('/api/admin/payment-qr', { fileID: 'https://test.example.com/PM/uploads/payment/qr.png', note: '备注' }, { 'X-Admin-Token': ADMIN_TOKEN });
+  assert.equal(save.success, true);
+  const q = await open('paymentQR', {});
+  assert.equal(q.config.fileID, 'https://test.example.com/PM/uploads/payment/qr.png');
+  assert.equal(q.config.note, '备注');
+});
+
 test('audit：关键动作留痕', async () => {
   const r = await get('/api/admin/audit', { 'X-Admin-Token': ADMIN_TOKEN });
   const actions = r.logs.map(l => l.action);
+  console.log('DBG:', r.logs.length, actions.join(','), 'pid', child && child.pid);
   for (const a of ['create_order', 'register_photo', 'submit_order', 'review_pass', 'set_payment_qr']) {
     assert.ok(actions.includes(a), '缺审计: ' + a);
   }

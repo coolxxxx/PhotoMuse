@@ -18,6 +18,7 @@ const MAX_QTY = 9;
 const MAX_CART_ITEMS = 20;
 const PHOTO_LIMIT = 50;
 
+const photomuseApi = require("../../utils/photomuse-api.js");
 Page({
   data: {
     orderId: '',
@@ -317,11 +318,11 @@ function resolvePhotos(fileIDs) {
 
 function getTempUrl(fileID) {
   return new Promise(resolve => {
-    if (!wx.cloud || !wx.cloud.getTempFileURL) {
+    if (false) { /* 独立后端：恒可用 */
       resolve('');
       return;
     }
-    wx.cloud.getTempFileURL({
+    photomuseApi.getTempFileURL({
       fileList: [fileID],
       success: res => {
         const item = res.fileList && res.fileList[0];
@@ -380,7 +381,7 @@ function formatPrice(value) {
 
 function callFunction(name, data) {
   return new Promise((resolve, reject) => {
-    wx.cloud.callFunction({
+    photomuseApi.callFunction({
       name,
       data,
       success: res => {

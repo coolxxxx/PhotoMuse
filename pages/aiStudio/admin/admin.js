@@ -74,6 +74,7 @@ Page({
 
   ensureAdminPassword() {
     const app = getApp();
+const photomuseApi = require("../../utils/photomuse-api.js");
     if (app.globalData && app.globalData.aiStudioAdminPassword) return true;
 
     wx.showToast({ title: '请先管理登录', icon: 'none' });
@@ -393,7 +394,7 @@ Page({
     wx.showLoading({ title: '上传样张', mask: true });
 
     try {
-      const uploadRes = await wx.cloud.uploadFile({
+      const uploadRes = await photomuseApi.uploadFile({
         cloudPath: `ai-studio/samples/${themeId}/${Date.now()}.jpg`,
         filePath: tempFilePath
       });
@@ -735,7 +736,7 @@ Page({
     wx.showLoading({ title: '上传收款码', mask: true });
 
     try {
-      const uploadRes = await wx.cloud.uploadFile({
+      const uploadRes = await photomuseApi.uploadFile({
         cloudPath: `ai-studio/payment/qr-${Date.now()}.png`,
         filePath: tempFilePath
       });
@@ -915,7 +916,7 @@ Page({
       for (let i = 0; i < files.length; i += 1) {
         const tempFilePath = files[i].tempFilePath || files[i].path;
         const ext = getFileExtension(tempFilePath);
-        const uploadRes = await wx.cloud.uploadFile({
+        const uploadRes = await photomuseApi.uploadFile({
           cloudPath: `ai-studio/${orderId}/delivery/${Date.now()}-${i}.${ext}`,
           filePath: tempFilePath
         });
@@ -984,7 +985,7 @@ Page({
     wx.showLoading({ title: '上传预览网格', mask: true });
 
     try {
-      const uploadRes = await wx.cloud.uploadFile({
+      const uploadRes = await photomuseApi.uploadFile({
         cloudPath: `ai-studio/${orderId}/grid/${Date.now()}-0.jpg`,
         filePath: tempFilePath
       });
@@ -1140,7 +1141,7 @@ async function hydrateOrderImages(orders) {
 function getTempUrlMap(fileList) {
   if (!fileList.length) return Promise.resolve({});
   return new Promise(resolve => {
-    wx.cloud.getTempFileURL({
+    photomuseApi.getTempFileURL({
       fileList,
       success: res => {
         const map = {};
@@ -1194,7 +1195,7 @@ function valueToString(value) {
 
 function callFunction(name, data) {
   return new Promise((resolve, reject) => {
-    wx.cloud.callFunction({
+    photomuseApi.callFunction({
       name,
       data,
       success: res => {
