@@ -43,7 +43,8 @@ const PORTRAIT_THEMES = [
   { themeId: 'retro', name: '港风复古', desc: '九十年代胶片港风，浓颜明艳复古摩登。', sceneHint: '复古西装衬衫、胶片颗粒质感、暖黄霓虹与百叶窗光影，港星氛围' },
   { themeId: 'sino', name: '新中式', desc: '国潮新中式，茶香绢本间的东方新贵气。', sceneHint: '新中式改良服装、茶席绢本屏风、温润木色与留白构图，东方雅致' },
   { themeId: 'french', name: '法式油画', desc: '法式复古礼服，油画质感的光影浪漫。', sceneHint: '复古礼服、宫廷质感窗帘与烛台、油画色温与古典布光，优雅浓郁' },
-  { themeId: 'film', name: '胶片电影', desc: '电影感胶片纪实，每一帧都是故事截图。', sceneHint: '日常质感服装、自然场景、胶片色温与浅景深叙事构图，故事感氛围' }
+  { themeId: 'film', name: '胶片电影', desc: '电影感胶片纪实，每一帧都是故事截图。', sceneHint: '日常质感服装、自然场景、胶片色温与浅景深叙事构图，故事感氛围' },
+  { themeId: 'destination', name: '地标旅拍', desc: '海岛雪山沙漠瀑布，敢想的地标都给你拍到位。', sceneHint: '全球旅拍地标场景：热带海岛、雪山垭口、沙漠驼影、山间瀑布等大场景，人物清晰构图辽阔；客户可在场景描述中指定具体地标' }
 ];
 
 const STYLES = [

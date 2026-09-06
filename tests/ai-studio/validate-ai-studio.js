@@ -50,7 +50,7 @@ function main() {
   assert.strictEqual(config.PRODUCTS.length, 3, '证件照制作应开放 3 个套餐（含 AI 写真套图）');
   assert.strictEqual(config.STYLES.length, 4, '证件照制作一期应只开放 4 个证件照/简历照风格');
   assert.strictEqual(config.PRODUCTS[0].price, 3.9, '引流证件照体验版价格应为 3.9');
-  assert(Array.isArray(config.PORTRAIT_THEMES) && config.PORTRAIT_THEMES.length === 10, 'AI 写真套图应提供 10 个可选主题');
+  assert(Array.isArray(config.PORTRAIT_THEMES) && config.PORTRAIT_THEMES.length === 11, 'AI 写真套图应提供 11 个可选主题');
   assert(config.STATUS_LABELS.grid_preview, '状态字典应包含网格预览待选片状态');
   assert(config.STATUS_LABELS.cell_selected, '状态字典应包含已选片制作中状态');
   assert(config.PRODUCT_EXAMPLES.id_photo_9_9, '证件照体验版应配置效果范例');

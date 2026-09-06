@@ -84,7 +84,7 @@ test('catalog 返回 3 套餐 / 10 主题 / 5 风格', async () => {
   const r = await open('catalog', {});
   assert.equal(r.success, true);
   assert.equal(r.products.length, 3);
-  assert.equal(r.themes.length, 10);
+  assert.equal(r.themes.length, 11);
   assert.equal(r.styles.length, 5);
 });
 
