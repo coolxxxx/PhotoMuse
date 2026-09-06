@@ -1051,6 +1051,7 @@ input[type="text"], input[type="tel"], input[type="password"], input[type="numbe
   }
   .page > .grid-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
   .grid-col-a { position: sticky; top: 76px; }   /* 选购列随滚动固定，右侧流程滚动 */
+  .grid-col-b { min-width: 0; }                    /* 流程列：随页面滚动 */
   .page > .card, .page > .btn, .page > .muted { margin-left: 0; margin-right: 0; }
 
   /* hero 两栏：左文案，右样张叠放 */

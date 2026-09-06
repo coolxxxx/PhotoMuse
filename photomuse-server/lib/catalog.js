@@ -38,7 +38,12 @@ const PORTRAIT_THEMES = [
   { themeId: 'sports', name: '运动活力', desc: '球场街头双场景切换，定格你最飒的动感瞬间。', sceneHint: '球场、街头、城市跑道，动感构图配高对比光影，元气氛围直接拉满' },
   { themeId: 'casual', name: '休闲日常', desc: '咖啡居家街拍三连，把松弛感日常拍成高光时刻。', sceneHint: '咖啡店、居家窗边、街头随拍，自然光加浅景深，轻松拿捏氛围感' },
   { themeId: 'travel', name: '旅拍风光', desc: '海边古镇山野任你选，一张照片装下整段旅程。', sceneHint: '海边日落、古镇石巷、山野草原，大场景构图配旅行穿搭，出片即封面' },
-  { themeId: 'family', name: '亲子合照', desc: '从温馨互动到全家福，把陪伴拍成值得收藏的样子。', sceneHint: '温馨互动、拥抱对视、全家福站位，柔和暖调光线，幸福感溢出屏幕' }
+  { themeId: 'family', name: '亲子合照', desc: '从温馨互动到全家福，把陪伴拍成值得收藏的样子。', sceneHint: '温馨互动、拥抱对视、全家福站位，柔和暖调光线，幸福感溢出屏幕' },
+  { themeId: 'professional', name: '职业形象照', desc: '西装礼服配杂志封面布光，职场人设一步到位。', sceneHint: '商务正装、简洁渐变背景、杂志封面级职业形象，自信专业气质' },
+  { themeId: 'retro', name: '港风复古', desc: '九十年代胶片港风，浓颜明艳复古摩登。', sceneHint: '复古西装衬衫、胶片颗粒质感、暖黄霓虹与百叶窗光影，港星氛围' },
+  { themeId: 'sino', name: '新中式', desc: '国潮新中式，茶香绢本间的东方新贵气。', sceneHint: '新中式改良服装、茶席绢本屏风、温润木色与留白构图，东方雅致' },
+  { themeId: 'french', name: '法式油画', desc: '法式复古礼服，油画质感的光影浪漫。', sceneHint: '复古礼服、宫廷质感窗帘与烛台、油画色温与古典布光，优雅浓郁' },
+  { themeId: 'film', name: '胶片电影', desc: '电影感胶片纪实，每一帧都是故事截图。', sceneHint: '日常质感服装、自然场景、胶片色温与浅景深叙事构图，故事感氛围' }
 ];
 
 const STYLES = [
