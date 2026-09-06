@@ -29,7 +29,31 @@ if (!ADMIN_PASSWORD) { console.error('缺少 PM_ADMIN_PASSWORD 环境变量'); p
 seedConfig('pricing', DEFAULT_PRICING);
 
 const app = express();
+/* ---------------- 轻量限流（IP 滑动窗口，防刷） ---------------- */
+const RATE_LIMIT = { windowMs: 60000, max: parseInt(process.env.PM_RATE_MAX || '120', 10) };
+const rateBuckets = new Map();
+setInterval(() => { rateBuckets.clear(); }, RATE_LIMIT.windowMs).unref();
+app.use((req, res, next) => {
+  const ip = (req.headers['x-real-ip'] || req.socket.remoteAddress || 'unknown').toString();
+  const nowMs = Date.now();
+  let bucket = rateBuckets.get(ip);
+  if (!bucket || nowMs - bucket.start > RATE_LIMIT.windowMs) {
+    bucket = { start: nowMs, count: 0 };
+    rateBuckets.set(ip, bucket);
+  }
+  bucket.count++;
+  if (bucket.count > RATE_LIMIT.max) {
+    return res.status(429).json({ success: false, code: 'RATE_LIMITED', message: '请求太频繁，请稍后再试' });
+  }
+  next();
+});
+
 app.use(express.json({ limit: '2mb' }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
 
 const upload = multer({
   storage: multer.memoryStorage(),
