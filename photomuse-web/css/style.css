@@ -1177,8 +1177,8 @@ a { color: #8A6D2F; }
 }
 
 /* ============================================================
- * v3.4 动态影廊（AI 图生视频样张）
- * 视频 = AI 让照片动起来的成片；滚动进视口自动播放，离开暂停
+ * v3.5 动态影廊（AI 图生视频样张）
+ * 默认静态海报；后台限流预载；hover/点按播放，离场暂停
  * ============================================================ */
 .motion-gallery { margin: 34px 0 6px; }
 .motion-gallery-head { display: flex; align-items: baseline; gap: 10px; padding: 0 2px 14px; }
@@ -1189,18 +1189,36 @@ a { color: #8A6D2F; }
   position: relative; overflow: hidden; border-radius: var(--radius-card);
   background: #F7F4EE; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
   cursor: pointer;
+  transition: transform .28s ease;
+  aspect-ratio: 490 / 856;
 }
 .motion-item video, .motion-item img {
-  width: 100%; display: block; aspect-ratio: 490 / 856; object-fit: cover;
+  width: 100%; height: 100%; display: block;
+  object-fit: cover;
+}
+.motion-item video {
+  position: absolute; inset: 0; opacity: 0;
+  transition: opacity .35s ease;
+  background: #0d0e11;
 }
 .motion-item img { position: absolute; inset: 0; transition: opacity .45s ease; }
-.motion-item video.ready ~ img, .motion-item.playing img { opacity: 0; }
+/* 仅在「正在播放」时露出视频；预载 ready 不再抢显 */
+.motion-item.playing video { opacity: 1; }
+.motion-item.playing img { opacity: 0; }
 .motion-badge {
   position: absolute; top: 8px; right: 8px; z-index: 3;
   font-size: 10px; letter-spacing: 2px; color: var(--dr-gold-bright);
   background: rgba(21, 22, 26, 0.72); border: 1px solid var(--dr-gold-dim);
   padding: 3px 8px; border-radius: 3px; pointer-events: none;
+  transition: color .25s ease, border-color .25s ease, background .25s ease;
 }
+.motion-item.is-hover .motion-badge,
+.motion-item.playing .motion-badge {
+  color: #fff;
+  border-color: var(--dr-gold-bright);
+  background: rgba(200, 168, 107, 0.28);
+}
+.motion-item.is-hover { transform: translateY(-2px); }
 .motion-caption {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
   padding: 22px 10px 8px; font-size: 11px; color: #F5F2EC; text-align: center;
@@ -1208,4 +1226,8 @@ a { color: #8A6D2F; }
 }
 @media (min-width: 1024px) {
   .motion-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-item, .motion-item.is-hover { transition: none; transform: none; }
+  .motion-item video, .motion-item img { transition: none; }
 }
