@@ -18,3 +18,16 @@ cloudfunctions/*/node_modules/
 # 部署密钥（本地保存，不入公开仓库）
 .deploy-secrets.json
 output/
+
+# 后端运行态数据（SQLite 及本地文件，生产数据不入库）
+photomuse-server/lib/data/
+photomuse-server/uploads/
+photomuse-server/node_modules/
+
+# 独立后端迁移后的孤儿资源（CloudBase SDK / 站点配置 / 传输补丁均已废弃）
+photomuse-web/js/config.js
+photomuse-web/js/vendor/
+photomuse-web/js/tcb-transport.js
+
+# 源码压缩包（文件夹版已入库）
+*.zip
