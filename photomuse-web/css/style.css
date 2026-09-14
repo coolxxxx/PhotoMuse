@@ -1231,3 +1231,99 @@ a { color: #8A6D2F; }
   .motion-item, .motion-item.is-hover { transition: none; transform: none; }
   .motion-item video, .motion-item img { transition: none; }
 }
+
+/* ============================================================
+ * v3.5 视差滚动带（Parallax Banner）
+ * 风景大图随滚动产生纵深位移 —— "去不了的地方也能拍成背景"
+ * ============================================================ */
+.parallax-bands {
+  position: relative;
+  /* 视差位移量默认值（JS 按滚动进度覆盖；静态降级即保持此值） */
+  --px: 0%;
+  --px-copy: 0px;
+  --px-fade: 1;
+}
+.parallax-band {
+  position: relative;
+  height: 62vh;
+  min-height: 320px;
+  max-height: 520px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+.parallax-media {
+  position: absolute;
+  inset: -12% 0;                 /* 上下多出余量，位移时不露底 */
+  z-index: 0;
+  will-change: transform;
+  transform: translate3d(0, var(--px, 0), 0) scale(1.06);
+}
+.parallax-media img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.parallax-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(18, 19, 23, 0.55) 0%, rgba(18, 19, 23, 0.25) 45%, rgba(18, 19, 23, 0.72) 100%);
+}
+.parallax-copy {
+  position: relative; z-index: 2;
+  text-align: center;
+  padding: 0 22px;
+  max-width: 620px;
+  transform: translate3d(0, var(--px-copy, 0), 0);
+  opacity: var(--px-fade, 1);
+}
+.parallax-eyebrow {
+  margin: 0 0 10px;
+  font-size: 10px; letter-spacing: 0.34em;
+  color: var(--dr-gold-bright);
+  text-transform: uppercase;
+}
+.parallax-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(38px, 7vw, 68px);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: #F7F4EE;
+  text-shadow: 0 4px 40px rgba(0, 0, 0, 0.55);
+}
+.parallax-sub {
+  margin: 12px 0 20px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: rgba(247, 244, 238, 0.82);
+}
+.parallax-cta {
+  display: inline-block;
+  padding: 10px 26px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--dr-gold-bright);
+  border: 1px solid var(--dr-gold-dim);
+  border-radius: 2px;
+  background: rgba(21, 22, 26, 0.35);
+  backdrop-filter: blur(3px);
+  text-decoration: none;
+  transition: background .3s ease, border-color .3s ease;
+}
+.parallax-cta:hover { background: rgba(200, 168, 107, 0.16); border-color: var(--dr-gold); }
+
+@media (min-width: 1024px) {
+  .parallax-band { height: 78vh; max-height: 680px; }
+}
+
+/* 影廊在桌面双栏栅格中跨列铺满（视差带已移出 .page，天然全幅） */
+@media (min-width: 1024px) {
+  .page > .motion-gallery { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .parallax-media { transform: none; }
+  .parallax-copy { transform: none; opacity: 1; }
+}
