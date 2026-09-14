@@ -628,7 +628,21 @@ button { font-family: inherit; }
 .theme-desc { margin: 0; padding-bottom: 4px; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
 
 /* ---------- 主题样张：拍立得白边（下宽边 + 轻微 rotate） ---------- */
-.sample-slot { padding: 0 12px 10px; }
+/* 未选中的主题不展示样张：列表更紧凑清晰，选中后才展开预览 */
+.sample-slot { display: none; padding: 0 12px 12px; }
+.theme-block.selected .sample-slot { display: block; }
+/* 桌面全幅下样张略放大 */
+@media (min-width: 1024px) {
+  .theme-block .sample-scroll { padding-bottom: 2px; }
+  .sample-slot, .sample-scroll { min-width: 0; max-width: 100%; }
+  /* 双列紧凑：减小内边距与勾选点偏移，控制在窄半列内可读 */
+  .theme-chip { padding: 11px 10px 7px 24px; }
+  .theme-block.selected::before { left: 8px; top: 19px; width: 7px; height: 7px; }
+  .theme-name { font-size: 13.5px; }
+  .theme-desc { font-size: 11.5px; }
+  .theme-desc { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .theme-check { width: 18px; height: 18px; line-height: 17px; font-size: 11px; }
+}
 .sample-scroll {
   margin-top: 6px;
   overflow-x: auto;
@@ -1034,6 +1048,7 @@ input[type="text"], input[type="tel"], input[type="password"], input[type="numbe
     max-width: 760px;
     padding: 32px 28px 64px;
   }
+  .page-cols { display: flex; flex-direction: column; gap: 22px; }
   .hero { padding-top: 52px; padding-bottom: 44px; }
   .hero-title, .hero h1 { font-size: clamp(40px, 6vw, 58px); }
   .nav { padding: 18px 32px; }
@@ -1041,18 +1056,22 @@ input[type="text"], input[type="tel"], input[type="password"], input[type="numbe
 
 /* ---- 桌面：脱离窄柱，双栏栅格 + hero 两栏 ---- */
 @media (min-width: 1024px) {
+  /* .page 为普通容器（全幅区块如系列区/影廊自然铺满）；下单两栏由 .page-cols 承载 */
   .page {
     max-width: 1180px;
+    padding: 44px 40px 90px;
+  }
+  .page-cols {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
     align-items: start;
-    padding: 44px 40px 90px;
+    margin-bottom: 24px;
+    grid-auto-flow: dense;   /* 两列高度不齐时回溯填充，减少留白 */
   }
-  .page > .grid-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-  .grid-col-a { position: sticky; top: 76px; }   /* 选购列随滚动固定，右侧流程滚动 */
-  .grid-col-b { min-width: 0; }                    /* 流程列：随页面滚动 */
-  .page > .card, .page > .btn, .page > .muted { margin-left: 0; margin-right: 0; }
+  .page-cols > .grid-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+  .grid-col-a { position: sticky; top: 76px; }
+  .grid-col-b { min-width: 0; }
 
   /* hero 两栏：左文案，右样张叠放 */
   .hero {
@@ -1068,8 +1087,8 @@ input[type="text"], input[type="tel"], input[type="password"], input[type="numbe
   .nav { max-width: 1180px; margin: 0 auto; }
 
   /* 桌面套餐/主题/风格列表横向舒展 */
-  .product-list, .theme-list, .option-list { display: grid; gap: 12px; }
-  .theme-list { grid-template-columns: 1fr 1fr; }
+  .product-list, .theme-list, .option-list { display: grid; gap: 0; }
+  .theme-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ---- 超宽屏（≥1440px）：三档字号微调，保持品牌一致 ---- */
@@ -1225,7 +1244,7 @@ a { color: #8A6D2F; }
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); pointer-events: none;
 }
 @media (min-width: 1024px) {
-  .motion-grid { grid-template-columns: repeat(4, 1fr); }
+  .motion-grid { grid-template-columns: repeat(6, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   html:not(.pm-motion-on) .motion-item, html:not(.pm-motion-on) .motion-item.is-hover { transition: none; transform: none; }
@@ -1319,10 +1338,6 @@ a { color: #8A6D2F; }
   .parallax-band { height: 78vh; max-height: 680px; }
 }
 
-/* 影廊在桌面双栏栅格中跨列铺满（视差带已移出 .page，天然全幅） */
-@media (min-width: 1024px) {
-  .page > .motion-gallery { grid-column: 1 / -1; }
-}
 /* 系统减少动画时静态化；用户在本站显式开启动效则让位（html.pm-motion-on） */
 @media (prefers-reduced-motion: reduce) {
   html:not(.pm-motion-on) .parallax-media { transform: scale(1.06); }
@@ -1350,7 +1365,7 @@ a { color: #8A6D2F; }
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
   transition: transform .35s cubic-bezier(.22,.61,.36,1), box-shadow .35s ease, border-color .35s ease;
 }
-.series-shot { display: block; position: relative; aspect-ratio: 3 / 4; overflow: hidden; background: #F4F4F1; }
+.series-shot { display: block; position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #F4F4F1; }
 .series-shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s cubic-bezier(.22,.61,.36,1); }
 .series-meta { display: block; padding: 10px 12px 12px; }
 .series-name { display: block; font-size: 14px; font-weight: 600; letter-spacing: 1px; }
@@ -1364,8 +1379,15 @@ a { color: #8A6D2F; }
   .series-card:hover { transform: translateY(-4px); box-shadow: 0 16px 38px rgba(0, 0, 0, 0.5); border-color: var(--dr-gold-dim); }
   .series-card:hover .series-shot img { transform: scale(1.06); }
 }
-@media (min-width: 768px) { .series-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 1024px) { .series-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 768px) { .series-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1024px) {
+  .series-grid { grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  /* 桌面：入口卡片信息精简，突出样张本身 */
+  .series-desc { display: none; }
+  .series-meta { padding: 8px 10px 10px; }
+  .series-name { font-size: 13px; }
+  .series-count { margin-top: 4px; font-size: 9.5px; }
+}
 
 /* ============================================================
  * v3.7 动效开关（悬浮，右下角）
