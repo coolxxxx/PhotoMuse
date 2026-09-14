@@ -10,7 +10,8 @@
   'use strict';
 
   var IMG_BASE = '/PM/img/landscape/';
-  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* 统一动效开关：用户在本站的选择优先于系统偏好（见 js/motion-pref.js） */
+  var prefersReduced = (typeof window.PM_MOTION_ON === 'boolean') ? !window.PM_MOTION_ON : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var DEFAULT_SLIDES = [
     { file: 'island.jpg', eyebrow: 'MALDIVES · 马尔代夫', title: '海岛', sub: '玻璃海与白沙曲线，航拍视角' },
@@ -62,9 +63,10 @@
       /* 进度：-1（即将进入）→ 0（居中）→ 1（离开） */
       var progress = (rect.top + rect.height / 2 - vh / 2) / (vh / 2 + rect.height / 2);
       progress = Math.max(-1, Math.min(1, progress));
-      band._media.style.setProperty('--px', (progress * 22).toFixed(2) + '%');
-      band._copy.style.setProperty('--px-copy', (progress * -40).toFixed(1) + 'px');
-      band._copy.style.setProperty('--px-fade', String(1 - Math.min(1, Math.abs(progress) * 1.5)));
+      var px = (progress * rect.height * 0.22).toFixed(1);
+      band._media.style.transform = 'translateY(' + px + 'px) scale(1.06)';
+      band._copy.style.transform = 'translateY(' + (progress * -40).toFixed(1) + 'px)';
+      band._copy.style.opacity = String(1 - Math.min(1, Math.abs(progress) * 1.5));
     });
   }
 
@@ -97,15 +99,17 @@
     /* reduced-motion：保留静态风景展示（内容不丢），仅禁用位移动效 */
     if (prefersReduced) {
       bands.forEach(function (band) {
-        band._media.style.setProperty('--px', '0%');
-        band._copy.style.setProperty('--px-copy', '0px');
-        band._copy.style.setProperty('--px-fade', '1');
+        band._media.style.transform = 'scale(1.06)';
+        band._copy.style.transform = 'none';
+        band._copy.style.opacity = '1';
       });
       return;
     }
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     update();
+    /* 首帧后再算一次：等布局稳定（图片解码/字体）避免首屏进度取值偏差 */
+    requestAnimationFrame(function () { update(); setTimeout(update, 300); });
   }
 
   if (document.readyState === 'loading') {

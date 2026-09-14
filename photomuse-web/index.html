@@ -6,7 +6,7 @@
   <title>在线下单 · 浅焦映像</title>
   <meta name="description" content="浅焦映像 在线下单：上传一张照片，生成证件照、职业形象照与多主题 AI 写真。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=16">
 </head>
 <body>
   <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
@@ -33,6 +33,15 @@
     <noscript><div class="warn-box">本站需要启用 JavaScript 才能下单。</div></noscript>
 
     
+    <section class="series-gallery reveal-card" id="series-gallery" aria-label="系列作品集">
+      <div class="series-head">
+        <span class="pm-sec-mark">№</span>
+        <h2 class="series-title">系列作品集</h2>
+        <span class="series-sub">11 个主题 · 点选即可下单</span>
+      </div>
+      <div class="series-grid" id="series-grid"><div class="img-loading">作品集加载中…</div></div>
+    </section>
+
     <section class="motion-gallery reveal-card" id="motion-gallery" aria-label="动态影廊">
       <div class="motion-gallery-head">
         <span class="pm-sec-mark">№</span>
@@ -160,8 +169,9 @@
 
   <footer class="footer">浅焦映像 · 上传一张照片，生成证件照、形象照与 AI 写真</footer>
 
+  <script src="js/motion-pref.js?v=2"></script>
   <script src="js/motion.js?v=1"></script>
-  <script src="js/parallax-banner.js?v=2"></script>
+  <script src="js/parallax-banner.js?v=5"></script>
   <script src="js/motion-gallery.js?v=3"></script>
   <script src="js/api.js?v=10"></script>
   <script>
@@ -183,6 +193,22 @@
         { themeId: 'travel', name: '旅拍风光', desc: '海边古镇山野任你选，一张照片装下整段旅程。', sceneHint: '海边日落、古镇石巷、山野草原，大场景构图配旅行穿搭，出片即封面' },
         { themeId: 'family', name: '亲子合照', desc: '从温馨互动到全家福，把陪伴拍成值得收藏的样子。', sceneHint: '温馨互动、拥抱对视、全家福站位，柔和暖调光线，幸福感溢出屏幕' },{ themeId: 'professional', name: '职业形象照', desc: '西装礼服配杂志封面布光，职场人设一步到位。', sceneHint: '商务正装、简洁渐变背景、杂志封面级职业形象，自信专业气质' },{ themeId: 'retro', name: '港风复古', desc: '九十年代胶片港风，浓颜明艳复古摩登。', sceneHint: '复古西装衬衫、胶片颗粒质感、暖黄霓虹与百叶窗光影，港星氛围' },{ themeId: 'sino', name: '新中式', desc: '国潮新中式，茶香绢本间的东方新贵气。', sceneHint: '新中式改良服装、茶席绢本屏风、温润木色与留白构图，东方雅致' },{ themeId: 'french', name: '法式油画', desc: '法式复古礼服，油画质感的光影浪漫。', sceneHint: '复古礼服、宫廷质感窗帘与烛台、油画色温与古典布光，优雅浓郁' },{ themeId: 'film', name: '胶片电影', desc: '电影感胶片纪实，每一帧都是故事截图。', sceneHint: '日常质感服装、自然场景、胶片色温与浅景深叙事构图，故事感氛围' },{ themeId: 'destination', name: '地标旅拍', desc: '海岛雪山沙漠瀑布，敢想的地标都给你拍到位。', sceneHint: '全球旅拍地标场景：热带海岛、雪山垭口、沙漠驼影、山间瀑布等大场景，人物清晰构图辽阔；客户可在场景描述中指定具体地标' }
       ];
+
+      /* 内嵌默认目录：首屏立即渲染（免除首次建连等待），随后由接口异步校正 */
+      const DEFAULT_CATALOG = {
+        products: [
+          { productId: 'id_photo_9_9', productType: 'standard', name: '证件照体验版', price: 3.9, description: '1 个规格，1 张高清电子版，适合考试报名、身份照、社保资料。', deliveryCount: 1, productionLine: 'auto' },
+          { productId: 'resume_photo_29_9', productType: 'standard', name: '简历形象照', price: 29.9, description: '1 个商务风格，适合简历、职业平台和工牌头像。', deliveryCount: 3, productionLine: 'semi-auto' },
+          { productId: 'portrait_suite_69', productType: 'portrait', name: '人像写真套系', price: 69.9, description: '多风格人像写真，5 张精修成片，人工拍摄指导与精修交付。', deliveryCount: 5, productionLine: 'manual' }
+        ],
+        styles: [
+          { styleId: 'std_white', name: '标准白底证件照', backgroundColor: '白色' },
+          { styleId: 'std_blue', name: '蓝底报名照', backgroundColor: '蓝色' },
+          { styleId: 'std_gray', name: '灰底商务证件照', backgroundColor: '深灰色' },
+          { styleId: 'resume_shirt', name: '白衬衫简历照', backgroundColor: '浅灰色' },
+          { styleId: 'casual_nat', name: '自然光人像写真', backgroundColor: '原场景' }
+        ]
+      };
 
       /* 多主题阶梯定价兜底值（businessConfig 接口可覆盖） */
       const DEFAULT_PRICING = { baseThemePrice: 69.9, extraThemePrice: 39.9, maxThemes: 3, photosPerTheme: 5 };
@@ -261,25 +287,33 @@
 
       /* ---------- 套餐目录 ---------- */
       const loadCatalog = async () => {
-        els.productList.innerHTML = '<div class="img-loading">套餐加载中…</div>';
-        els.catalogError.classList.add('hidden');
-        try {
-          PM.showLoading('正在加载套餐…');
-          const res = await PM.callApi('catalog');
-          PM.hideLoading();
-          state.products = res.products || [];
-          state.styles = res.styles || [];
+        /* 首屏：立即用内嵌目录渲染，不等网络（消除首次建连导致的"卡在载入套餐"） */
+        if (!state.products.length) {
+          state.products = DEFAULT_CATALOG.products;
+          state.styles = DEFAULT_CATALOG.styles;
           renderProducts();
           renderStyles();
           if (state.products.length) { selectProduct(state.products[0].productId); }
+        }
+        /* 后台校正：产品/价格可能已在后台调整，拉到后无损覆盖（保留用户当前选择） */
+        els.catalogError.classList.add('hidden');
+        try {
+          const res = await PM.callApi('catalog');
+          const keepId = state.productId;
+          state.products = (res.products && res.products.length) ? res.products : state.products;
+          state.styles = (res.styles && res.styles.length) ? res.styles : state.styles;
+          renderProducts();
+          renderStyles();
+          const stillValid = state.products.some((p) => p.productId === keepId);
+          selectProduct(stillValid ? keepId : (state.products[0] ? state.products[0].productId : ''));
         } catch (e) {
-          PM.hideLoading();
-          els.productList.innerHTML = '';
-          els.catalogError.classList.remove('hidden');
-          /* 把真实错误写进告警框（区别：函数层错误 / 登录层错误 / 域名拦截） */
-          els.catalogError.textContent = '套餐加载失败：' + (e && e.message ? e.message : '未知错误');
-          console.error('catalog 加载失败:', e);
-          PM.toast(e.message || '套餐加载失败', 'error');
+          /* 内嵌目录已渲染，接口失败不阻断下单；仅在无内容时提示 */
+          if (!state.products.length) {
+            els.productList.innerHTML = '';
+            els.catalogError.classList.remove('hidden');
+            els.catalogError.textContent = '套餐加载失败：' + (e && e.message ? e.message : '未知错误');
+          }
+          console.error('catalog 校正失败（已用内嵌目录兜底）:', e);
         }
       };
 
@@ -450,6 +484,46 @@
         }
         state.samplesLoaded = true;
         renderSamples();
+        renderSeries();
+      };
+
+      /* 系列作品集：每个主题取一张样张作封面，点击选中该主题并跳到下单区 */
+      /* 系列作品集：每主题一张封面样张，点击=选中该主题并跳到下单区 */
+      const renderSeries = () => {
+        const grid = document.getElementById('series-grid');
+        if (!grid) return;
+        const themes = PORTRAIT_THEMES.filter((t) => (state.samplesByTheme[t.themeId] || []).some((s) => s.url));
+        if (!themes.length) {
+          grid.innerHTML = '<div class="series-empty">作品集加载中…</div>';
+          return;
+        }
+        grid.innerHTML = themes.map((t) => {
+          const list = (state.samplesByTheme[t.themeId] || []).filter((s) => s.url);
+          const cover = list[0];
+          return '<button type="button" class="series-card" data-theme="' + esc(t.themeId) + '">' +
+            '<span class="series-shot"><img src="' + esc(cover.url) + '" alt="' + esc(t.name) + '样张" loading="lazy"></span>' +
+            '<span class="series-meta">' +
+              '<span class="series-name">' + esc(t.name) + '</span>' +
+              '<span class="series-desc">' + esc(t.desc || '') + '</span>' +
+              '<span class="series-count">' + list.length + ' 张样张 · 点击选用</span>' +
+            '</span>' +
+          '</button>';
+        }).join('');
+        grid.querySelectorAll('.series-card').forEach((card) => {
+          card.addEventListener('click', () => {
+            const tid = card.getAttribute('data-theme');
+            /* 主题区只在写真套餐下可见，先切过去 */
+            const cur = state.products.find((p) => p.productId === state.productId);
+            if (!cur || !isPortrait(cur)) {
+              const portrait = state.products.find((p) => isPortrait(p));
+              if (portrait) selectProduct(portrait.productId);
+            }
+            /* 未选中才加入（避免点击已选项反而取消） */
+            if (state.selectedThemes.indexOf(tid) < 0) { toggleTheme(tid); }
+            const target = document.getElementById('portrait-section');
+            if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+          });
+        });
       };
 
       const renderSamples = () => {

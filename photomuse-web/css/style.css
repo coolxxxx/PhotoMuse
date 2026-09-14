@@ -1172,8 +1172,8 @@ a { color: #8A6D2F; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .reveal-card { opacity: 1; transform: none; transition: none; }
-  .kenburns img, img.kenburns { animation: none !important; }
+  html:not(.pm-motion-on) .reveal, html:not(.pm-motion-on) .reveal-card { opacity: 1; transform: none; transition: none; }
+  html:not(.pm-motion-on) .kenburns img, html:not(.pm-motion-on) img.kenburns { animation: none !important; }
 }
 
 /* ============================================================
@@ -1228,8 +1228,8 @@ a { color: #8A6D2F; }
   .motion-grid { grid-template-columns: repeat(4, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .motion-item, .motion-item.is-hover { transition: none; transform: none; }
-  .motion-item video, .motion-item img { transition: none; }
+  html:not(.pm-motion-on) .motion-item, html:not(.pm-motion-on) .motion-item.is-hover { transition: none; transform: none; }
+  html:not(.pm-motion-on) .motion-item video, html:not(.pm-motion-on) .motion-item img { transition: none; }
 }
 
 /* ============================================================
@@ -1239,7 +1239,7 @@ a { color: #8A6D2F; }
 .parallax-bands {
   position: relative;
   /* 视差位移量默认值（JS 按滚动进度覆盖；静态降级即保持此值） */
-  --px: 0%;
+  --px: 0px;
   --px-copy: 0px;
   --px-fade: 1;
 }
@@ -1259,7 +1259,7 @@ a { color: #8A6D2F; }
   inset: -12% 0;                 /* 上下多出余量，位移时不露底 */
   z-index: 0;
   will-change: transform;
-  transform: translate3d(0, var(--px, 0), 0) scale(1.06);
+  transform: scale(1.06);
 }
 .parallax-media img {
   width: 100%; height: 100%;
@@ -1276,7 +1276,7 @@ a { color: #8A6D2F; }
   text-align: center;
   padding: 0 22px;
   max-width: 620px;
-  transform: translate3d(0, var(--px-copy, 0), 0);
+  /* 位移由 JS 直接写 transform（CSS 变量在函数式 translate 中解析不可靠） */
   opacity: var(--px-fade, 1);
 }
 .parallax-eyebrow {
@@ -1323,7 +1323,83 @@ a { color: #8A6D2F; }
 @media (min-width: 1024px) {
   .page > .motion-gallery { grid-column: 1 / -1; }
 }
+/* 系统减少动画时静态化；用户在本站显式开启动效则让位（html.pm-motion-on） */
 @media (prefers-reduced-motion: reduce) {
-  .parallax-media { transform: none; }
-  .parallax-copy { transform: none; opacity: 1; }
+  html:not(.pm-motion-on) .parallax-media { transform: scale(1.06); }
+  html:not(.pm-motion-on) .parallax-copy { transform: none; opacity: 1; }
 }
+
+/* ============================================================
+ * v3.6 系列作品集（11 主题入口）
+ * 首页即可看到全部主题与代表样张，点击直达下单
+ * ============================================================ */
+.series-gallery { margin: 30px 0 8px; }
+.series-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 0 2px 14px; }
+.series-title { font-family: var(--serif); font-size: 19px; color: var(--dr-gold-bright); letter-spacing: 2px; margin: 0; }
+.series-sub { font-size: 11px; color: var(--dr-paper-2); letter-spacing: 1px; }
+.series-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.series-empty { grid-column: 1 / -1; text-align: center; color: var(--dr-paper-2); font-size: 12px; padding: 24px 0; }
+.series-card {
+  display: block; padding: 0; border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #FFFFFF; border-radius: var(--radius-card); overflow: hidden;
+  cursor: pointer; text-align: left; font: inherit; color: var(--ink);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+  transition: transform .35s cubic-bezier(.22,.61,.36,1), box-shadow .35s ease, border-color .35s ease;
+}
+.series-shot { display: block; position: relative; aspect-ratio: 3 / 4; overflow: hidden; background: #F4F4F1; }
+.series-shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s cubic-bezier(.22,.61,.36,1); }
+.series-meta { display: block; padding: 10px 12px 12px; }
+.series-name { display: block; font-size: 14px; font-weight: 600; letter-spacing: 1px; }
+.series-desc {
+  display: block; margin-top: 4px; font-size: 11px; line-height: 1.5; color: #565B63;
+  overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.series-count { display: block; margin-top: 7px; font-size: 10px; letter-spacing: 1px; color: #8A6D2F; }
+@media (hover: hover) {
+  .series-card:hover { transform: translateY(-4px); box-shadow: 0 16px 38px rgba(0, 0, 0, 0.5); border-color: var(--dr-gold-dim); }
+  .series-card:hover .series-shot img { transform: scale(1.06); }
+}
+@media (min-width: 768px) { .series-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1024px) { .series-grid { grid-template-columns: repeat(4, 1fr); } }
+
+/* ============================================================
+ * v3.7 动效开关（悬浮，右下角）
+ * 系统开启"减少动画"时默认关闭，用户可显式开启
+ * ============================================================ */
+.pm-motion-toggle {
+  position: fixed; right: 16px; bottom: 18px; z-index: 60;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 14px; border-radius: 999px;
+  font-size: 11px; letter-spacing: 1.5px; font-family: inherit;
+  color: var(--dr-paper-2);
+  background: rgba(21, 22, 26, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  transition: border-color .3s ease, color .3s ease, transform .3s ease;
+}
+.pm-motion-toggle:hover { transform: translateY(-2px); border-color: var(--dr-gold-dim); }
+.pm-motion-toggle.is-on { color: var(--dr-gold-bright); border-color: var(--dr-gold-dim); }
+.pm-motion-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #6B6862; transition: background .3s ease, box-shadow .3s ease;
+}
+.pm-motion-toggle.is-on .pm-motion-dot { background: var(--dr-gold-bright); box-shadow: 0 0 8px rgba(227, 200, 146, 0.8); }
+
+.pm-motion-tip {
+  position: fixed; right: 16px; bottom: 66px; z-index: 59;
+  max-width: 260px; padding: 12px 14px;
+  font-size: 12px; line-height: 1.65;
+  color: var(--dr-paper); background: rgba(28, 30, 36, 0.96);
+  border: 1px solid var(--dr-gold-dim); border-radius: 6px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  transition: opacity .8s ease;
+}
+.pm-motion-tip b { color: var(--dr-gold-bright); }
+.pm-motion-tip.fade { opacity: 0; }

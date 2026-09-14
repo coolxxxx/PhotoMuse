@@ -11,7 +11,8 @@
   var VID_BASE = '/PM/vid/';
   var IMG_BASE = '/PM/img/';
   var PRELOAD_MAX = 1; /* 同时后台缓冲条数：1 条优先保证滚动流畅 */
-  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* 统一动效开关：用户在本站的选择优先于系统偏好（见 js/motion-pref.js） */
+  var prefersReduced = (typeof window.PM_MOTION_ON === 'boolean') ? !window.PM_MOTION_ON : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   var items = [];

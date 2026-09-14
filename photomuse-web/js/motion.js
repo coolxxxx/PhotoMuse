@@ -8,7 +8,8 @@
 (function () {
   'use strict';
 
-  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* 统一动效开关：用户在本站的选择优先于系统偏好（见 js/motion-pref.js） */
+  var prefersReduced = (typeof window.PM_MOTION_ON === 'boolean') ? !window.PM_MOTION_ON : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- 1. 滚动进场 ---------- */
   function initReveal() {
