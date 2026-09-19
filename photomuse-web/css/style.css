@@ -965,6 +965,8 @@ body::before {
   width: 168px; padding: 7px 7px 26px; background: #F7F4EE;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
   border-radius: 2px;
+  /* 禁止子图动画覆盖 polaroid 错位 transform */
+  animation: none !important;
 }
 .hero-photos img:nth-child(1) { transform: translateX(-88%) rotate(-7deg); z-index: 1; }
 .hero-photos img:nth-child(2) { transform: translateX(-50%) translateY(-8px) rotate(2deg); z-index: 3; }
@@ -972,8 +974,18 @@ body::before {
 .hero-photos img:hover { z-index: 5; transform: translateX(-50%) translateY(-16px) scale(1.04) rotate(0deg); transition: transform .35s ease; }
 .hero-photos::after {
   content: '成片样张 · SHALLOW FOCUS';
-  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
-  font-size: 10px; letter-spacing: 0.3em; color: var(--dr-gold-dim); white-space: nowrap;
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; letter-spacing: 0.28em; color: var(--dr-gold-dim); white-space: nowrap;
+  z-index: 4; pointer-events: none;
+}
+/* 整组缓慢浮动：保留 polaroid 错位，又不破坏单图 transform */
+.hero-photos-float { animation: hero-stack-float 10s ease-in-out infinite alternate; }
+@keyframes hero-stack-float {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not(.pm-motion-on) .hero-photos-float { animation: none; }
 }
 
 /* ---- 内容卡片：暗场上的相纸 ---- */
@@ -1196,8 +1208,8 @@ a { color: #8A6D2F; }
 }
 
 /* ============================================================
- * v3.5 动态影廊（AI 图生视频样张）
- * 默认静态海报；后台限流预载；hover/点按播放，离场暂停
+ * v3.8 动态影廊 + hero 拍立得修复
+ * 默认静态海报；后台限流预载；hover/点按播放；hero 三图错位不被动效覆盖
  * ============================================================ */
 .motion-gallery { margin: 34px 0 6px; }
 .motion-gallery-head { display: flex; align-items: baseline; gap: 10px; padding: 0 2px 14px; }
@@ -1244,7 +1256,8 @@ a { color: #8A6D2F; }
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); pointer-events: none;
 }
 @media (min-width: 1024px) {
-  .motion-grid { grid-template-columns: repeat(6, 1fr); }
+  /* 6 列过窄导致样张可读性差；桌面 4 列更接近相册密度 */
+  .motion-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html:not(.pm-motion-on) .motion-item, html:not(.pm-motion-on) .motion-item.is-hover { transition: none; transform: none; }
@@ -1364,11 +1377,15 @@ a { color: #8A6D2F; }
   cursor: pointer; text-align: left; font: inherit; color: var(--ink);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
   transition: transform .35s cubic-bezier(.22,.61,.36,1), box-shadow .35s ease, border-color .35s ease;
+  min-width: 0;
 }
 .series-shot { display: block; position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #F4F4F1; }
 .series-shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s cubic-bezier(.22,.61,.36,1); }
-.series-meta { display: block; padding: 10px 12px 12px; }
-.series-name { display: block; font-size: 14px; font-weight: 600; letter-spacing: 1px; }
+.series-meta { display: block; padding: 10px 12px 12px; min-height: 52px; }
+.series-name {
+  display: block; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .series-desc {
   display: block; margin-top: 4px; font-size: 11px; line-height: 1.5; color: #565B63;
   overflow: hidden; text-overflow: ellipsis; display: -webkit-box;

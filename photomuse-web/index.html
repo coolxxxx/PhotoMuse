@@ -6,7 +6,7 @@
   <title>在线下单 · 浅焦映像</title>
   <meta name="description" content="浅焦映像 在线下单：上传一张照片，生成证件照、职业形象照与多主题 AI 写真。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231976D2'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E%E5%BD%B1%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=23">
+  <link rel="stylesheet" href="css/style.css?v=24">
 </head>
 <body>
   <div id="config-banner" class="banner banner-warning hidden">站点未配置 API Key，请联系管理员</div>
@@ -18,7 +18,7 @@
       <div class="hero-rule" aria-hidden="true"></div>
       <p class="hero-sub">不用出门的影楼 · 上传一张照片，收获整套专业形象</p>
     </div>
-    <div class="hero-photos kenburns" aria-hidden="true">
+    <div class="hero-photos hero-photos-float" aria-hidden="true">
       <img src="/PM/img/mother-2.jpg" alt="国风旗袍样张" loading="eager">
       <img src="/PM/img/family-1.jpg" alt="亲子全家福样张" loading="eager">
       <img src="/PM/img/father-1.jpg" alt="绅士商务样张" loading="eager">
@@ -172,7 +172,7 @@
   <footer class="footer">浅焦映像 · 上传一张照片，生成证件照、形象照与 AI 写真</footer>
 
   <script src="js/motion-pref.js?v=2"></script>
-  <script src="js/motion.js?v=1"></script>
+  <script src="js/motion.js?v=2"></script>
   <script src="js/parallax-banner.js?v=5"></script>
   <script src="js/motion-gallery.js?v=3"></script>
   <script src="js/api.js?v=10"></script>
@@ -184,7 +184,7 @@
       const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
       const MAX_PHOTO_MB = 10;
       const OK_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-      const LINE_LABELS = { auto: '自动产线', semi_auto: '半自动产线', manual_ai: '人工精修', manual: '人工产线' };
+      const LINE_LABELS = { auto: '自动产线', semi_auto: '半自动产线', 'semi-auto': '半自动产线', manual_ai: '人工精修', manual: '人工产线' };
 
       /* 写真主题目录（与小程序 utils/ai-studio-config.js PORTRAIT_THEMES 同构；
          与后端 catalog.js PORTRAIT_THEMES 同步维护（当前 10 个主题）） */
@@ -330,7 +330,7 @@
             <p class="product-desc">${esc(p.description || '')}</p>
             <div class="tag-row">
               <span class="tag">交付 ${esc(p.deliveryCount != null ? p.deliveryCount : '-')} 张</span>
-              ${p.productionLine ? `<span class="tag">${esc(LINE_LABELS[p.productionLine] || p.productionLine)}</span>` : ''}
+              ${p.productionLine ? `<span class="tag">${esc(LINE_LABELS[String(p.productionLine).replace(/-/g, '_')] || LINE_LABELS[p.productionLine] || p.productionLine)}</span>` : ''}
               ${isPortrait(p) ? '<span class="tag tag-blue">AI 写真</span>' : ''}
             </div>
           </label>`).join('');

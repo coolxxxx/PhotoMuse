@@ -66,7 +66,8 @@
 
   /* ---------- 3. Ken Burns 启动（节流到视口内才播） ---------- */
   function initKenBurns() {
-    var els = document.querySelectorAll('.kenburns');
+    /* 排除 hero 拍立得叠放：kb 动画会覆盖单图 polaroid transform */
+    var els = document.querySelectorAll('.kenburns:not(.hero-photos)');
     if (!els.length || prefersReduced) return;
     if (!('IntersectionObserver' in window)) return;
     var observer = new IntersectionObserver(function (entries) {
