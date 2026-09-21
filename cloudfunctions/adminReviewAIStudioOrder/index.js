@@ -81,6 +81,18 @@ exports.main = async (event = {}) => {
 
     await writeAudit(orderId, OPENID, `admin_review_${action}`, { reason });
 
+    /* 审核通过：后台启动自动出图（到可 QC）。不可 await 全流程，否则本函数 20s 超时 */
+    if (action === 'pass') {
+      cloud.callFunction({
+        name: 'autoGenerateAIStudioOrder',
+        data: { orderId, adminPassword: event.adminPassword, internal: true }
+      }).then(function (r) {
+        console.log('autoGenerate finished:', orderId, r && r.result && r.result.success);
+      }).catch(function (e) {
+        console.warn('autoGenerate failed:', orderId, e && e.message);
+      });
+    }
+
     return {
       success: true,
       order: {
@@ -88,7 +100,8 @@ exports.main = async (event = {}) => {
         order_status: updateData.order_status,
         photo_check: updateData.photo_check,
         reviewNote: updateData.reviewNote
-      }
+      },
+      autoGen: action === 'pass' ? { kicked: true } : null
     };
   } catch (error) {
     console.error('adminReviewAIStudioOrder failed:', error);

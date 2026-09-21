@@ -19,6 +19,8 @@ const fs = require('fs');
 const { db, now, seedConfig } = require('./lib/db');
 const { ORDER_PRODUCTS, PORTRAIT_THEMES, STYLES, DEFAULT_PRICING, STATUS_LABELS, DEFAULT_MERCH } = require('./lib/catalog');
 const ai = require('./lib/ai');
+const notify = require('./lib/notify');
+const pipeline = require('./lib/pipeline');
 
 const PORT = process.env.PORT || 8900;
 const ADMIN_PASSWORD = process.env.PM_ADMIN_PASSWORD || '';
@@ -103,6 +105,18 @@ function orderFiles(orderId, fileType) {
     ? db.prepare('SELECT * FROM order_files WHERE order_id = ? AND file_type = ? ORDER BY created_at').all(orderId, fileType)
     : db.prepare('SELECT * FROM order_files WHERE order_id = ? ORDER BY created_at').all(orderId);
   return rows;
+}
+
+/* 自动出图流水线依赖注入（须在 helper 定义之后） */
+pipeline.bind({ db, getOrder, orderFiles, audit, nowStr, rid });
+
+/** 审核通过后异步跑自动出图（到可 QC），失败只记日志 */
+function kickAutoGenerate(orderId) {
+  setImmediate(() => {
+    pipeline.run(orderId)
+      .then(r => console.log('[autoGen]', orderId, r && r.success ? 'ok' : (r && r.error)))
+      .catch(e => console.error('[autoGen]', orderId, e && e.message));
+  });
 }
 
 /* 订单脱敏视图（前端 order-view.js 兼容形状） */
@@ -271,6 +285,8 @@ actions.submitOrder = (payload) => {
   if (count < 1) return fail('VALIDATION_ERROR', '请至少上传 1 张照片');
   db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?').run('photo_review', nowStr(), o.order_id);
   audit(o.order_id, 'customer', 'submit_order', { photos: count });
+  /* 进入人工审核：邮件通知（失败不阻断） */
+  notify.send('photo_review', o, { source: 'web-h5' }).catch(e => console.warn('[notify]', e.message));
   return ok({ orderStatus: 'photo_review' });
 };
 
@@ -416,14 +432,17 @@ wxActions.adminReviewAIStudioOrder = (payload) => {
   if (!wxAdmin(payload)) return fail('FORBIDDEN', '口令错误');
   const o = getOrder(clean(payload.orderId, 40));
   if (!o) return fail('NOT_FOUND', '订单不存在');
-  const decision = clean(payload.decision, 20);
+  const decision = clean(payload.decision, 20) || clean(payload.action, 20);
   if (decision === 'pass') {
     db.prepare('UPDATE orders SET photo_review = ?, order_status = ?, updated_at = ? WHERE order_id = ?').run('passed', 'queued', nowStr(), o.order_id);
-  } else if (decision === 'retake') {
+    kickAutoGenerate(o.order_id);
+  } else if (decision === 'retake' || decision === 'need_retake') {
     db.prepare('UPDATE orders SET photo_review = ?, photo_note = ?, order_status = ?, updated_at = ? WHERE order_id = ?')
-      .run('need_retake', clean(payload.note, 200) || '照片需要重拍', 'waiting_photos', nowStr(), o.order_id);
+      .run('need_retake', clean(payload.note || payload.reason, 200) || '照片需要重拍', 'waiting_photos', nowStr(), o.order_id);
+    notify.send('photo_review', o, { source: 'admin_need_retake' }).catch(() => {});
   } else {
     db.prepare('UPDATE orders SET photo_review = ?, order_status = ?, updated_at = ? WHERE order_id = ?').run('rejected', 'cancelled', nowStr(), o.order_id);
+    notify.send('photo_review', o, { source: 'admin_reject' }).catch(() => {});
   }
   audit(o.order_id, 'admin', 'wx_review_' + decision, {});
   return ok();
@@ -623,6 +642,7 @@ wxActions.submitAIStudioOrder = (payload, openid) => {
   if (count < 1) return fail('VALIDATION_ERROR', '请至少上传 1 张照片');
   db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?').run('photo_review', nowStr(), o.order_id);
   audit(o.order_id, openid, 'submit_order', { photos: count });
+  notify.send('photo_review', o, { source: 'miniprogram' }).catch(e => console.warn('[notify]', e.message));
   return ok({ order: { orderId: o.order_id, order_status: 'photo_review', photo_check: 'unchecked', reference_photo_count: count } });
 };
 
@@ -824,6 +844,7 @@ app.post('/api/admin/order/:id/review', (req, res) => {
   if (decision === 'pass') {
     db.prepare('UPDATE orders SET photo_review = ?, order_status = ?, updated_at = ? WHERE order_id = ?')
       .run('passed', 'queued', nowStr(), o.order_id);
+    kickAutoGenerate(o.order_id);
   } else if (decision === 'retake') {
     db.prepare('UPDATE orders SET photo_review = ?, photo_note = ?, order_status = ?, updated_at = ? WHERE order_id = ?')
       .run('need_retake', clean(req.body.note, 200) || '照片需要重拍', 'waiting_photos', nowStr(), o.order_id);
@@ -834,7 +855,7 @@ app.post('/api/admin/order/:id/review', (req, res) => {
     return res.json(fail('VALIDATION_ERROR', 'decision 须为 pass/retake/reject'));
   }
   audit(o.order_id, 'admin', 'review_' + decision, { note: req.body.note || '' });
-  res.json(ok());
+  res.json(ok({ autoGen: decision === 'pass' ? { kicked: true } : null }));
 });
 
 /* AI 生成：stage = grid | cell（需要订单已到对应状态） */

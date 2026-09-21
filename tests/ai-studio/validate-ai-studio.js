@@ -34,7 +34,9 @@ const requiredFunctions = [
   'exportAIStudioPrintFile',
   'analyzeAIStudioPhoto',
   'getAIStudioBusinessConfig',
-  'adminUpsertAIStudioBusinessConfig'
+  'adminUpsertAIStudioBusinessConfig',
+  'notifyAIStudioOrder',
+  'autoGenerateAIStudioOrder'
 ];
 
 function read(relativePath) {

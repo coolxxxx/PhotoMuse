@@ -26,6 +26,31 @@
       "memory": 256
     },
     {
+      "name": "notifyAIStudioOrder",
+      "timeout": 30,
+      "envVariables": {
+        "AI_STUDIO_SMTP_USER": "1670825@qq.com",
+        "AI_STUDIO_SMTP_PASS": "",
+        "AI_STUDIO_NOTIFY_TO": "1670825@qq.com",
+        "AI_STUDIO_SMTP_HOST": "smtp.qq.com",
+        "AI_STUDIO_SMTP_PORT": "465",
+        "AI_STUDIO_ADMIN_URL": "https://www.czpsm.art/PM/admin.html"
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 256
+    },
+    {
+      "name": "autoGenerateAIStudioOrder",
+      "timeout": 600,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": "",
+        "AI_STUDIO_AUTO_GEN_CELLS": "1,2,3"
+      },
+      "runtime": "Nodejs16.13",
+      "memory": 512
+    },
+    {
       "name": "listMyAIStudioOrders",
       "timeout": 20,
       "envVariables": {},
@@ -58,7 +83,7 @@
     },
     {
       "name": "adminReviewAIStudioOrder",
-      "timeout": 20,
+      "timeout": 30,
       "envVariables": {
         "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
         "AI_STUDIO_ADMIN_PASSWORD": ""
@@ -165,8 +190,11 @@
     },
     {
       "name": "generateAIStudioImage",
-      "timeout": 120,
-      "envVariables": {},
+      "timeout": 300,
+      "envVariables": {
+        "AI_STUDIO_ADMIN_OPENIDS": "oMfVa19s4el3fIWHON1pV3IyvLJg",
+        "AI_STUDIO_ADMIN_PASSWORD": ""
+      },
       "runtime": "Nodejs16.13",
       "memory": 256
     },

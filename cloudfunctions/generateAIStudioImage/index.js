@@ -90,7 +90,10 @@ exports.main = async (event = {}) => {
   const { OPENID } = cloud.getWXContext();
 
   try {
-    if (!isAdmin(OPENID) || !isAdminPassword(event.adminPassword)) {
+    /* 串联调用：internal + 管理员口令可无 OPENID（供 autoGenerate 流水线） */
+    const internalOk = event.internal === true && isAdminPassword(event.adminPassword);
+    const adminOk = isAdmin(OPENID) && isAdminPassword(event.adminPassword);
+    if (!internalOk && !adminOk) {
       return fail('FORBIDDEN', '无权触发生图');
     }
 

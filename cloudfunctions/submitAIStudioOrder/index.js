@@ -39,6 +39,16 @@ exports.main = async (event = {}) => {
       referencePhotoCount: countResult.total
     });
 
+    /* 进入人工审核：邮件通知管理员（失败不阻断提交） */
+    try {
+      await cloud.callFunction({
+        name: 'notifyAIStudioOrder',
+        data: { type: 'photo_review', orderId, source: 'miniprogram' }
+      });
+    } catch (e) {
+      console.warn('notify photo_review skipped:', e && e.message);
+    }
+
     return {
       success: true,
       order: {

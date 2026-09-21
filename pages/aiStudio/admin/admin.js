@@ -840,8 +840,22 @@ const photomuseApi = require("../../utils/photomuse-api.js");
   async reviewOrder(orderId, action, reason) {
     this.setData({ actionOrderId: orderId });
     try {
-      await callFunction('adminReviewAIStudioOrder', { orderId, action, reason, adminPassword: getAdminPassword() });
-      wx.showToast({ title: '已更新', icon: 'success' });
+      const res = await callFunction('adminReviewAIStudioOrder', { orderId, action, reason, adminPassword: getAdminPassword() });
+      /* 云端 pass 已异步 kick autoGenerate；此处再兜底触发一次（幂等） */
+      if (action === 'pass') {
+        try {
+          await callFunction('autoGenerateAIStudioOrder', {
+            orderId,
+            adminPassword: getAdminPassword(),
+            internal: true
+          });
+        } catch (e) {
+          console.warn('autoGenerate fallback:', e && e.message);
+        }
+        wx.showToast({ title: '已通过·自动出图中', icon: 'success' });
+      } else {
+        wx.showToast({ title: '已更新', icon: 'success' });
+      }
       this.loadOrders();
     } catch (error) {
       wx.showToast({ title: error.message || '操作失败', icon: 'none' });
