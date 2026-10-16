@@ -8,9 +8,7 @@ project.private.config.json
 *.log
 .DS_Store
 Thumbs.db
-
-# 云函数本地依赖
-cloudfunctions/*/node_modules/
+.asar-header.json
 
 # 设计稿压缩包（文件夹版已入库，zip 为本机重复副本）
 浅焦映像 三版视觉 Mock.zip
@@ -23,11 +21,6 @@ output/
 photomuse-server/lib/data/
 photomuse-server/uploads/
 photomuse-server/node_modules/
-
-# 独立后端迁移后的孤儿资源（CloudBase SDK / 站点配置 / 传输补丁均已废弃）
-photomuse-web/js/config.js
-photomuse-web/js/vendor/
-photomuse-web/js/tcb-transport.js
 
 # 源码压缩包（文件夹版已入库）
 *.zip

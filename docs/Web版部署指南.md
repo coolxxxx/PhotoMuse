@@ -1,17 +1,16 @@
 # 浅焦映像 · Web 版部署指南
 
-`photomuse-web/` 是浅焦映像的**网站独立版**：原生 HTML + CSS + JS 纯静态站，nginx 直接托管，**无构建步骤**。数据与业务全部复用小程序同一套云开发环境，通过 CloudBase Web SDK 匿名登录后调用 `photomuseOpenApi` 云函数（API Key 鉴权），照片经云存储直传。
+`photomuse-web/` 是浅焦映像的**网站独立版**：原生 HTML + CSS + JS 纯静态站，nginx 直接托管，**无构建步骤**。页面经 `js/api.js` 请求同源 `/PM/api/*`（`API_BASE = '/PM/api'`），由 nginx 反向代理到独立后端 `photomuse-server/`（Express + node:sqlite）；照片经 `POST /api/upload` 落盘上传目录 `uploads/`（`PM_UPLOAD_ROOT`），对外以 `/PM/uploads/` 提供；管理后台 `admin.html` 口令登录后以 `X-Admin-Token` 调用 `/PM/api/admin/*`。
 
 ```
 浏览器 ──HTTPS──► nginx（纯静态托管 photomuse-web/）
    │
-   ├── CloudBase Web SDK（匿名登录）
-   │      ├── callFunction → photomuseOpenApi（apiKey 信封：catalog / createOrder /
-   │      │     registerPhoto / submitOrder / getOrder / selectCells / queryOrder / paymentQR /
-   │      │     businessConfig / samples / merchandise / analyzePhoto / selectMerch）
-   │      └── uploadFile → 云存储 ai-studio/{orderId}/web-customer/、customer-retake/、
-   │      │     ai-studio/analysis/web-{ts}.{ext}（AI 主题推荐分析用图，不登记订单）
-   │      └── getTempFileURL → 收款码 / 预览图 / 样张 / 成片临时链接
+   ├── /PM/api/open       —— action 分发（catalog / createOrder / registerPhoto /
+   │       submitOrder / getOrder / selectCells / queryOrder / paymentQR /
+   │       businessConfig / samples / merchandise / analyzePhoto / selectMerch）
+   ├── /PM/api/upload     —— multipart 照片上传（webToken 鉴权），落盘 uploads/
+   ├── /PM/api/admin/*    —— 管理后台（口令换 token，X-Admin-Token 鉴权）
+   └── /PM/uploads/       —— 静态：收款码 / 预览图 / 样张 / 成片
 ```
 
 **站点页面**
@@ -22,11 +21,13 @@
 | `order.html` | 订单详情（需下单浏览器本地凭证 webToken）：状态轮询、收款码、分主题选片、成片、周边好物、补拍补传 |
 | `query.html` | 免登录查询：订单号 + 手机号 + 查询密码 三元组查询，同样支持分主题选片与周边清单展示 |
 | `showcase.html` | 周边场景模拟：7 品类切换、6 款纯 CSS 实物场景（挂墙/摆台/挂历/钱包照/亚克力挂件/相册）、照片切换条、已选清单与提交（selectMerch） |
-| `js/config.js` | 站点配置（环境 ID 与 API Key），部署时修改 |
+| `admin.html` | 管理后台（口令登录换 token，请求头 `X-Admin-Token` 调 `/PM/api/admin/*`） |
 | `js/api.js` | SDK 初始化 / 匿名登录 / callFunction / 上传 / 临时链接 / toast / loading |
 | `js/order-view.js` | 订单视图渲染，order.html 与 query.html 复用（含分主题选片与周边好物区块） |
 | `css/style.css` | 全站样式（CSS 变量令牌） |
 | `nginx.conf` | nginx server 块示例 |
+
+> **废弃说明**：`photomuse-web/js/config.js`、`js/tcb-transport.js`、`js/vendor/cloudbase.full.js` 已废弃且无引用，可删除（本次不动它们）；第三、四、六节的 CloudBase 安全域名 / 云存储规则 / 匿名登录步骤属旧链路存档，当前 Web 链路为 photomuse-web/ 静态站 + photomuse-server/ 独立后端。
 
 ---
 
@@ -42,11 +43,7 @@ scp -r photomuse-web/* user@your-server:/var/www/photomuse-web/
 rsync -av --delete photomuse-web/ user@your-server:/var/www/photomuse-web/
 ```
 
-上传前先完成本地配置修改（见下）：
-
-- 编辑 `js/config.js`：
-  - `ENV_ID`：腾讯云开发环境 ID（默认已填 `cloud1-9gv5zn35c8ca8869-00c771e2`，如有变更请替换）；
-  - `OPEN_API_KEY`：填入开放接口 Key（见第五节）。**为空或仍为占位文案时，站点顶部会出现「站点未配置 API Key，请联系管理员」横幅并禁用提交按钮。**
+上传前无需修改前端配置（`js/config.js` 已废弃）：页面统一经 `js/api.js` 请求同源 `/PM/api`，由独立后端 `photomuse-server/`（Express + node:sqlite）处理。后端配置见 `photomuse-server/server.js` 顶部环境变量：`PM_ADMIN_PASSWORD`（必填，管理口令）、`PORT`（默认 8900，仅监听 127.0.0.1）、`PM_UPLOAD_ROOT`（上传目录，默认 `photomuse-server/uploads/`）、`PM_PUBLIC_ORIGIN`（默认 `https://www.czpsm.art`）；数据目录 `PM_DATA_DIR`（默认 `photomuse-server/lib/data/`）。启动：`PM_ADMIN_PASSWORD=xxx PM_UPLOAD_ROOT=/var/www/pm/uploads node server.js`。
 
 ## 二、nginx 配置与重载
 
@@ -75,7 +72,9 @@ sudo certbot --nginx -d photomuse.example.com
 
 certbot 会自动生成 443 server 块并把 80 跳转到 HTTPS，证书自动续期。
 
-## 三、控制台开启 Web 安全域名
+## 三、控制台开启 Web 安全域名（旧 CloudBase SDK 链路存档）
+
+> 本节及 A 小节描述旧 CloudBase Web SDK 链路；当前 Web 链路已改走 `photomuse-server` 同源反代（见 B 小节），无需配置安全域名。
 
 CloudBase Web SDK 会校验请求来源域名，**未添加安全域名的站点所有 SDK 请求都会被拒绝（典型表现：请求返回 401 / `INVALID_ORIGIN` / CORS 跨域报错）**。
 
@@ -85,7 +84,7 @@ CloudBase Web SDK 会校验请求来源域名，**未添加安全域名的站点
 > 且新版 SDK 默认走 `*.api.tcloudbasegateway.com` 网关域，该域严格执行白名单（403）；
 > 旧域 `*.tcb-api.tencentcloudapi.com` 对任意来源放行，但部分 Chromium 浏览器对其 `/web` 路由存在 TLS 兼容问题。
 >
-> **当前采用的稳定方案（无需升级套餐）**：nginx 同源反向代理 + 传输补丁，见「第三节 B」。此方案与套餐无关，升级后也建议保留（少一层白名单维护）。
+> **当时的过渡方案**：nginx 同源反向代理 + 传输补丁（`js/tcb-transport.js`，已废弃且无引用）；现已整体迁移到 `photomuse-server`，见「第三节 B」。
 
 ### A. 标准方式（需套餐支持添加安全域名）
 
@@ -96,35 +95,31 @@ CloudBase Web SDK 会校验请求来源域名，**未添加安全域名的站点
 
 本地调试可临时把 `localhost` / `127.0.0.1` 加入（用完建议移除）。
 
-### B. 同源代理方式（当前生产采用，无套餐要求）
+### B. 同源反代到独立后端（当前实际链路，替代旧 tcb-transport 补丁）
 
-**原理**：浏览器只与 `www.czpsm.art` 同源通信（彻底无 CORS / 无白名单问题），由 nginx 把 `/pm-tcb/` 前转发到 CloudBase 旧域；前端 `js/tcb-transport.js` 在 SDK 加载前把发往旧域的 fetch/XHR 全部重写到代理路径，`js/api.js` 以 `endPointMode: 'CLOUD_API'` 初始化 SDK。
+**原理**：浏览器只与站点同源通信（彻底无 CORS / 无白名单问题）。当前链路：nginx 把 `/PM/api/` 反代到独立后端 `photomuse-server/`（`server.js` 监听 `127.0.0.1:8900`），前端 `js/api.js` 固定请求 `API_BASE = '/PM/api'`；旧的 `js/tcb-transport.js` 传输补丁已废弃且无引用。
 
-**服务器 nginx 需要的 location（加在 `/PM/` 之前）：**
+**服务器 nginx 需要的配置（仓库 `photomuse-web/nginx.conf` 未包含反代部分，以下为待确认要点）：**
 
-```nginx
-    location /pm-tcb/ {
-        proxy_pass https://cloud1-9gv5zn35c8ca8869-00c771e2.ap-shanghai.tcb-api.tencentcloudapi.com/;
-        proxy_ssl_server_name on;
-        proxy_set_header Host cloud1-9gv5zn35c8ca8869-00c771e2.ap-shanghai.tcb-api.tencentcloudapi.com;
-        proxy_http_version 1.1;
-        proxy_buffering off;
-    }
-```
+<!-- TODO：具体 nginx location 写法需按实际环境确认，此处不提供未经验证的配置 -->
+- `/PM/api/` → 反代到 `127.0.0.1:8900`（`photomuse-server/server.js` 默认 `PORT=8900`，且仅监听 127.0.0.1）
+- `/PM/uploads/` → 静态指向后端上传目录 `PM_UPLOAD_ROOT`（后端返回的 fileID 形如 `https://域名/PM/uploads/...`）
 
-**改动文件清单（换域名/环境时同步改三处）：**
+**当前配置清单（换环境时核对）：**
 
-| 文件 | 内容 |
+| 位置 | 内容 |
 |---|---|
-| `js/tcb-transport.js` | `TCB_ORIGIN`（旧域全称，含尾斜杠）与 `PROXY_PATH` |
-| `nginx /pm-tcb/` | `proxy_pass` + `proxy_set_header Host`（两处同值） |
-| `js/api.js` | `ensureApp` 中 `endPointMode: 'CLOUD_API'`（固定值，无需改） |
+| `photomuse-server` 启动环境变量 | `PM_ADMIN_PASSWORD` / `PORT`（默认 8900）/ `PM_UPLOAD_ROOT` / `PM_PUBLIC_ORIGIN` / `PM_DATA_DIR`，见 `server.js` 顶部 |
+| nginx（反代，TODO：需按实际环境确认） | `/PM/api/` → `127.0.0.1:8900`；`/PM/uploads/` → `PM_UPLOAD_ROOT` 静态目录 |
+| `photomuse-web/js/api.js` | `API_BASE = '/PM/api'`（同源相对路径，换域名无需改） |
 
-**自检**：`curl -X POST https://你的域名/pm-tcb/auth/v1/signin/anonymously -H 'Content-Type: application/json' -H 'X-Device-Id: t1' -d '{"client_id":"环境ID"}'` 返回 200 + token 即通。
+**自检**：`curl -X POST https://你的域名/PM/api/open -H 'Content-Type: application/json' -d '{"action":"catalog","payload":{}}'` 返回含 `success: true` 的 JSON 即通。
 
-> 另一部署形态：`tcb hosting deploy` 把整站发到 `*.tcloudbaseapp.com` 静态托管默认域（在白名单内、零配置），但会有「风险提醒」中间页且官方禁止生产使用，仅作演示镜像。
+> 另一部署形态（旧链路存档）：`tcb hosting deploy` 把整站发到 `*.tcloudbaseapp.com` 静态托管默认域，但会有「风险提醒」中间页且官方禁止生产使用；现部署已不再使用 CloudBase 托管。
 
-## 四、云存储规则：允许匿名读写 `ai-studio/` 前缀
+## 四、云存储规则：允许匿名读写 `ai-studio/` 前缀（旧链路存档）
+
+> 当前 Web 链路照片经 `POST /api/upload` 落盘服务器 `uploads/` 目录（`PM_UPLOAD_ROOT`），不经云存储直传；本节仅对小程序云函数链路有效。
 
 Web 端上传照片（匿名登录身份）与读取收款码 / 预览图 / 成片，都需要云存储权限放行 `ai-studio/` 前缀：
 
@@ -157,9 +152,11 @@ Web 端上传照片（匿名登录身份）与读取收款码 / 预览图 / 成�
 
 > 说明：小程序端原本即依赖 `ai-studio/` 前缀读写，以上规则同时兼容小程序与 Web；若你改动了路径前缀，请同步检查 `js/api.js` / `js/order-view.js` 中的 `cloudPath`。
 
-## 五、配置 OPEN_API_KEY（环境变量）
+## 五、配置 OPEN_API_KEY（环境变量，旧云函数链路存档）
 
-Web 端所有请求走 `photomuseOpenApi` 云函数的 API Key 信封鉴权：
+> **Web 端已不再使用 OPEN_API_KEY**：当前链路为 `photomuse-server` 独立后端（见第一节配置说明），`/api/open` 无 Key 信封鉴权。本节仅保留给仍走 `photomuseOpenApi` 云函数的旧接入方 / 小程序链路。
+
+云函数 `photomuseOpenApi` 的 API Key 信封鉴权配置：
 
 1. 生成一个独立的 Key（一个接入方一个 key，便于吊销与审计）：
 
@@ -174,11 +171,13 @@ Web 端所有请求走 `photomuseOpenApi` 云函数的 API Key 信封鉴权：
    - 值：逗号分隔的 Key 白名单，把新 key 追加进去（已有 key 保持不变），例如
      `pm_open_a1b2c3d4e5,pm_open_3f9a1c2b4d5e6f70`
 
-3. 把同一个 key 填入站点 `js/config.js` 的 `OPEN_API_KEY`，重新上传该文件即可。
+3. Web 端已不再使用 `OPEN_API_KEY`（`js/config.js` 已废弃且无引用）：`photomuse-server` 的 `/api/open` 直接按 action 分发、无 Key 信封鉴权；管理端口令由环境变量 `PM_ADMIN_PASSWORD` 控制。
 
 **未配置该环境变量时，所有开放接口调用一律返回 FORBIDDEN。**
 
-## 六、启用 Web SDK 匿名登录
+## 六、启用 Web SDK 匿名登录（旧 CloudBase SDK 链路存档）
+
+> 当前 Web 链路无匿名登录：请求经 nginx 同源反代到 `photomuse-server`，无 SDK 登录态。本节仅存档。
 
 CloudBase Web SDK `callFunction` / `uploadFile` 需要登录态，站点使用匿名登录：
 
@@ -188,7 +187,7 @@ CloudBase Web SDK `callFunction` / `uploadFile` 需要登录态，站点使用�
 
 ## 七、部署自检清单
 
-- [ ] 打开 `https://photomuse.example.com`，无「未配置 API Key」横幅，首页能加载出 3 个套餐卡与 5 个写真主题；
+- [ ] 打开 `https://photomuse.example.com`，首页能加载出 3 个套餐卡与 5 个写真主题；
 - [ ] 写真套餐：主题可多选（默认最多 3 个，超限 toast 拦截），价格条实时显示「基础价 + 加价明细 + 合计 + 成片张数」；
 - [ ] 主题卡下方样张横滑可浏览（需商家已在管理端上传样张），点击样张新标签页打开大图；无样张主题显示「样张制作中」；
 - [ ] 「AI 帮我选主题」：选一张正脸照 → 出现评分面板（summary + 评分条 + top2 推荐徽章）→「采用推荐」一键勾选；未配置视觉模型时展示 CONFIG_MISSING 的 message 提示；
@@ -208,8 +207,8 @@ CloudBase Web SDK `callFunction` / `uploadFile` 需要登录态，站点使用�
 | 浏览器控制台 CORS / 跨域错误，SDK 请求全部失败 | 站点域名未加入云开发「Web 安全域名」（第三节）；或本地用 `file://` 直接打开页面——必须经 http/https 访问（本地可用 `python -m http.server` 或 `npx serve photomuse-web`） |
 | 请求返回 401 / `INVALID_ORIGIN` | 同上：安全域名未配置或域名填写不一致（协议 / 端口 / 大小写） |
 | 上传照片返回 **413 Request Entity Too Large** | nginx 默认 `client_max_body_size` 只有 1m，按 `nginx.conf` 示例设为 `12m` 后 `nginx -s reload` |
-| 提示「CloudBase SDK 未加载」 | `imgcache.qq.com` 的 SDK 脚本加载失败（网络原因），可改用 `https://unpkg.com/@cloudbase/js-sdk@latest/dist/cloudbase.full.js` 等镜像源 |
-| 提示「无效的 API Key」(FORBIDDEN) | `js/config.js` 的 `OPEN_API_KEY` 与云函数环境变量 `AI_STUDIO_OPEN_API_KEYS` 不一致，或环境变量未保存 / 云函数未重启 |
+| 提示「CloudBase SDK 未加载」 | 旧 CloudBase 链路现象；Web 端现直接 `fetch('/PM/api')`，不再加载 CloudBase SDK（`js/vendor/cloudbase.full.js` 已废弃且无引用，可删除） |
+| 提示「无效的 API Key」(FORBIDDEN) | 旧 CloudBase 链路现象；Web 端已无 API Key（`js/config.js` 已废弃）。管理后台 FORBIDDEN 请核对 `PM_ADMIN_PASSWORD`；云函数链路见第五节 |
 | callFunction 报匿名登录相关错误 | 控制台未启用「匿名登录」（第六节） |
 | 「AI 帮我选主题」提示视觉分析模型未配置（CONFIG_MISSING） | `analyzeAIStudioPhoto` 需要 `ai_studio_model_settings` 中配置 `photo_analysis` 场景（openai_compatible + 支持视觉的模型）；未配置时页面直接展示后端 message，可先人工选主题 |
 | 主题卡一直显示「样张制作中」 | 商家尚未在管理端上传样张（`adminUpsertAIStudioSamples`），或样张 fileID 临时链接换取失败——刷新重试 |
@@ -220,12 +219,12 @@ CloudBase Web SDK `callFunction` / `uploadFile` 需要登录态，站点使用�
 | 订单页不显示收款码 | 商家后台尚未配置收款码（`paymentQR` 返回 `config: null` 时卡片自动隐藏），先在小程序管理端上传收款码 |
 | 收款码 / 成片图片显示「图片链接获取失败」 | 云存储权限规则未放行 `ai-studio/` 读取（第四节），或临时链接过期——刷新页面重新获取 |
 
-## 九、安全注意事项（API Key 泄露风险）
+## 九、安全注意事项
 
-`OPEN_API_KEY` 写在前端 `js/config.js` 中，**任何访问者查看源码即可拿到**，等同于把接入密码公开。务必：
+> 本节原描述「`OPEN_API_KEY` 写在前端 `js/config.js`」的旧链路风险——`js/config.js` 已废弃且无引用，Web 端不再持有前端 Key；管理口令 `PM_ADMIN_PASSWORD` 只存在 `photomuse-server` 运行环境变量中，不落前端。以下为现行注意事项：
 
-1. **使用独立的低权限 Key**：Web 站点专用一个 key，与后端 / 第三方接入方分开，一旦泄露只影响这一条链路，可单独吊销（从 `AI_STUDIO_OPEN_API_KEYS` 白名单中移除并重新部署站点配置）；
-2. **定期轮换**：建议每 1-3 个月更换一次 key（生成新 key → 加入白名单 → 更新 `js/config.js` → 观察正常后移除旧 key）；
-3. **监控审计**：每次通过鉴权的调用都写入 `ai_studio_audit_logs`（含 `action: 'open_api_call'` 与时间戳），发现异常高频调用及时定位与吊销；
-4. **订单数据边界**：订单查询以「订单号 + 手机号 + 查询密码」三元组为权限边界，`webToken` 为下单浏览器本地凭证；前端不得缓存或打印明文查询密码（本站 query 页仅存 sessionStorage，关闭标签页即清除）；
-5. 有条件时在网关层为站点来源加 referer / IP 白名单，作为 API Key 之外的第二道防线。
+1. **管理口令**：`PM_ADMIN_PASSWORD` 必填且仅存服务端环境变量（见 `photomuse-server/server.js` 顶部），口令错误时 `/api/admin/*` 一律返回 FORBIDDEN；
+2. **反代边界**：`photomuse-server` 默认只监听 `127.0.0.1:8900`（`PORT` 可改），由 nginx 反代暴露 `/PM/api/`，勿将后端端口直接暴露公网；
+3. **订单数据边界**：订单查询以「订单号 + 手机号 + 查询密码」三元组为权限边界，`webToken` 为下单浏览器本地凭证；前端不得缓存或打印明文查询密码（本站 query 页仅存 sessionStorage，关闭标签页即清除）；
+4. 有条件时在网关层为站点来源加 referer / IP 白名单，作为第二道防线。
+<!-- TODO：若仍保留云函数链路的 AI_STUDIO_OPEN_API_KEYS Key 轮换/审计要求，需按实际环境确认后补回 -->

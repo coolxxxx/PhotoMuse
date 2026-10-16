@@ -55,7 +55,8 @@ const STYLES = [
   { styleId: 'casual_nat', name: '自然光人像写真', backgroundColor: '原场景' }
 ];
 
-const DEFAULT_PRICING = { basePrice: 69.9, perTheme: 39.9, maxThemes: 3, freeThemes: 1 };
+/* 定价键名与 v1 云函数契约一致（baseThemePrice/extraThemePrice/maxThemes/photosPerTheme） */
+const DEFAULT_PRICING = { baseThemePrice: 69.9, extraThemePrice: 39.9, maxThemes: 3, photosPerTheme: 5 };
 
 const STATUS_LABELS = {
   waiting_photos: '待上传照片', photo_review: '照片审核中', queued: '已排单',

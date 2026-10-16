@@ -105,6 +105,8 @@
         if (!silent) { PM.showLoading('查询中…'); }
         try {
           const res = await PM.callApi('queryOrder', creds);
+          /* 三元组换到的短时 webToken：后续选片/周边/补传都用它，不必反复上送明文查询密码 */
+          if (res && res.webToken) { creds.webToken = res.webToken; }
           /* 凭证存 sessionStorage，便于刷新自动回填（仅本会话） */
           sessionStorage.setItem(SS_KEY, JSON.stringify(creds));
           els.queryBar.classList.remove('hidden');

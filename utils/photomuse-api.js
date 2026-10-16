@@ -15,6 +15,12 @@ function storeToken(token) {
   try { wx.setStorageSync('pm_user_token', token); } catch (e) { /* ignore */ }
 }
 
+/* 令牌失效时清空缓存并重置登录态，供自愈重试用 */
+function resetLogin() {
+  loginPromise = null;
+  storeToken('');
+}
+
 let loginPromise = null;
 
 /* 匿名登录（deviceId 模式；token 90 天有效，过期自动重登） */
@@ -46,6 +52,11 @@ function ensureLogin() {
   return loginPromise;
 }
 
+/**
+ * 把后端响应体转成 wx.cloud.callFunction 的 { result } 语义：
+ * 成功返回响应体本身，业务失败抛带 code 的 Error（交由 fail 分支）。
+ * 页面侧的 callFunction 包装判的是 res.result.success，故必须包一层 result。
+ */
 function normalizeResult(res) {
   const result = res.data;
   if (result && result.success) return result;
@@ -57,6 +68,7 @@ function normalizeResult(res) {
 /* 与 wx.cloud.callFunction 同签名（回调式） */
 function callFunction(options) {
   const { name, data, success, fail } = options;
+  let retried = false;
   const doRequest = (token) => {
     wx.request({
       url: API_BASE + '/open/wx/' + name,
@@ -64,7 +76,18 @@ function callFunction(options) {
       header: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'X-User-Token': token } : {}),
       data: data || {},
       success: (res) => {
-        try { success(normalizeResult(res)); } catch (e) { fail(e); }
+        try {
+          success({ result: normalizeResult(res) });
+        } catch (e) {
+          /* token 过期/失效自愈：清掉旧凭证重新登录后自动重试一次 */
+          if (!retried && e && e.code === 'UNAUTHENTICATED') {
+            retried = true;
+            resetLogin();
+            ensureLogin().then(doRequest).catch((err) => fail(err));
+            return;
+          }
+          fail(e);
+        }
       },
       fail: () => fail(new Error('网络连接失败，请检查网络'))
     });

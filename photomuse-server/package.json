@@ -4,6 +4,9 @@
   "private": true,
   "description": "浅焦映像独立后端 · 订单/数据/AI 全自管，摆脱云函数限制",
   "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "start": "node server.js"
   },

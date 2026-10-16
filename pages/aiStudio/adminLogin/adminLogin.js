@@ -1,3 +1,4 @@
+const photomuseApi = require('/utils/photomuse-api.js');
 Page({
   data: {
     isChecking: false,
@@ -39,7 +40,6 @@ Page({
       });
 
       const app = getApp();
-const photomuseApi = require("../../utils/photomuse-api.js");
       app.globalData.aiStudioAdminPassword = this.data.adminPassword;
 
       wx.showToast({ title: '登录成功', icon: 'success' });

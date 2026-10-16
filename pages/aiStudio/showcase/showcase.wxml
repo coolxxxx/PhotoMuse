@@ -92,7 +92,7 @@
         <view wx:else class="cal-photo photo-empty" bindtap="onScenePhotoTap">点击选择成片</view>
         <view class="cal-range">{{calendarRange}}</view>
         <view class="cal-months">
-          <view class="cal-month" wx:for="{{calendarMonths}}" wx:for-item="month" wx:key="label">
+          <view class="cal-month" wx:for="{{calendarMonths}}" wx:for-item="month" wx:key="id">
             <view class="cal-month-name">{{month.label}}</view>
             <view class="cal-week">
               <text wx:for="{{month.header}}" wx:for-item="day" wx:key="*this">{{day}}</text>

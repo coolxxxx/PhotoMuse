@@ -27,11 +27,24 @@
   },
   "simulatorPluginLibVersion": {},
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "file", "value": ".deploy-secrets.json" },
+      { "type": "file", "value": ".gitignore" },
+      { "type": "folder", "value": "docs" },
+      { "type": "folder", "value": "node_modules" },
+      { "type": "folder", "value": "output" },
+      { "type": "folder", "value": "photomuse-server" },
+      { "type": "folder", "value": "photomuse-web" },
+      { "type": "folder", "value": "scripts" },
+      { "type": "folder", "value": "tests" },
+      { "type": "folder", "value": ".worktrees" },
+      { "type": "folder", "value": "浅焦映像 三版视觉 Mock" },
+      { "type": "suffix", "value": ".zip" },
+      { "type": "suffix", "value": ".md" }
+    ],
     "include": []
   },
   "appid": "wxf33002655b0cea9f",
   "editorSetting": {},
-  "libVersion": "3.10.0",
-  "cloudfunctionRoot": "cloudfunctions/"
+  "libVersion": "3.10.0"
 }

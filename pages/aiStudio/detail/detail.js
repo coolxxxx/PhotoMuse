@@ -3,6 +3,7 @@ const {
   PHOTO_CHECK_LABELS,
   PORTRAIT_THEMES
 } = require('../../../utils/ai-studio-config');
+const photomuseApi = require('/utils/photomuse-api.js');
 
 const GRID_CELLS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
@@ -156,7 +157,6 @@ Page({
 
   queryDetailByCredential() {
     const app = getApp();
-const photomuseApi = require("../../utils/photomuse-api.js");
     const query = app.globalData && app.globalData.aiStudioOrderQuery;
     if (!query || query.orderId !== this.data.orderId) {
       return Promise.reject(new Error('请返回证件照制作页重新查询订单'));

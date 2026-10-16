@@ -1,7 +1,7 @@
 /* ============================================================
  * 浅焦映像 · 订单邮件通知（QQ 邮箱 SMTP）
  * 环境变量：
- *   PM_SMTP_USER  发件邮箱，默认 1670825@qq.com
+ *   PM_SMTP_USER  发件邮箱（必填；不配则邮件通知自动关闭）
  *   PM_SMTP_PASS  QQ 邮箱 SMTP 授权码（非登录密码）
  *   PM_NOTIFY_TO  收件人，默认同 USER
  *   PM_SMTP_HOST / PM_SMTP_PORT 默认 smtp.qq.com:465
@@ -10,7 +10,7 @@
 
 const nodemailer = require('nodemailer');
 
-const USER = process.env.PM_SMTP_USER || '1670825@qq.com';
+const USER = process.env.PM_SMTP_USER || '';
 const PASS = process.env.PM_SMTP_PASS || '';
 const TO = process.env.PM_NOTIFY_TO || USER;
 const HOST = process.env.PM_SMTP_HOST || 'smtp.qq.com';

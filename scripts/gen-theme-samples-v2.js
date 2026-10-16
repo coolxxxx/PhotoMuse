@@ -12,7 +12,9 @@ const fs = require('fs');
 const path = require('path');
 
 const GEN_API = process.env.PM_GEN_API || 'https://api.3213218.xyz/v1/images/generations';
-const API_KEY = process.env.PM_GEN_KEY || 'fkall';
+/* 密钥只走环境变量，绝不写兜底字面量 */
+const API_KEY = process.env.PM_GEN_KEY || '';
+if (!API_KEY) { console.error('缺少 PM_GEN_KEY 环境变量'); process.exit(1); }
 const IMG_MODEL = process.env.PM_GEN_MODEL || 'fkall-图像';
 const SIZE = '1024x1792';
 const OUT_DIR = path.join(__dirname, '..', 'output', 'theme-samples');

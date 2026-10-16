@@ -783,7 +783,8 @@
         try {
           PM.showLoading('正在创建订单…');
           const res = await PM.callApi('createOrder', payload);
-          order = res && res.order;
+          /* createOrder 返回平铺字段（服务端 ok() 直接展开）：{orderId, webToken, amount, orderStatus} */
+          order = res && res.orderId ? res : null;
           if (!order || !order.orderId) { throw new Error('服务端未返回订单号'); }
         } catch (e) {
           PM.hideLoading();

@@ -9,18 +9,69 @@
 const fs = require('fs');
 const path = require('path');
 
-const GEN_API = process.env.PM_GEN_API || 'https://api.3213218.xyz/v1/images/generations';
-const CHAT_API = process.env.PM_CHAT_API || 'https://api.3213218.xyz/v1/chat/completions';
-/* 密钥一律环境变量注入（部署时配置），不入库；未配置时 AI 功能明确报 CONFIG_MISSING */
-const API_KEY = process.env.PM_AI_KEY || '';
-const IMG_MODEL = process.env.PM_IMG_MODEL || 'fkall-图像';
-const TXT_MODEL = process.env.PM_TXT_MODEL || 'fkall-文本';
 const UPLOAD_ROOT = process.env.PM_UPLOAD_ROOT || path.join(__dirname, '..', 'uploads');
 
-function requireAIConfig() {
-  if (!API_KEY) {
-    const e = new Error('AI 生图未配置（PM_AI_KEY）');
-    e.code = 'CONFIG_MISSING';
+/* 内置默认节点（fkall OpenAI 兼容）；端点可换成任意 OpenAI 兼容服务 */
+const DEFAULT_BASE = 'https://api.3213218.xyz/v1';
+const DEFAULT_IMG_MODEL = 'fkall-图像';
+const DEFAULT_TXT_MODEL = 'fkall-文本';
+
+/* 运行期配置提供者：由 server.js 注入（读 config_kv 的管理面板设置）。
+   每次调用时解析 → 面板改完立即生效，无需重启服务。 */
+let runtimeProvider = null;
+function bindRuntimeConfig(fn) { runtimeProvider = fn; }
+
+/* 把「完整端点」或「纯 base」统一成 base：
+     https://api.x.com/v1/images/generations → https://api.x.com/v1
+     https://api.x.com/v1                    → https://api.x.com/v1 */
+function normalizeBase(raw) {
+  let s = String(raw || '').trim().replace(/\/+$/, '');
+  if (!s) return DEFAULT_BASE;
+  s = s.replace(/\/images\/generations$/i, '').replace(/\/chat\/completions$/i, '');
+  return s.replace(/\/+$/, '') || DEFAULT_BASE;
+}
+
+/* 解析优先级：管理面板 image_generation 场景 > 环境变量 > 内置默认。
+   面板只需填「base URL（或完整 images/generations 地址）+ Key + 模型名」即可，
+   对话/视觉端点按同一 base 自动推导。 */
+function resolveConfig() {
+  const panel = (runtimeProvider && runtimeProvider()) || {};
+  const panelUrl = String(panel.apiUrl || '').trim();
+  const envGen = String(process.env.PM_GEN_API || '').trim();
+  const envChat = String(process.env.PM_CHAT_API || '').trim();
+
+  let genApi;
+  if (panelUrl) {
+    genApi = /\/images\/generations$/i.test(panelUrl) ? panelUrl : normalizeBase(panelUrl) + '/images/generations';
+  } else {
+    genApi = envGen || DEFAULT_BASE + '/images/generations';
+  }
+
+  let chatApi;
+  if (envChat) chatApi = envChat;
+  else if (panelUrl) chatApi = normalizeBase(panelUrl) + '/chat/completions';
+  else chatApi = DEFAULT_BASE + '/chat/completions';
+
+  return {
+    enabled: panel.enabled !== false,
+    genApi,
+    chatApi,
+    key: String(panel.apiKey || '').trim() || String(process.env.PM_AI_KEY || '').trim(),
+    imgModel: String(panel.model || '').trim() || String(process.env.PM_IMG_MODEL || '').trim() || DEFAULT_IMG_MODEL,
+    txtModel: String(process.env.PM_TXT_MODEL || '').trim() || DEFAULT_TXT_MODEL,
+    imageSize: String(panel.imageSize || '').trim() || '1024x1792'
+  };
+}
+
+function requireAIConfig(cfg) {
+  const e = new Error('');
+  e.code = 'CONFIG_MISSING';
+  if (!cfg.enabled) {
+    e.message = 'AI 生图已在管理后台-模型设置中停用';
+    throw e;
+  }
+  if (!cfg.key) {
+    e.message = 'AI 生图未配置：请在管理后台-模型设置填写接口地址（base URL）与 Key，或设置环境变量 PM_AI_KEY';
     throw e;
   }
 }
@@ -70,14 +121,15 @@ function buildPrompt(stage, { cell, themeId, sceneDesc, themeCount }) {
 
 /* 提交生图并返回 { buffer, ext } */
 async function generateImage(prompt, size) {
-  requireAIConfig();
+  const cfg = resolveConfig();
+  requireAIConfig(cfg);
   let lastErr = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch(GEN_API, {
+      const res = await fetch(cfg.genApi, {
         method: 'POST',
-        headers: { Authorization: 'Bearer ' + API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: IMG_MODEL, prompt, n: 1, size: size || '1024x1792' })
+        headers: { Authorization: 'Bearer ' + cfg.key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: cfg.imgModel, prompt, n: 1, size: size || cfg.imageSize })
       });
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + (await res.text()).slice(0, 150));
       const data = await res.json();
@@ -101,12 +153,13 @@ async function generateImage(prompt, size) {
 
 /* 视觉分析：看照片 → 5 主题评分 */
 async function analyzePhoto(imageUrl) {
-  requireAIConfig();
-  const res = await fetch(CHAT_API, {
+  const cfg = resolveConfig();
+  requireAIConfig(cfg);
+  const res = await fetch(cfg.chatApi, {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + API_KEY, 'Content-Type': 'application/json' },
+    headers: { Authorization: 'Bearer ' + cfg.key, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: TXT_MODEL,
+      model: cfg.txtModel,
       messages: [{
         role: 'user',
         content: [
@@ -124,12 +177,13 @@ async function analyzePhoto(imageUrl) {
   return JSON.parse(m[0]);
 }
 
-/* 把 buffer 存到 uploads，返回公网 URL 路径（/PM/uploads/...） */
-function saveUpload(relPath, buffer) {
+/* 把 buffer 存到 uploads，返回公网 URL 路径（/PM/uploads/...）。
+   异步写盘：writeFileSync 会阻塞事件循环，大图写入时会拖慢所有并发请求。 */
+async function saveUpload(relPath, buffer) {
   const abs = path.join(UPLOAD_ROOT, relPath);
-  fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, buffer);
+  await fs.promises.mkdir(path.dirname(abs), { recursive: true });
+  await fs.promises.writeFile(abs, buffer);
   return '/PM/uploads/' + relPath.replace(/\\/g, '/');
 }
 
-module.exports = { generateImage, analyzePhoto, saveUpload, buildPrompt, THEME_HINTS };
+module.exports = { generateImage, analyzePhoto, saveUpload, buildPrompt, THEME_HINTS, bindRuntimeConfig, resolveConfig };

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS order_files (
   url TEXT NOT NULL,
   file_name TEXT,
   uploaded_by TEXT,
+  status TEXT NOT NULL DEFAULT 'uploaded',
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -86,6 +87,13 @@ CREATE TABLE IF NOT EXISTS config_kv (
   updated_at TEXT NOT NULL
 );
 `);
+
+/* 迁移：order_files 补 status 列（对齐 v1 的 uploaded/replaced 语义）；列已存在则跳过 */
+try { db.exec("ALTER TABLE order_files ADD COLUMN status TEXT NOT NULL DEFAULT 'uploaded'"); } catch (e) { /* 列已存在 */ }
+
+/* 迁移：orders 补 spec 列（证件照规格，如「一寸」）。
+   旧实现没有该列，导致客户下单选的规格无处存放、证件照引擎无从取用。 */
+try { db.exec("ALTER TABLE orders ADD COLUMN spec TEXT"); } catch (e) { /* 列已存在 */ }
 
 const now = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
 

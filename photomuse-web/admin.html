@@ -81,6 +81,12 @@
 
   var $ = function (id) { return document.getElementById(id); };
 
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   function api(path, body) {
     return fetch('/PM/api' + path, {
       method: 'POST',
@@ -90,7 +96,7 @@
   }
 
   function msg(el, text, cls) {
-    el.innerHTML = '<div class="msg ' + (cls || 'info') + '">' + text + '</div>';
+    el.innerHTML = '<div class="msg ' + esc(cls || 'info') + '">' + esc(text) + '</div>';
     setTimeout(function () { if (el.firstChild && el.firstChild.textContent === text) el.innerHTML = ''; }, 4000);
   }
 
@@ -202,7 +208,7 @@
     fetch('/PM/api/admin/orders' + (status ? '?status=' + status : ''), { headers: { 'X-Admin-Token': TOKEN } })
       .then(function (r) { return r.json(); })
       .then(function (r) {
-        if (!r.success) { list.innerHTML = '<div class="msg err">' + (r.message || '加载失败') + '</div>'; return; }
+        if (!r.success) { list.innerHTML = '<div class="msg err">' + esc(r.message || '加载失败') + '</div>'; return; }
         if (!r.orders.length) { list.innerHTML = '<div class="empty">暂无订单</div>'; return; }
         list.innerHTML = '';
         r.orders.forEach(function (o) { list.appendChild(orderCard(o)); });
@@ -213,9 +219,9 @@
     var div = document.createElement('div');
     div.className = 'order-item';
     var thumbHtml = '';
-    (o.customerPhotos || []).forEach(function (u) { thumbHtml += '<img src="' + u + '" loading="lazy">'; });
-    (o.gridPreviews || []).forEach(function (u) { thumbHtml += '<img src="' + u + '" loading="lazy">'; });
-    (o.deliveryFiles || []).forEach(function (u) { thumbHtml += '<img src="' + u + '" loading="lazy">'; });
+    (o.customerPhotos || []).forEach(function (u) { thumbHtml += '<img src="' + esc(u) + '" loading="lazy">'; });
+    (o.gridPreviews || []).forEach(function (u) { thumbHtml += '<img src="' + esc(u) + '" loading="lazy">'; });
+    (o.deliveryFiles || []).forEach(function (u) { thumbHtml += '<img src="' + esc(u) + '" loading="lazy">'; });
 
     var acts = '<div class="acts">';
     var st = o.order_status;
@@ -232,15 +238,15 @@
       if (!o.paid) acts += '<button class="b-green" data-act="paid">标记已收款</button>';
       acts += '<button data-act="deliver">完结订单</button>';
     }
-    acts += '<a href="order.html?orderId=' + o.orderId + '" target="_blank">客户视图</a>';
+    acts += '<a href="order.html?orderId=' + esc(o.orderId) + '" target="_blank">客户视图</a>';
     acts += '</div>';
 
     div.innerHTML =
-      '<div class="order-top"><span class="order-id">' + o.orderId + '</span>' +
-      '<span class="st ' + st + '">' + (o.statusLabel || st) + (o.paid ? ' · 已付款' : '') + '</span></div>' +
-      '<div class="order-meta">' + (o.productName || '') + ' · ¥' + Number(o.amount).toFixed(2) +
-      ' · ' + (o.contactPhone || '') + ' · ' + (o.source || 'web') + ' · ' + (o.createdAt || '') +
-      ((o.themes || []).length ? '<br>主题：' + o.themes.map(function (t) { return t.themeName; }).join('、') : '') +
+      '<div class="order-top"><span class="order-id">' + esc(o.orderId) + '</span>' +
+      '<span class="st ' + esc(st) + '">' + esc(o.statusLabel || st) + (o.paid ? ' · 已付款' : '') + '</span></div>' +
+      '<div class="order-meta">' + esc(o.productName || '') + ' · ¥' + esc(Number(o.amount).toFixed(2)) +
+      ' · ' + esc(o.contactPhone || '') + ' · ' + esc(o.source || 'web') + ' · ' + esc(o.createdAt || '') +
+      ((o.themes || []).length ? '<br>主题：' + esc(o.themes.map(function (t) { return t.themeName; }).join('、')) : '') +
       '</div>' +
       '<div class="thumbs">' + thumbHtml + '</div>' + acts;
 

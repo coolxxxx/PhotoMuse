@@ -14,6 +14,15 @@ const notify = require('./notify');
 let deps = null;
 function bind(d) { deps = d; }
 
+/* 通知失败绝不影响出图主流程（否则 SMTP 故障会让订单永久卡在 generating） */
+const safeNotify = (type, order, extra) =>
+  Promise.resolve()
+    .then(() => notify.send(type, order, extra))
+    .catch(e => { console.warn('[notify]', type, e && e.message); return { ok: false }; });
+
+/* 同一订单同时只跑一条流水线，避免被并发触发重复烧钱生图 */
+const running = new Set();
+
 function parseThemes(order) {
   try {
     return (JSON.parse(order.themes || '[]') || []).filter(Boolean);
@@ -37,13 +46,15 @@ async function run(orderId) {
 
   const photos = orderFiles(orderId, 'customer');
   if (!photos.length) {
-    await notify.send('generation_failed', o, { error: '订单无客户照片' });
+    await safeNotify('generation_failed', o, { error: '订单无客户照片' });
     return { success: false, error: 'NO_PHOTOS' };
   }
 
+  if (running.has(orderId)) return { success: false, error: 'ALREADY_RUNNING' };
+  running.add(orderId);
   db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?')
     .run('generating', nowStr(), orderId);
-  await notify.send('review_passed', o, { autoGen: true });
+  await safeNotify('review_passed', o, { autoGen: true });
 
   const themes = parseThemes(o);
   const isPortrait = Boolean(themes.length) || String(o.product_type || o.product_id || '').includes('portrait');
@@ -56,7 +67,7 @@ async function run(orderId) {
       const sceneDesc = o.scene_desc || '';
       const refPrompt = ai.buildPrompt('reference', { themeCount, sceneDesc });
       const ref = await ai.generateImage(refPrompt);
-      const refUrl = ai.saveUpload(path.join('orders', orderId, 'reference.png'), ref.buffer);
+      const refUrl = await ai.saveUpload(path.join('orders', orderId, 'reference.png'), ref.buffer);
       db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, created_at) VALUES (?, ?, ?, ?, ?)')
         .run(rid('file'), orderId, 'generated', refUrl, nowStr());
       done.push('reference');
@@ -67,7 +78,7 @@ async function run(orderId) {
         const themeName = theme.themeName || themeId;
         const gridPrompt = ai.buildPrompt('grid', { themeId, sceneDesc });
         const grid = await ai.generateImage(gridPrompt);
-        const gridUrl = ai.saveUpload(path.join('orders', orderId, 'grid-' + themeId + '.png'), grid.buffer);
+        const gridUrl = await ai.saveUpload(path.join('orders', orderId, 'grid-' + themeId + '.png'), grid.buffer);
         db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, created_at) VALUES (?, ?, ?, ?, ?)')
           .run(rid('file'), orderId, 'grid_preview', gridUrl, nowStr());
         done.push('grid:' + themeId);
@@ -76,7 +87,7 @@ async function run(orderId) {
           try {
             const cellPrompt = ai.buildPrompt('cell', { cell, themeId });
             const img = await ai.generateImage(cellPrompt);
-            const url = ai.saveUpload(path.join('orders', orderId, 'cell-' + themeId + '-' + cell + '.png'), img.buffer);
+            const url = await ai.saveUpload(path.join('orders', orderId, 'cell-' + themeId + '-' + cell + '.png'), img.buffer);
             db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, created_at) VALUES (?, ?, ?, ?, ?)')
               .run(rid('file'), orderId, 'delivery', url, nowStr());
             done.push('cell:' + themeId + ':' + cell);
@@ -90,31 +101,58 @@ async function run(orderId) {
       const summary = `写真自动出图完成：参考图 + 网格×${themes.length || 1}，默认分镜 ${cells.join('/')}；请 QC 后交付`;
       db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?')
         .run('qc', nowStr(), orderId);
-      await notify.send('generation_ready', o, { summary });
+      await safeNotify('generation_ready', o, { summary });
       audit(orderId, 'system', 'auto_generate_ready', { done, failures });
       return { success: true, done, failures, summary };
     }
 
-    /* 证件照 / 标准：用客户照片直接出一张交付候选（简化全自动路径） */
+    /* 证件照 / 标准：优先走自部署 HivisionIDPhotos 引擎（合规规格 mm + 指定底色）。
+       引擎未配置或调用失败时回落到 AI 提示词路径，保证自动流程不中断。 */
+    const viaEngine = deps.generateIdPhoto
+      ? await deps.generateIdPhoto(orderId, o).catch(err => {
+        console.error('[pipeline] 证件照引擎失败，回落 AI 路径:', err && err.message);
+        return null;
+      })
+      : null;
+
+    if (viaEngine && viaEngine.url) {
+      db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, created_at) VALUES (?, ?, ?, ?, ?)')
+        .run(rid('file'), orderId, 'delivery', viaEngine.url, nowStr());
+      done.push('idphoto');
+      if (viaEngine.layoutUrl) {
+        db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, created_at) VALUES (?, ?, ?, ?, ?)')
+          .run(rid('file'), orderId, 'delivery', viaEngine.layoutUrl, nowStr());
+        done.push('layout');
+      }
+      db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?')
+        .run('qc', nowStr(), orderId);
+      await safeNotify('generation_ready', o, { summary: '证件照引擎出图完成，请 QC 后交付' });
+      audit(orderId, 'system', 'auto_generate_ready', { done, engine: 'hivision' });
+      return { success: true, done, failures: [], summary: '证件照引擎出图完成' };
+    }
+
+    /* 回落：用客户照片直接出一张交付候选（简化全自动路径） */
     const styleId = o.style_id || o.styleId || '';
     const prompt = ai.buildPrompt('cell', { cell: 1, themeId: 'professional', sceneDesc: o.scene_desc || styleId });
     const img = await ai.generateImage(prompt);
-    const url = ai.saveUpload(path.join('orders', orderId, 'idphoto-auto.png'), img.buffer);
+    const url = await ai.saveUpload(path.join('orders', orderId, 'idphoto-auto.png'), img.buffer);
     db.prepare('INSERT INTO order_files (file_id, order_id, file_type, url, created_at) VALUES (?, ?, ?, ?, ?)')
       .run(rid('file'), orderId, 'delivery', url, nowStr());
     done.push('idphoto');
     db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?')
       .run('qc', nowStr(), orderId);
-    await notify.send('generation_ready', o, { summary: '证件照自动出图完成，请 QC 后交付' });
+    await safeNotify('generation_ready', o, { summary: '证件照自动出图完成，请 QC 后交付' });
     audit(orderId, 'system', 'auto_generate_ready', { done });
     return { success: true, done, failures: [], summary: '证件照自动出图完成' };
   } catch (e) {
     console.error('[pipeline] failed', orderId, e);
     db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE order_id = ?')
       .run('queued', nowStr(), orderId);
-    await notify.send('generation_failed', o, { error: e.message || String(e) });
+    await safeNotify('generation_failed', o, { error: e.message || String(e) });
     audit(orderId, 'system', 'auto_generate_failed', { error: String(e.message || e) });
     return { success: false, error: e.message || String(e), done, failures };
+  } finally {
+    running.delete(orderId);
   }
 }
 

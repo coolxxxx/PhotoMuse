@@ -65,9 +65,9 @@
 
 `index`（下单）/ `detail`（订单详情）/ `admin` / `adminLogin` / `showcase`；接口封装在 `utils/photomuse-api.js`（与 `wx.cloud` 同签名，直连独立后端）；主题等配置在 `utils/ai-studio-config.js`。
 
-### 云函数 `cloudfunctions/`（30 个，**历史保留，当前未使用**）
+### 云函数 `cloudfunctions/`（**已退役删除**）
 
-独立后端上线前的实现，保留用于回滚与参考；对应集合与数据仍在云环境中，但已不再被前端调用。
+独立后端上线前的旧实现，前端已完全不调用（小程序侧无任何原生 `wx.cloud.callFunction`，所有调用都打到 `photomuse-server`）。随「云函数与云数据库退役清理」一并删除；如需回滚参考，从 git 历史取回（`git log -- cloudfunctions/`）。
 
 ## 快速开始
 
@@ -122,13 +122,14 @@ location /PM/      { alias /var/www/pm/; index index.html; }
 ## 测试
 
 ```bash
-npm test              # 小程序与云函数侧四层（49 用例）
-npm run test:server   # 独立后端（38 用例，node:test）
+npm test              # 全量测试链（4 段，逐段跑完再汇总）
+npm run test:server   # 只跑独立后端（38 用例，node:test）
 ```
 
-- `npm test`：断言校验 → 契约交叉核对 → 视觉完整性 → 集成用例（内存 mock 真实执行云函数逻辑）
-- `npm run test:server`：spawn 隔离实例 + 临时数据目录，覆盖鉴权 / 计价 / 上传凭证 / 三元组 / 越权 / 管理流转 / 样张 / 收款码 / 审计
-- 真实外部 API 端到端预演：`node tests/integration/real-api-e2e.js`（消耗真实生图配额）
+- `npm test`（= `node tests/run-all.js`）：小程序契约 → 前后端契约交叉核对 → 视觉完整性 → 独立后端 38 用例。四段**顺序跑完不短路**，最后按汇总定退出码，避免前面某段失败把后面几段整个掩盖掉。
+- 契约交叉核对三个方向：小程序 `callFunction('名字')` ↔ 后端 `wxActions`；网站 `callApi('action')` ↔ 后端 `actions`；`app.json` 页面注册 ↔ 页面文件存在。
+- `npm run test:server`：spawn 隔离实例 + 临时数据目录，覆盖鉴权 / 计价 / 上传凭证 / 三元组 / 越权 / 管理流转 / 样张 / 收款码 / 审计。
+- 单段可单独跑：`npm run test:validate` / `npm run test:static` / `npm run test:visual`。
 
 > 注意：静态完整性检查会校验 HTML 用到的 class 必须在 CSS 中有定义，改页面结构时容易踩到。
 
@@ -137,14 +138,15 @@ npm run test:server   # 独立后端（38 用例，node:test）
 | 变量 | 用途 |
 |---|---|
 | `PM_ADMIN_PASSWORD` | 管理后台口令（必填，未配置则服务拒绝启动） |
-| `PM_AI_KEY` / `PM_GEN_API` / `PM_CHAT_API` | 生图与视觉分析（OpenAI 兼容节点）；未配置时 AI 功能返回 `CONFIG_MISSING` |
+| `PM_AI_KEY` / `PM_GEN_API` / `PM_CHAT_API` / `PM_IMG_MODEL` / `PM_TXT_MODEL` | 生图与视觉分析（任意 OpenAI 兼容节点）。**通常不用配**——在管理后台→模型设置里填 base URL + Key + 模型名即可（存库、改完立即生效无需重启、`apiKey` 永不回传）；环境变量只作兜底。未配置时 AI 功能返回 `CONFIG_MISSING` |
 | `PM_UPLOAD_ROOT` | 照片与成片落盘目录 |
 | `PM_PUBLIC_ORIGIN` | 对外域名（用于拼 fileID） |
 | `PM_DATA_DIR` | SQLite 数据目录（默认 `lib/data`） |
 | `PM_RATE_MAX` | 每 IP 每分钟请求上限 |
+| `PM_IDPHOTO_ENGINE_URL` | 证件照引擎（自部署 HivisionIDPhotos）地址，如 `http://127.0.0.1:8080`；**通常不用配**——在管理后台→模型设置→证件照引擎里填即可（配置存库、可随时开关），此变量只是无面板时的兜底 |
 | `WX_APPID` / `WX_APPSECRET` | 小程序登录升级为 code2session（未配置时使用设备 ID 匿名身份） |
 
-密钥一律环境变量注入，**不入库、不进 git**；仓库内 `.deploy-secrets.example.json` 仅为格式示例。
+密钥一律环境变量注入，**不入库、不进 git**。原 `.deploy-secrets.example.json` / `cloudbaserc.json` / `scripts/deploy.js`（云函数时代的部署与密钥合并链）已随云函数退役一并删除；历史遗留密钥仍保留在你本机 gitignore 的 `.deploy-secrets.json`（含原 `cloudbaserc.json` 里的管理员 openid、通知邮箱等 PII），该文件已不再被仓库代码引用。
 
 ## 安全设计
 
@@ -167,7 +169,7 @@ npm run test:server   # 独立后端（38 用例，node:test）
 - [ ] 小程序接入 code2session（替换设备 ID 匿名身份）
 - [ ] 真 CMYK 转换（需 ICC 引擎，当前 sRGB 全流程 + 打样流程）
 - [ ] 微信支付接入
-- [ ] 云函数与云数据库正式退役清理
+- [x] 云函数与云数据库正式退役清理（`cloudfunctions/` 与内存 mock 已删除，契约测试改为断言现行后端）
 
 ## 文档
 

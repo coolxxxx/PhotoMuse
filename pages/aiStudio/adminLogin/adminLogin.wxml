@@ -8,7 +8,7 @@
     <view class="login-eyebrow">STUDIO CONSOLE</view>
     <view class="login-title">管理登录</view>
     <view class="login-desc">
-      仅管理员可进入订单看板。系统会使用当前微信身份校验 openid，不需要教师账号。
+      仅管理员可进入订单看板。系统会使用当前微信身份校验 openid，不需要额外账号。
     </view>
 
     <view class="permission-box">

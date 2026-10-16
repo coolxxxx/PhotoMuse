@@ -8,7 +8,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert';
 import { spawn } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, openSync, closeSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,6 +45,10 @@ const JPEG_1PX = Buffer.from('ffd8ffe000104a46494600010100000100010000ffd9', 'he
 before(async () => {
   dataDir = mkdtempSync(path.join(tmpdir(), 'pm-test-'));
   uploadDir = path.join(dataDir, 'uploads');
+  /* 服务端输出落到日志文件而非管道：受限沙箱里管道 stdio 会被拒（EPERM），文件重定向不受影响。
+     这样服务起不来时能直接看到原因（例如缺依赖），而不是只剩一句"测试服务未就绪"。 */
+  const logPath = path.join(dataDir, 'server.log');
+  const logFd = openSync(logPath, 'w');
   child = spawn(process.execPath, [path.join(ROOT, 'server.js')], {
     cwd: ROOT,
     env: Object.assign({}, process.env, {
@@ -55,17 +59,19 @@ before(async () => {
       PM_AI_KEY: '',
       PM_PUBLIC_ORIGIN: 'https://test.example.com'
     }),
-    stdio: 'ignore'
+    stdio: ['ignore', logFd, logFd]
   });
   // 等服务就绪
   for (let i = 0; i < 30; i++) {
     await new Promise(r => setTimeout(r, 200));
     try {
       const r = await fetch(BASE + '/api/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"action":"catalog","payload":{}}' });
-      if (r.ok) return;
+      if (r.ok) { closeSync(logFd); return; }
     } catch (e) { /* retry */ }
   }
-  throw new Error('测试服务未就绪');
+  let log = '';
+  try { closeSync(logFd); log = readFileSync(logPath, 'utf8').slice(-2000); } catch (e) { /* ignore */ }
+  throw new Error('测试服务未就绪\n--- photomuse-server 输出 ---\n' + (log || '(无输出)'));
 });
 after(() => {
   if (child) {

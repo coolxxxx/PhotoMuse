@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "wx-server-sdk": "latest",
-    "jpeg-js": "0.4.4",
-    "pngjs": "6.0.0"
-  }
-}

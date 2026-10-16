@@ -10,6 +10,7 @@ const {
   ID_PHOTO_SPECS,
   BACKGROUND_COLORS
 } = require('../../utils/ai-studio-config');
+const photomuseApi = require('/utils/photomuse-api.js');
 
 Page({
   data: {
@@ -69,6 +70,8 @@ Page({
   },
 
   onShow() {
+    // 去抖：距上次加载不足 800ms（含 onLoad 刚触发的首次）则跳过，避免 onLoad+onShow 双份请求
+    if (this._ordersLoaded && Date.now() - (this._lastOrdersLoadAt || 0) < 800) return;
     this.loadOrders();
   },
 
@@ -510,22 +513,35 @@ Page({
     }
   },
 
-  async loadOrders() {
+  async loadOrders(append) {
+    // 记录"已加载"标记与时间戳，供 onShow 去抖判断（不影响请求本身与数据结构）
+    this._ordersLoaded = true;
+    this._lastOrdersLoadAt = Date.now();
+    if (append && this._loadingMore) return; // 触底并发去重
+    if (append) this._loadingMore = true;
+    const page = append ? (this._ordersPage || 0) + 1 : 0;
     this.setData({ isLoading: true });
     try {
-      const res = await callFunction('listMyAIStudioOrders', { page: 0, pageSize: 10 });
-      this.setData({
-        orders: (res.data || []).map(order => ({
-          ...order,
-          statusText: STATUS_LABELS[order.order_status] || order.order_status,
-          photoCheckText: PHOTO_CHECK_LABELS[order.photo_check] || order.photo_check
-        }))
-      });
+      const res = await callFunction('listMyAIStudioOrders', { page, pageSize: 10 });
+      const rows = (res.data || []).map(order => ({
+        ...order,
+        statusText: STATUS_LABELS[order.order_status] || order.order_status,
+        photoCheckText: PHOTO_CHECK_LABELS[order.photo_check] || order.photo_check
+      }));
+      this._ordersPage = page;
+      this._hasMoreOrders = Boolean(res.pagination && res.pagination.hasMore);
+      this.setData({ orders: append ? (this.data.orders || []).concat(rows) : rows });
     } catch (error) {
       console.warn('加载证件照订单失败:', error);
     } finally {
+      this._loadingMore = false;
       this.setData({ isLoading: false });
     }
+  },
+
+  /* 触底加载下一页（服务端每页 10 条、上限 30） */
+  onReachBottom() {
+    if (this._hasMoreOrders) this.loadOrders(true);
   },
 
   openOrder(e) {
@@ -556,7 +572,6 @@ Page({
       await callFunction('queryAIStudioOrder', { orderId, contactPhone, queryPassword });
 
       const app = getApp();
-const photomuseApi = require("../../utils/photomuse-api.js");
       app.globalData.aiStudioOrderQuery = { orderId, contactPhone, queryPassword };
 
       wx.hideLoading();

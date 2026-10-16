@@ -84,6 +84,7 @@
           class="sample-thumb"
           src="{{sample.tempUrl}}"
           mode="aspectFill"
+          lazy-load="{{true}}"
           data-url="{{sample.tempUrl}}"
           data-urls="{{[sample.tempUrl]}}"
           bindtap="previewImage"
@@ -188,9 +189,10 @@
     <view class="image-row" wx:if="{{item.customerFiles.length}}">
       <image
         wx:for="{{item.customerFiles}}"
-        wx:key="fileId"
+        wx:key="fileID"
         src="{{item.tempUrl}}"
         mode="aspectFill"
+        lazy-load="{{true}}"
         data-url="{{item.tempUrl}}"
         data-urls="{{item.customerUrls}}"
         bindtap="previewImage"
@@ -201,10 +203,11 @@
       <image
         wx:for="{{item.generatedFiles}}"
         wx:for-item="genFile"
-        wx:key="fileId"
+        wx:key="fileID"
         class="gen-thumb"
         src="{{genFile.tempUrl}}"
         mode="aspectFill"
+        lazy-load="{{true}}"
         data-url="{{genFile.tempUrl}}"
         data-urls="{{item.generatedUrls}}"
         bindtap="previewImage"
@@ -212,7 +215,7 @@
       <view
         wx:for="{{item.printTicketFiles}}"
         wx:for-item="ticket"
-        wx:key="fileId"
+        wx:key="fileID"
         class="ticket-chip"
       >制作单</view>
     </view>

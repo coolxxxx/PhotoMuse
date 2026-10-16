@@ -3,6 +3,7 @@ const {
   PHOTO_CHECK_LABELS,
   PORTRAIT_THEMES
 } = require('../../../utils/ai-studio-config');
+const photomuseApi = require('/utils/photomuse-api.js');
 
 // 样张管理用主题快捷项（与后端 adminUpsertAIStudioSamples 主题白名单一致）
 const SAMPLE_THEME_OPTIONS = [
@@ -13,22 +14,16 @@ const SAMPLE_THEME_OPTIONS = [
   { themeId: 'family', label: '亲子' }
 ];
 
+/* 筛选 tab 的状态顺序；值是冻结契约字面量，不得改动。
+   文案统一取 STATUS_LABELS，避免同一状态在筛选 tab 与订单卡片上显示两种说法。 */
+const STATUS_TAB_ORDER = [
+  'photo_review', 'queued', 'grid_preview', 'cell_selected', 'generating', 'qc',
+  'delivered', 'merch_pending', 'in_production', 'completed', 'waiting_photos', 'cancelled'
+];
+
 Page({
   data: {
-    statusOptions: [
-      { value: 'photo_review', label: '待审核' },
-      { value: 'queued', label: '已排单' },
-      { value: 'grid_preview', label: '待选片' },
-      { value: 'cell_selected', label: '制作中' },
-      { value: 'generating', label: '出图中' },
-      { value: 'qc', label: '质检中' },
-      { value: 'delivered', label: '已交付' },
-      { value: 'merch_pending', label: '待制作' },
-      { value: 'in_production', label: '制作中' },
-      { value: 'completed', label: '已完结' },
-      { value: 'waiting_photos', label: '待补图' },
-      { value: 'cancelled', label: '已取消' }
-    ],
+    statusOptions: STATUS_TAB_ORDER.map(value => ({ value, label: STATUS_LABELS[value] || value })),
     selectedStatus: 'photo_review',
     orders: [],
     isLoading: false,
@@ -74,7 +69,6 @@ Page({
 
   ensureAdminPassword() {
     const app = getApp();
-const photomuseApi = require("../../utils/photomuse-api.js");
     if (app.globalData && app.globalData.aiStudioAdminPassword) return true;
 
     wx.showToast({ title: '请先管理登录', icon: 'none' });
@@ -805,7 +799,27 @@ const photomuseApi = require("../../utils/photomuse-api.js");
         hasSelectedCells: hasAnySelectedCells(order)
       })));
 
-      this.setData({ orders });
+      // 分批 setData：避免一次 setData 塞入全部 20 单完整对象导致渲染卡顿。
+      // 不预清空，避免列表"先空后闪现"；只有新列表比旧列表短时才裁掉尾部残留。
+      // TODO: 分批写入期间订单列表分阶段出现（isLoading=true 时先显示"加载中..."）；如需瞬时整体替换需改回整包 setData 并重新评估卡顿
+      const seq = (this._ordersSeq = (this._ordersSeq || 0) + 1);
+      const prevLen = (this.data.orders || []).length;
+      const batchSize = 5;
+      for (let i = 0; i < orders.length; i += batchSize) {
+        if (seq !== this._ordersSeq) return; // 已有更新的 loadOrders 在写入，放弃本批，保证后写覆盖先写
+        const patch = {};
+        for (let j = i; j < Math.min(i + batchSize, orders.length); j += 1) {
+          patch[`orders[${j}]`] = orders[j];
+        }
+        this.setData(patch);
+        if (i + batchSize < orders.length) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      }
+      if (seq !== this._ordersSeq) return;
+      if (orders.length !== prevLen) {
+        this.setData({ orders: this.data.orders.slice(0, orders.length) });
+      }
     } catch (error) {
       wx.showToast({ title: error.message || '加载失败', icon: 'none' });
       this.setData({ orders: [] });
@@ -841,17 +855,8 @@ const photomuseApi = require("../../utils/photomuse-api.js");
     this.setData({ actionOrderId: orderId });
     try {
       const res = await callFunction('adminReviewAIStudioOrder', { orderId, action, reason, adminPassword: getAdminPassword() });
-      /* 云端 pass 已异步 kick autoGenerate；此处再兜底触发一次（幂等） */
+      /* 出图由服务端 adminReview pass 自动触发（kickAutoGenerate 带状态守卫，重复 pass 不会重复烧钱） */
       if (action === 'pass') {
-        try {
-          await callFunction('autoGenerateAIStudioOrder', {
-            orderId,
-            adminPassword: getAdminPassword(),
-            internal: true
-          });
-        } catch (e) {
-          console.warn('autoGenerate fallback:', e && e.message);
-        }
         wx.showToast({ title: '已通过·自动出图中', icon: 'success' });
       } else {
         wx.showToast({ title: '已更新', icon: 'success' });

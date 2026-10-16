@@ -18,7 +18,7 @@ const MAX_QTY = 9;
 const MAX_CART_ITEMS = 20;
 const PHOTO_LIMIT = 50;
 
-const photomuseApi = require("../../utils/photomuse-api.js");
+const photomuseApi = require('/utils/photomuse-api.js');
 Page({
   data: {
     orderId: '',
@@ -300,7 +300,7 @@ function parseFileIDs(raw) {
     list = [];
   }
   return list
-    .filter(id => typeof id === 'string' && id.startsWith('cloud://'))
+    .filter(id => typeof id === 'string' && (id.startsWith('cloud://') || /^https?:\/\//i.test(id)))
     .slice(0, PHOTO_LIMIT);
 }
 
@@ -345,6 +345,7 @@ function buildCalendarMonths() {
     for (let b = 0; b < offset; b += 1) cells.push({ id: `b${b}`, on: 0 });
     for (let day = 1; day <= days; day += 1) cells.push({ id: `d${day}`, on: 1 });
     months.push({
+      id: `${first.getFullYear()}-${first.getMonth() + 1}`,
       label: `${first.getMonth() + 1}月`,
       header: WEEK_HEADER,
       cells
